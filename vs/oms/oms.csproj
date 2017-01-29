@@ -42,6 +42,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="oms\Exception.cs" />
+    <Compile Include="oms\Parser.cs" />
+    <Compile Include="oms\SyntaxTree.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="oms\Lex.cs" />

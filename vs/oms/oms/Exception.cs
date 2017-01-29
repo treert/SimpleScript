@@ -42,4 +42,12 @@ namespace oms
             SetInfo(source_, ":", line_, ":", column_, " ",msg);
         }
     }
+
+    class ParserException:BaseException
+    {
+        public ParserException(string msg)
+        {
+            SetInfo(msg);
+        }
+    }
 }
