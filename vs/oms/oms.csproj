@@ -41,9 +41,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="oms\Exception.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="oms\Lex.cs" />
+    <Compile Include="test\TestLex.cs" />
+    <Compile Include="test\TestManager.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

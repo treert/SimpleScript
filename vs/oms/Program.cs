@@ -10,12 +10,7 @@ namespace oms
     {
         static void Main(string[] args)
         {
-            var lex = new Lex();
-            lex.Init("a = 123");
-            Console.WriteLine(lex.GetNextToken());
-            Console.WriteLine(lex.GetNextToken());
-            Console.WriteLine(lex.GetNextToken());
-            Console.WriteLine(lex.GetNextToken());
+            test.TestManager.RunTest();           
         }
     }
 }

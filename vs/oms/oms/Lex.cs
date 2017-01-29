@@ -83,7 +83,7 @@ namespace oms
 
         public override string ToString()
         {
-            return string.Format("token_type:{0},string:{1},number:{2}",
+            return string.Format("token_type:{0},\tstring:{1},\tnumber:{2}",
                 m_type, m_string, m_number);
         }
     }
@@ -162,7 +162,7 @@ namespace oms
             }
             else
             {
-                throw new Exception(String.Format("{0} is not valid double",_buf));
+                throw new LexException(_source_name,_line,_column,String.Format("{0} is not valid double",_buf));
             }
         }
 
@@ -174,9 +174,9 @@ namespace oms
             while(_current != quote)
             {
                 if (_current == '\0')
-                    throw new Exception("incomplete string at file end");
+                    throw new LexException(_source_name,_line,_column,"incomplete string at file end");
                 if (_current == '\r' || _current == '\n')
-                    throw new Exception("incomplete string at line end");
+                    throw new LexException(_source_name, _line, _column, "incomplete string at line end");
                 _PutCharInBuf();
             }
             _NextChar();
@@ -228,7 +228,7 @@ namespace oms
                         }
                         _NextChar();
                     }
-                    if(i == 0) throw new Exception("unexpect char after '\\x'");
+                    if(i == 0) throw new LexException(_source_name,_line,_column,"unexpect char after '\\x'");
                     _buf.Append(char.ConvertFromUtf32(code));
                     return;
                 }
@@ -248,12 +248,12 @@ namespace oms
                         }
                         _NextChar();
                     }
-                    if (code > byte.MaxValue) throw new Exception("char code too big");
+                    if (code > byte.MaxValue) throw new LexException(_source_name,_line,_column,"char code too big");
                     _buf.Append(char.ConvertFromUtf32(code));
                     return;
                 }
                 else
-                    throw new Exception("unexpect character after '\\'");
+                    throw new LexException(_source_name,_line,_column,"unexpect character after '\\'");
             }
             else
             {
@@ -271,7 +271,7 @@ namespace oms
                 _NextChar();
             }
             if (_current != '[')
-                throw new Exception("incomplete multi line string");
+                throw new LexException(_source_name,_line,_column,"incomplete multi line string");
             _NextChar();
             _buf.Clear();
             if (_current == '\r' || _current == '\n')
@@ -311,7 +311,7 @@ namespace oms
                 }
             }
 
-            throw new Exception("incomplete multi line string");
+            throw new LexException(_source_name,_line,_column,"incomplete multi line string");
         }
 
         private void _SkipComment()
@@ -328,7 +328,7 @@ namespace oms
                     _NextChar();
                 }
                 if (_current != '[')
-                    throw new Exception("incomplete multi line comment");
+                    throw new LexException(_source_name,_line,_column,"incomplete multi line comment");
                 _NextChar();
 
                 while (_current != '\0')
@@ -373,6 +373,7 @@ namespace oms
             {
                 switch(_current){
                     case '\r': case '\n':
+                        _NewLine();
                         break;
                     case '-':
                         _NextChar();
@@ -414,7 +415,7 @@ namespace oms
                         }
                         else
                         {
-                            throw new Exception("expect '=' after '~'");
+                            throw new LexException(_source_name,_line,_column,"expect '=' after '~'");
                         }
                         //break;
                     case '=':
@@ -487,6 +488,7 @@ namespace oms
             return new Token();
         }
 
+        private string _source_name;
         private string _source;
         private char _current;
         private int _pos;
@@ -508,6 +510,7 @@ namespace oms
 
         public void Init(string input_)
         {
+            _source_name = "test";
             _source = input_;
             _pos = 0;
             _line = 1;
