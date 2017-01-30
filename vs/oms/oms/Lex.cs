@@ -12,6 +12,7 @@ namespace oms
         // reserved words
         AND = 257,
         BREAK,
+        CONTINUE,
         DO,
         ELSE,
         ELSEIF,
@@ -96,6 +97,7 @@ namespace oms
             s_reserve_keys = new Dictionary<string, TokenType>();
             s_reserve_keys.Add("and", TokenType.AND);
             s_reserve_keys.Add("break", TokenType.BREAK);
+            s_reserve_keys.Add("continue", TokenType.CONTINUE);
             s_reserve_keys.Add("do", TokenType.DO);
             s_reserve_keys.Add("else", TokenType.ELSE);
             s_reserve_keys.Add("elseif", TokenType.ELSEIF);

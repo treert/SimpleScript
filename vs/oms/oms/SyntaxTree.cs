@@ -16,7 +16,6 @@ namespace oms
         void Visit(DoStatement tree, ref object data);
         void Visit(WhileStatement tree, ref object data);
         void Visit(IfStatement tree, ref object data);
-        void Visit(ElseStatement tree, ref object data);
         void Visit(ForStatement tree, ref object data);
         void Visit(ForInStatement tree, ref object data);
         void Visit(ForEachStatement tree, ref object data);
@@ -39,6 +38,7 @@ namespace oms
         void Visit(NormalFuncCall tree, ref object data);
         void Visit(MemberFuncCall tree, ref object data);
         void Visit(ExpressionList tree, ref object data);
+        void Visit(NameList tree, ref object data);
         //void Visit(SyntaxTree tree, ref object data);
     }
     
@@ -50,10 +50,6 @@ namespace oms
     class Chunk:SyntaxTree
     {
         public SyntaxTree block;
-        public Chunk(SyntaxTree block_)
-        {
-            block = block_;
-        }
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
@@ -128,15 +124,6 @@ namespace oms
         }
     }
 
-    class ElseStatement : SyntaxTree
-    {
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
-        {
-            v.Visit(this, ref data);
-        }
-    }
-
     class ForStatement:SyntaxTree
     {
         public Token name;
@@ -152,7 +139,7 @@ namespace oms
 
     class ForInStatement : SyntaxTree
     {
-        public List<Token> name_list = new List<Token>();
+        public SyntaxTree name_list;
         public SyntaxTree exp_list;
         public SyntaxTree block;
         public override void Accept(Visitor v, ref object data)
@@ -225,6 +212,15 @@ namespace oms
     class VarList:SyntaxTree
     {
         public List<SyntaxTree> var_list;
+        public override void Accept(Visitor v, ref object data)
+        {
+            v.Visit(this, ref data);
+        }
+    }
+
+    class NameList:SyntaxTree
+    {
+        public List<Token> names;
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
