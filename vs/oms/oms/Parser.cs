@@ -42,6 +42,11 @@ namespace oms
                 _look_ahead2 = _lex.GetNextToken();
             return _look_ahead2;
         }
+        enum PrefixExpType
+        {
+            Normal,
+            Var,
+        }
         bool IsMainExp()
         {
             int token_type = LookAhead().m_type;
@@ -55,23 +60,319 @@ namespace oms
                 token_type == (int)TokenType.FUNCTION ||
                 token_type == (int)TokenType.NAME ||
                 token_type == (int)'(' ||
-                token_type == (int)'{';
+                token_type == (int)'{' ||
+                token_type == (int)'-' ||
+                token_type == (int)'#' ||
+                token_type == (int)TokenType.NOT;
         }
-        SyntaxTree ParseExp()
+        int GetOpPriority(Token t)
         {
-            return null;
+            switch(t.m_type)
+            {
+                case (int)'^': return 100;
+                case (int)'*':
+                case (int)'/':
+                case (int)'%': return 80;
+                case (int)'+':
+                case (int)'-': return 70;
+                case (int)TokenType.CONCAT: return 60;
+                case (int)'>':
+                case (int)'<':
+                case (int)TokenType.GE:
+                case (int)TokenType.LE:
+                case (int)TokenType.NE:
+                case (int)TokenType.EQ: return 50;
+                case (int)TokenType.AND: return 40;
+                case (int)TokenType.OR: return 30;
+                default: return 0;
+            }
+        }
+        bool IsRightAssociation(Token t)
+        {
+            return t.m_type == (int)'^';
+        }
+        SyntaxTree ParseExp(SyntaxTree left = null,Token op = null,int left_priority = 0)
+        {
+            var exp = ParseMainExp();
+            while(true)
+            {
+                int right_priority = GetOpPriority(LookAhead());
+                if(left_priority < right_priority ||
+                    (left_priority == right_priority
+                    && IsRightAssociation(LookAhead())))
+                {
+                    exp = ParseExp(exp, NextToken(), right_priority);
+                }
+                else if(left_priority == right_priority)
+                {
+                    if (left_priority == 0)
+                        return exp;
+                    left = new BinaryExpression(left, op, exp);
+                    op = NextToken();
+                    exp = ParseMainExp();
+                }
+                else
+                {
+                    if(left != null)
+                    {
+                        exp = new BinaryExpression(left, op, exp); 
+                    }
+                    return exp;
+                }
+            }
         }
         SyntaxTree ParseMainExp()
         {
-            return null;
+            SyntaxTree exp;
+            switch(LookAhead().m_type)
+            {
+                case (int)TokenType.NIL:
+                case (int)TokenType.FALSE:
+                case (int)TokenType.TRUE:
+                case (int)TokenType.NUMBER:
+                case (int)TokenType.STRING:
+                case (int)TokenType.DOTS:
+                    exp = new Terminator(NextToken());
+                    break;
+                case (int)TokenType.FUNCTION:
+                    exp = ParseFunctionDef();
+                    break;
+                case (int)TokenType.NAME:
+                case (int)'(':
+                    PrefixExpType type;
+                    exp = ParsePrefixExp(out type);
+                    break;
+                case (int)'{':
+                    exp = ParseTableConstructor();
+                    break;
+                // unop exp priority is 90 less then ^
+                case (int)'-':
+                case (int)'#':
+                case (int)TokenType.NOT:
+                    var unexp = new UnaryExpression();
+                    unexp.op = NextToken();
+                    unexp.exp = ParseExp(null, null, 90);
+                    exp = unexp;
+                    break;
+                default:
+                    throw new ParserException("unexpect token for main exp");
+            }
+            return exp;
         }
         SyntaxTree ParseExpList()
         {
-            return null;
+            var exp = new ExpressionList();
+            exp.exp_list.Add(ParseExp());
+            while(LookAhead().m_type == (int)',')
+            {
+                NextToken();
+                exp.exp_list.Add(ParseExp());
+            }
+            return exp;
         }
-        SyntaxTree ParseVarList()
+        SyntaxTree ParseFunctionDef()
         {
-            return null;
+            NextToken();
+            return ParseFunctionBody();
+        }
+        SyntaxTree ParseVar(SyntaxTree table)
+        {
+            NextToken();// skip '[' or '.'
+
+            if(_current.m_type == (int)'[')
+            {
+                var index_access = new IndexAccessor();
+                index_access.table = table;
+                index_access.index = ParseExp();
+                if (NextToken().m_type != (int)']')
+                    throw new ParserException("expect ']'");
+                return index_access;
+            }
+            else
+            {
+                var member_access = new MemberAccessor();
+                if (NextToken().m_type != (int)TokenType.NAME)
+                    throw new ParserException("expect 'id' after '.'");
+                member_access.table = table;
+                member_access.member_name = _current;
+                return member_access;
+            }
+        }
+        SyntaxTree ParseFunctionCall(SyntaxTree caller)
+        {
+            if(LookAhead().m_type == (int)':')
+            {
+                NextToken();
+                if (NextToken().m_type != (int)TokenType.NAME)
+                    throw new ParserException("expect 'id' after ':'");
+                var member_call = new MemberFuncCall();
+                member_call.caller = caller;
+                member_call.member_name = _current;
+                member_call.args = ParseArgs();
+                return member_call;
+            }
+            else
+            {
+                var normal_call = new NormalFuncCall();
+                normal_call.caller = caller;
+                normal_call.args = ParseArgs();
+                return normal_call;
+            }
+        }
+        SyntaxTree ParseArgs()
+        {
+            if(LookAhead().m_type == (int)'{')
+            {
+                return ParseTableConstructor();
+            }
+            else if(LookAhead().m_type == (int)'(')
+            {
+                NextToken();
+                var exp_list = ParseExpList();
+                if (NextToken().m_type != (int)')')
+                    throw new ParserException("expect '(' to end function-args");
+                return exp_list;
+            }
+            else
+                throw new ParserException("expect '(' or '{' to start function-args");
+        }
+        SyntaxTree ParsePrefixExp(out PrefixExpType type)
+        {
+            NextToken();
+            Debug.Assert(_current.m_type == (int)TokenType.NAME
+                || _current.m_type == (int)'(');
+            SyntaxTree exp;
+            PrefixExpType the_type = PrefixExpType.Var;
+            PrefixExpType last_type = PrefixExpType.Var;
+            if(_current.m_type == (int)'(')
+            {
+                exp = ParseExp();
+                if (NextToken().m_type != (int)')')
+                    throw new ParserException("expect ')'");
+                the_type = PrefixExpType.Normal;
+            }
+            else
+            {
+                exp = new Terminator(_current);
+            }
+
+            // table index or func call
+            for(;;)
+            {
+                if(LookAhead().m_type == (int)'['
+                    || LookAhead().m_type == (int)'.')
+                {
+                    exp = ParseVar(exp);
+                    last_type = PrefixExpType.Var;
+                }
+                else if(LookAhead().m_type == (int)':'
+                    || LookAhead().m_type == (int)'('
+                    || LookAhead().m_type == (int)'{')
+                {
+                    exp = ParseFunctionCall(exp);
+                    last_type = PrefixExpType.Normal;
+                }
+                else
+                {
+                    break;
+                }
+            }
+            type = (the_type == PrefixExpType.Var) ? last_type : PrefixExpType.Normal;
+            return exp;
+        }
+        SyntaxTree ParseOtherStatement()
+        {
+            Debug.Assert(IsMainExp());
+            SyntaxTree exp;
+            if (LookAhead().m_type == (int)TokenType.NAME)
+            {
+                PrefixExpType type;
+                exp = ParsePrefixExp(out type);
+                if(type == PrefixExpType.Var &&
+                    (LookAhead().m_type == (int)'=' 
+                    || LookAhead().m_type == (int)','))
+                {
+                    var var_list = new VarList();
+                    var_list.var_list.Add(exp);
+                    while(LookAhead().m_type != (int)'=')
+                    {
+                        if (NextToken().m_type != (int)',')
+                            throw new ParserException("expect ',' to split var-list");
+                        exp = ParsePrefixExp(out type);
+                        if (type != PrefixExpType.Var)
+                            throw new ParserException("expect var here");
+                        var_list.var_list.Add(exp);
+                    }
+                    NextToken();// skip '='
+                    var exp_list = ParseExpList();
+
+                    var assign_statement = new AssignStatement();
+                    assign_statement.var_list = var_list;
+                    assign_statement.exp_list = exp_list;
+                    return assign_statement;
+                }
+                else
+                {
+
+                }
+            }
+            else
+            {
+                exp = ParseExp();
+            }
+            return exp;
+        }
+        SyntaxTree ParseTableIndexField()
+        {
+            NextToken();
+            var field = new TableIndexField();
+            field.index = ParseExp();
+            if (NextToken().m_type != ']')
+                throw new ParserException("expect ']'");
+            if (NextToken().m_type != '=')
+                throw new ParserException("expect '='");
+            field.value = ParseExp();
+            return field;
+        }
+        SyntaxTree ParseTableNameField()
+        {
+            var field = new TableNameField();
+            field.name = NextToken();
+            NextToken();
+            field.value = ParseExp();
+            return field;
+        }
+        SyntaxTree ParseTableArrayField()
+        {
+            var field = new TableArrayField();
+            field.value = ParseExp();
+            return field;
+        }
+        SyntaxTree ParseTableConstructor()
+        {
+            NextToken();
+            var table = new TableDefine();
+            while(LookAhead().m_type != '}')
+            {
+                if (LookAhead().m_type == (int)'[')
+                    table.fields.Add(ParseTableIndexField());
+                else if(LookAhead().m_type == (int)TokenType.NAME
+                    && LookAhead2().m_type == (int)'=')
+                    table.fields.Add(ParseTableNameField());
+                else
+                    table.fields.Add(ParseTableArrayField());
+
+                if(LookAhead().m_type != '}')
+                {
+                    NextToken();
+                    if(_current.m_type != (int)','
+                        && _current.m_type != (int)';')
+                        throw new ParserException("expect ',' or ';' to split table fields");
+                }
+            }
+            if (NextToken().m_type != '}')
+                throw new ParserException("expect '}' for table");
+            return table;
         }
         SyntaxTree ParseChunk()
         {
@@ -125,21 +426,15 @@ namespace oms
             }
             return block;
         }
-        SyntaxTree ParseFunctionDef()
-        {
-            return null;
-        }
-        SyntaxTree ParseFunctionBody()
-        {
-            return null;
-        }
-        SyntaxTree ParseParamList()
-        {
-            return null;
-        }
         SyntaxTree ParseReturnStatement()
         {
-            return new ReturnStatement();
+            NextToken();
+            var statement = new ReturnStatement();
+            if(IsMainExp())
+            {
+                statement.exp_list = ParseExpList();
+            }
+            return statement;
         }
         SyntaxTree ParseBreakStatement()
         {
@@ -153,12 +448,10 @@ namespace oms
         {
             NextToken();// skip 'do'
 
-            var block = ParseBlock();
+            var do_statement = new DoStatement();
+            do_statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
                 throw new ParserException("expect 'end' for do-statement");
-
-            var do_statement = new DoStatement();
-            do_statement.block = block;
             return do_statement;
         }
         SyntaxTree ParseWhileStatement()
@@ -251,6 +544,53 @@ namespace oms
 
             return func_name;
         }
+        SyntaxTree ParseFunctionBody()
+        {
+            if (NextToken().m_type != (int)'(')
+                throw new ParserException("expect '(' to start function-body");
+            var statement = new FunctionBody();
+            statement.param_list = ParseParamList();
+            if (NextToken().m_type != (int)')')
+                throw new ParserException("expect ')' after param-list");
+            statement.block = ParseBlock();
+            if (NextToken().m_type != (int)TokenType.END)
+                throw new ParserException("expect 'end' after function-body");
+            
+            return statement;
+        }
+        SyntaxTree ParseParamList()
+        {
+            if (LookAhead().m_type == (int)')')
+                return null;
+            var statement = new ParamList();
+            if(LookAhead().m_type == (int)TokenType.NAME)
+            {
+                statement.name_list.Add(NextToken());
+                while(LookAhead().m_type == (int)',')
+                {
+                    NextToken();
+                    if (LookAhead().m_type == (int)TokenType.NAME)
+                        statement.name_list.Add(NextToken());
+                    else if (LookAhead().m_type == (int)TokenType.DOTS)
+                    {
+                        NextToken();
+                        statement.is_var_arg = true;
+                        break;
+                    }
+                    else
+                        throw new ParserException("unexpect token in param list");
+                }
+            }
+            if(LookAhead().m_type == (int)TokenType.DOTS)
+            {
+                NextToken();
+                statement.is_var_arg = true;
+            }
+            else
+                throw new ParserException("unexpect token in param list");
+
+            return null;
+        }
         SyntaxTree ParseForStatement()
         {
             NextToken();// skip 'for'
@@ -275,7 +615,7 @@ namespace oms
             if (NextToken().m_type != (int)',')
                 throw new ParserException("expect ',' in for-statement");
             statement.exp2 = ParseExp();
-            if(LookAhead().m_type == ',')
+            if (LookAhead().m_type == ',')
             {
                 NextToken();
                 statement.exp3 = ParseExp();
@@ -346,23 +686,43 @@ namespace oms
             else
                 throw new ParserException("unexpect token after 'local'");
         }
-        SyntaxTree ParseOtherStatement()
-        {
-            return null;
-        }
         SyntaxTree ParseLocalFunction()
         {
-            return null;
-        }
-        SyntaxTree ParseNameList()
-        {
-            return null;
+            NextToken();// skip 'function'
+
+            if (NextToken().m_type != (int)TokenType.NAME)
+                throw new ParserException("expect 'id' after 'local function'");
+
+            var statement = new LocalFunctionStatement();
+            statement.name = _current;
+            statement.func_body = ParseFunctionBody();
+            return statement;
         }
         SyntaxTree ParseLocalNameList()
         {
-            return null;
+            var statement = new LocalNameListStatement();
+            statement.name_list = ParseNameList();
+            if(LookAhead().m_type == (int)'=')
+            {
+                NextToken();
+                statement.exp_list = ParseExpList();
+            }
+            return statement;
         }
-
+        SyntaxTree ParseNameList()
+        {
+            var statement = new NameList();
+            statement.names.Add(NextToken());
+            Debug.Assert(_current.m_type == (int)TokenType.NAME);
+            while(LookAhead().m_type == ',')
+            {
+                NextToken();
+                if (NextToken().m_type != (int)TokenType.NAME)
+                    throw new ParserException("expect 'id' after ','");
+                statement.names.Add(_current);
+            }
+            return statement;
+        }
         public SyntaxTree Parse(Lex lex_)
         {
             _lex = lex_;

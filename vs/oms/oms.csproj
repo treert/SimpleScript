@@ -49,6 +49,7 @@
     <Compile Include="oms\Lex.cs" />
     <Compile Include="test\TestLex.cs" />
     <Compile Include="test\TestManager.cs" />
+    <Compile Include="test\TestParser.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

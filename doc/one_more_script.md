@@ -42,7 +42,7 @@ function ::= "function" funcbody
 
 funcbody ::= "(" [parlist] ")" block "end"
 
-parlist ::= namelist ["," "..."] | "..."
+parlist ::= Name {"," Name} ["," "..."] | "..."
 
 explist ::= {exp ","} exp
 

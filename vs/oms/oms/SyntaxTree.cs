@@ -29,6 +29,7 @@ namespace oms
         void Visit(BinaryExpression tree, ref object data);
         void Visit(UnaryExpression tree, ref object data);
         void Visit(FunctionBody tree, ref object data);
+        void Visit(ParamList tree, ref object data);
         void Visit(TableDefine tree, ref object data);
         void Visit(TableIndexField tree, ref object data);
         void Visit(TableNameField tree, ref object data);
@@ -230,6 +231,10 @@ namespace oms
     class Terminator:SyntaxTree
     {
         public Token token;
+        public Terminator(Token token_)
+        {
+            token = token_;
+        }
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
@@ -239,8 +244,14 @@ namespace oms
     class BinaryExpression:SyntaxTree
     {
         public SyntaxTree left;
-        public SyntaxTree right;
         public Token op;
+        public SyntaxTree right;
+        public BinaryExpression(SyntaxTree left_,Token op_,SyntaxTree right_)
+        {
+            left = left_;
+            op = op_;
+            right = right_;
+        }
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
@@ -259,15 +270,22 @@ namespace oms
 
     class FunctionBody:SyntaxTree
     {
-        public List<Token> name_list = new List<Token>();
-        public bool is_var_arg;
+        public SyntaxTree param_list;
         public SyntaxTree block;
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
         }
     }
-    
+    class ParamList:SyntaxTree
+    {
+        public List<Token> name_list = new List<Token>();
+        public bool is_var_arg = false;
+        public override void Accept(Visitor v, ref object data)
+        {
+            v.Visit(this, ref data);
+        }
+    }
     class TableDefine:SyntaxTree
     {
         public List<SyntaxTree> fields;
