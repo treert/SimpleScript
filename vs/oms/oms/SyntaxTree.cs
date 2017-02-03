@@ -212,7 +212,7 @@ namespace oms
 
     class VarList:SyntaxTree
     {
-        public List<SyntaxTree> var_list;
+        public List<SyntaxTree> var_list = new List<SyntaxTree>();
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
@@ -221,7 +221,7 @@ namespace oms
 
     class NameList:SyntaxTree
     {
-        public List<Token> names;
+        public List<Token> names = new List<Token>();
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
@@ -288,7 +288,7 @@ namespace oms
     }
     class TableDefine:SyntaxTree
     {
-        public List<SyntaxTree> fields;
+        public List<SyntaxTree> fields = new List<SyntaxTree>();
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);
@@ -367,7 +367,7 @@ namespace oms
     
     class ExpressionList:SyntaxTree
     {
-        public List<SyntaxTree> exp_list;
+        public List<SyntaxTree> exp_list = new List<SyntaxTree>();
         public override void Accept(Visitor v, ref object data)
         {
             v.Visit(this, ref data);

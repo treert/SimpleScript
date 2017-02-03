@@ -228,10 +228,12 @@ namespace oms
             else if(LookAhead().m_type == (int)'(')
             {
                 NextToken();
-                var exp_list = ParseExpList();
+                SyntaxTree args = null;
+                if (LookAhead().m_type != (int)')')
+                    args = ParseExpList();
                 if (NextToken().m_type != (int)')')
                     throw new ParserException("expect '(' to end function-args");
-                return exp_list;
+                return args;
             }
             else
                 throw new ParserException("expect '(' or '{' to start function-args");
@@ -282,6 +284,8 @@ namespace oms
         }
         SyntaxTree ParseOtherStatement()
         {
+            // lua做了限制，其他语句只有两种，assign statement and func call
+            // oms限制放松很多。assgin statement and exp
             Debug.Assert(IsMainExp());
             SyntaxTree exp;
             if (LookAhead().m_type == (int)TokenType.NAME)
@@ -292,6 +296,7 @@ namespace oms
                     (LookAhead().m_type == (int)'=' 
                     || LookAhead().m_type == (int)','))
                 {
+                    // assign statement
                     var var_list = new VarList();
                     var_list.var_list.Add(exp);
                     while(LookAhead().m_type != (int)'=')
@@ -313,7 +318,13 @@ namespace oms
                 }
                 else
                 {
-
+                    // exp
+                    int next_priority = GetOpPriority(LookAhead());
+                    while(next_priority > 0)
+                    {
+                        exp = ParseExp(exp, NextToken(), next_priority);
+                        next_priority = GetOpPriority(LookAhead());
+                    }
                 }
             }
             else
@@ -402,6 +413,8 @@ namespace oms
                         statement = ParseIfStatement(); break;
                     case (int)TokenType.FOR:
                         statement = ParseForStatement(); break;
+                    case (int)TokenType.FOREACH:
+                        statement = ParseForEachStatement(); break;
                     case (int)TokenType.FUNCTION:
                         statement = ParseFunctionStatement(); break;
                     case (int)TokenType.LOCAL:
@@ -581,7 +594,7 @@ namespace oms
                         throw new ParserException("unexpect token in param list");
                 }
             }
-            if(LookAhead().m_type == (int)TokenType.DOTS)
+            else if(LookAhead().m_type == (int)TokenType.DOTS)
             {
                 NextToken();
                 statement.is_var_arg = true;
@@ -589,7 +602,7 @@ namespace oms
             else
                 throw new ParserException("unexpect token in param list");
 
-            return null;
+            return statement;
         }
         SyntaxTree ParseForStatement()
         {
@@ -647,6 +660,8 @@ namespace oms
         }
         SyntaxTree ParseForEachStatement()
         {
+            NextToken();// skip 'foreach'
+
             var statement = new ForEachStatement();
             if(NextToken().m_type != (int)TokenType.NAME)
                 throw new ParserException("expect 'id' in foreach-statement");
@@ -726,6 +741,9 @@ namespace oms
         public SyntaxTree Parse(Lex lex_)
         {
             _lex = lex_;
+            _current = null;
+            _look_ahead = null;
+            _look_ahead2 = null;
             return ParseChunk();
         }
     }

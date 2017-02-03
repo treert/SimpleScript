@@ -19,6 +19,7 @@ namespace oms
         END,
         FALSE,
         FOR,
+        FOREACH,
         FUNCTION,
         GOTO,
         IF,
@@ -27,11 +28,9 @@ namespace oms
         NIL,
         NOT,
         OR,
-        REPEAT,
         RETURN,
         THEN,
         TRUE,
-        UNTIL,
         WHILE,
         // other terminal symbols
         CONCAT,
@@ -104,6 +103,7 @@ namespace oms
             s_reserve_keys.Add("end", TokenType.END);
             s_reserve_keys.Add("false", TokenType.FALSE);
             s_reserve_keys.Add("for", TokenType.FOR);
+            s_reserve_keys.Add("foreach", TokenType.FOREACH);
             s_reserve_keys.Add("function", TokenType.FUNCTION);
             s_reserve_keys.Add("if", TokenType.IF);
             s_reserve_keys.Add("in", TokenType.IN);
@@ -111,11 +111,9 @@ namespace oms
             s_reserve_keys.Add("nil", TokenType.NIL);
             s_reserve_keys.Add("not", TokenType.NOT);
             s_reserve_keys.Add("or", TokenType.OR);
-            s_reserve_keys.Add("repeat", TokenType.REPEAT);
             s_reserve_keys.Add("return", TokenType.RETURN);
             s_reserve_keys.Add("then", TokenType.THEN);
             s_reserve_keys.Add("true", TokenType.TRUE);
-            s_reserve_keys.Add("until", TokenType.UNTIL);
             s_reserve_keys.Add("while", TokenType.WHILE);
         }
 

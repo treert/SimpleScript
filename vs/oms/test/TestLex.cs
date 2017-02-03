@@ -115,8 +115,8 @@ namespace oms.test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init("and do else elseif end false for function if in local "
-                       +"nil not or repeat return then true until while");
+            lex.Init("and do else elseif end false for foreach function if in local "
+                       +"nil not or return then true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.AND);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DO);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSE);
@@ -124,6 +124,7 @@ namespace oms.test
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.END);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FALSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOR);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOREACH);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FUNCTION);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IN);
@@ -131,11 +132,9 @@ namespace oms.test
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.NIL);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.NOT);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.OR);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.REPEAT);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.RETURN);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.THEN);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.TRUE);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.UNTIL);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.WHILE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.EOS);
         }

@@ -77,9 +77,17 @@ namespace oms.test
                     }
                 }
             }
-            catch(Exception e)
+            catch(LexException e)
             {
-                Console.WriteLine("{0} catch exception {1}", t.Name, e.Message);
+                Console.WriteLine("{0} catch lex exception {1}", t.Name, e.Message);
+            }
+            catch (ParserException e)
+            {
+                Console.WriteLine("{0} catch parser exception {1}", t.Name, e.Message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("{0} catch exception {1}", t.Name, e);
             }
         }
     }
