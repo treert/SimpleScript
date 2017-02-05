@@ -521,7 +521,7 @@ namespace oms.test
     {
         public override void Run()
         {
-            TestUtils.Parse("function f() repeat return until (1 + 1) end");
+            TestUtils.Parse("function f() return (true and dosomething) end");
             ExpectTrue(TestUtils.IsEOF());
         }
     }
@@ -582,9 +582,12 @@ namespace oms.test
     {
         public override void Run()
         {
-            // lua报异常，oms就不报 
-            TestUtils.Parse("f().m():m().m");
-            ExpectTrue(TestUtils.IsEOF());
+            try
+            {
+                TestUtils.Parse("f().m():m().m");
+                Error("no exception");
+            }
+            catch (ParserException) { }
         }
     }
     class TestParser_parser23 : TestBase
@@ -760,7 +763,8 @@ namespace oms.test
     {
         public override void Run()
         {
-            TestUtils.Parse("f 1");
+            // oms 特殊处理的语法
+            TestUtils.Parse("(f + 1):xx{1,2}");
             ExpectTrue(TestUtils.IsEOF());
         }
     }

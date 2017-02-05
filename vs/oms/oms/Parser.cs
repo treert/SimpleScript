@@ -44,8 +44,9 @@ namespace oms
         }
         enum PrefixExpType
         {
+            Var,// Name or table access, can be used in left or '='
+            FuncCall,
             Normal,
-            Var,
         }
         bool IsMainExp()
         {
@@ -107,6 +108,7 @@ namespace oms
                 {
                     if (left_priority == 0)
                         return exp;
+                    Debug.Assert(left != null);
                     left = new BinaryExpression(left, op, exp);
                     op = NextToken();
                     exp = ParseMainExp();
@@ -238,7 +240,7 @@ namespace oms
             else
                 throw new ParserException("expect '(' or '{' to start function-args");
         }
-        SyntaxTree ParsePrefixExp(out PrefixExpType type)
+        SyntaxTree ParsePrefixExp(out PrefixExpType type_)
         {
             NextToken();
             Debug.Assert(_current.m_type == (int)TokenType.NAME
@@ -272,29 +274,26 @@ namespace oms
                     || LookAhead().m_type == (int)'{')
                 {
                     exp = ParseFunctionCall(exp);
-                    last_type = PrefixExpType.Normal;
+                    last_type = PrefixExpType.FuncCall;
                 }
                 else
                 {
                     break;
                 }
             }
-            type = (the_type == PrefixExpType.Var) ? last_type : PrefixExpType.Normal;
+            type_ = (the_type == PrefixExpType.Var) ? last_type : PrefixExpType.Normal;
             return exp;
         }
         SyntaxTree ParseOtherStatement()
         {
             // lua做了限制，其他语句只有两种，assign statement and func call
-            // oms限制放松很多。assgin statement and exp
-            Debug.Assert(IsMainExp());
+            // oms放松了些，可以有PrefixExpType = normal的语句存在，也就是'('开头的语句
             SyntaxTree exp;
             if (LookAhead().m_type == (int)TokenType.NAME)
             {
                 PrefixExpType type;
                 exp = ParsePrefixExp(out type);
-                if(type == PrefixExpType.Var &&
-                    (LookAhead().m_type == (int)'=' 
-                    || LookAhead().m_type == (int)','))
+                if(type == PrefixExpType.Var)
                 {
                     // assign statement
                     var var_list = new VarList();
@@ -303,6 +302,8 @@ namespace oms
                     {
                         if (NextToken().m_type != (int)',')
                             throw new ParserException("expect ',' to split var-list");
+                        if (LookAhead().m_type != (int)TokenType.NAME)
+                            throw new ParserException("expect 'id' to start var");
                         exp = ParsePrefixExp(out type);
                         if (type != PrefixExpType.Var)
                             throw new ParserException("expect var here");
@@ -318,18 +319,20 @@ namespace oms
                 }
                 else
                 {
-                    // exp
-                    int next_priority = GetOpPriority(LookAhead());
-                    while(next_priority > 0)
-                    {
-                        exp = ParseExp(exp, NextToken(), next_priority);
-                        next_priority = GetOpPriority(LookAhead());
-                    }
+                    Debug.Assert(type == PrefixExpType.FuncCall);
                 }
+            }
+            else if (LookAhead().m_type == '(')
+            {
+                // special handle, so can use (ok and dosomething())
+                PrefixExpType type;
+                exp = ParsePrefixExp(out type);
             }
             else
             {
-                exp = ParseExp();
+                exp = null;
+                if (IsMainExp())
+                    throw new ParserException("incomplete statement");
             }
             return exp;
         }
@@ -426,10 +429,7 @@ namespace oms
                     case (int)TokenType.CONTINUE:
                         statement = ParseContinueStatement(); break;
                     default:
-                        if (IsMainExp())
-                        {
-                            statement = ParseOtherStatement();
-                        }
+                        statement = ParseOtherStatement();
                         break;
                 }
                 if (statement == null)
