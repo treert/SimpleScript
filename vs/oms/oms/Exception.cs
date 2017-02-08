@@ -50,4 +50,12 @@ namespace oms
             SetInfo(msg);
         }
     }
+
+    class SematicException : BaseException
+    {
+        public SematicException(string msg)
+        {
+            SetInfo(msg);
+        }
+    }
 }

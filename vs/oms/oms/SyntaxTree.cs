@@ -8,70 +8,70 @@ namespace oms
 {
     interface Visitor
     {
-        void Visit(Chunk tree, ref object data);
-        void Visit(Block tree, ref object data);
-        void Visit(ReturnStatement tree, ref object data);
-        void Visit(BreakStatement tree, ref object data);
-        void Visit(ContinueStatement tree, ref object data);
-        void Visit(DoStatement tree, ref object data);
-        void Visit(WhileStatement tree, ref object data);
-        void Visit(IfStatement tree, ref object data);
-        void Visit(ForStatement tree, ref object data);
-        void Visit(ForInStatement tree, ref object data);
-        void Visit(ForEachStatement tree, ref object data);
-        void Visit(FunctionStatement tree, ref object data);
-        void Visit(FunctionName tree, ref object data);
-        void Visit(LocalFunctionStatement tree, ref object data);
-        void Visit(LocalNameListStatement tree, ref object data);
-        void Visit(AssignStatement tree, ref object data);
-        void Visit(VarList tree, ref object data);
-        void Visit(Terminator tree, ref object data);
-        void Visit(BinaryExpression tree, ref object data);
-        void Visit(UnaryExpression tree, ref object data);
-        void Visit(FunctionBody tree, ref object data);
-        void Visit(ParamList tree, ref object data);
-        void Visit(TableDefine tree, ref object data);
-        void Visit(TableIndexField tree, ref object data);
-        void Visit(TableNameField tree, ref object data);
-        void Visit(TableArrayField tree, ref object data);
-        void Visit(IndexAccessor tree, ref object data);
-        void Visit(MemberAccessor tree, ref object data);
-        void Visit(NormalFuncCall tree, ref object data);
-        void Visit(MemberFuncCall tree, ref object data);
-        void Visit(ExpressionList tree, ref object data);
-        void Visit(NameList tree, ref object data);
-        //void Visit(SyntaxTree tree, ref object data);
+        object Visit(Chunk tree, object data = null);
+        object Visit(Block tree, object data = null);
+        object Visit(ReturnStatement tree, object data = null);
+        object Visit(BreakStatement tree, object data = null);
+        object Visit(ContinueStatement tree, object data = null);
+        object Visit(DoStatement tree, object data = null);
+        object Visit(WhileStatement tree, object data = null);
+        object Visit(IfStatement tree, object data = null);
+        object Visit(ForStatement tree, object data = null);
+        object Visit(ForInStatement tree, object data = null);
+        object Visit(ForEachStatement tree, object data = null);
+        object Visit(FunctionStatement tree, object data = null);
+        object Visit(FunctionName tree, object data = null);
+        object Visit(LocalFunctionStatement tree, object data = null);
+        object Visit(LocalNameListStatement tree, object data = null);
+        object Visit(AssignStatement tree, object data = null);
+        object Visit(VarList tree, object data = null);
+        object Visit(Terminator tree, object data = null);
+        object Visit(BinaryExpression tree, object data = null);
+        object Visit(UnaryExpression tree, object data = null);
+        object Visit(FunctionBody tree, object data = null);
+        object Visit(ParamList tree, object data = null);
+        object Visit(TableDefine tree, object data = null);
+        object Visit(TableIndexField tree, object data = null);
+        object Visit(TableNameField tree, object data = null);
+        object Visit(TableArrayField tree, object data = null);
+        object Visit(IndexAccessor tree, object data = null);
+        object Visit(MemberAccessor tree, object data = null);
+        object Visit(NormalFuncCall tree, object data = null);
+        object Visit(MemberFuncCall tree, object data = null);
+        object Visit(ExpressionList tree, object data = null);
+        object Visit(NameList tree, object data = null);
+        //object Visit(SyntaxTree tree, object data = null);
     }
-    
+
     abstract class SyntaxTree
     {
-        public abstract void Accept(Visitor v, ref object data);
+        public abstract object Accept(Visitor v, object data = null);
     }
 
     class Chunk:SyntaxTree
     {
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public Block block;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class Block:SyntaxTree
     {
         public List<SyntaxTree> statements = new List<SyntaxTree>();
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class ReturnStatement:SyntaxTree
     {
-        public SyntaxTree exp_list;
-        public override void Accept(Visitor v, ref object data)
+        public ExpressionList exp_list;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -79,9 +79,9 @@ namespace oms
     {
         // for semantic
         public SyntaxTree loop;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -89,39 +89,39 @@ namespace oms
     {
         // for semantic
         public SyntaxTree loop;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class DoStatement:SyntaxTree
     {
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public Block block;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class WhileStatement:SyntaxTree
     {
         public SyntaxTree exp;
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public Block block;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class IfStatement:SyntaxTree
     {
         public SyntaxTree exp;
-        public SyntaxTree true_branch;
+        public Block true_branch;
         public SyntaxTree false_branch;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -131,21 +131,21 @@ namespace oms
         public SyntaxTree exp1;
         public SyntaxTree exp2;
         public SyntaxTree exp3;
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public Block block;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class ForInStatement : SyntaxTree
     {
-        public SyntaxTree name_list;
-        public SyntaxTree exp_list;
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public NameList name_list;
+        public ExpressionList exp_list;
+        public Block block;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -153,20 +153,20 @@ namespace oms
     {
         public Token k,v;
         public SyntaxTree exp;
-        public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public Block block;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class FunctionStatement : SyntaxTree
     {
-        public SyntaxTree func_name;
-        public SyntaxTree func_body;
-        public override void Accept(Visitor v, ref object data)
+        public FunctionName func_name;
+        public FunctionBody func_body;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -174,70 +174,71 @@ namespace oms
     {
         public List<Token> names = new List<Token>();
         public Token member_name;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class LocalFunctionStatement : SyntaxTree
     {
         public Token name;
-        public SyntaxTree func_body;
-        public override void Accept(Visitor v, ref object data)
+        public FunctionBody func_body;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class LocalNameListStatement:SyntaxTree
     {
-        public SyntaxTree name_list;
-        public SyntaxTree exp_list;
-        public override void Accept(Visitor v, ref object data)
+        public NameList name_list;
+        public ExpressionList exp_list;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
-    
+
     class AssignStatement:SyntaxTree
     {
-        public SyntaxTree var_list;
-        public SyntaxTree exp_list;
-        public override void Accept(Visitor v, ref object data)
+        public VarList var_list;
+        public ExpressionList exp_list;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class VarList:SyntaxTree
     {
         public List<SyntaxTree> var_list = new List<SyntaxTree>();
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class NameList:SyntaxTree
     {
         public List<Token> names = new List<Token>();
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class Terminator:SyntaxTree
     {
         public Token token;
+        public bool is_read = true;
         public Terminator(Token token_)
         {
             token = token_;
         }
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -252,9 +253,9 @@ namespace oms
             op = op_;
             right = right_;
         }
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -262,36 +263,36 @@ namespace oms
     {
         public SyntaxTree exp;
         public Token op;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class FunctionBody:SyntaxTree
     {
-        public SyntaxTree param_list;
+        public ParamList param_list;
         public SyntaxTree block;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
     class ParamList:SyntaxTree
     {
         public List<Token> name_list = new List<Token>();
         public bool is_var_arg = false;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
     class TableDefine:SyntaxTree
     {
         public List<SyntaxTree> fields = new List<SyntaxTree>();
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -299,9 +300,9 @@ namespace oms
     {
         public SyntaxTree index;
         public SyntaxTree value;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -309,18 +310,18 @@ namespace oms
     {
         public Token name;
         public SyntaxTree value;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
     class TableArrayField:SyntaxTree
     {
         public SyntaxTree value;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -328,9 +329,10 @@ namespace oms
     {
         public SyntaxTree table;
         public SyntaxTree index;
-        public override void Accept(Visitor v, ref object data)
+        public bool is_read = true;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -338,9 +340,10 @@ namespace oms
     {
         public SyntaxTree table;
         public Token member_name;
-        public override void Accept(Visitor v, ref object data)
+        public bool is_read = true;
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -348,9 +351,9 @@ namespace oms
     {
         public SyntaxTree caller;
         public SyntaxTree args;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 
@@ -359,19 +362,18 @@ namespace oms
         public SyntaxTree caller;
         public Token member_name;
         public SyntaxTree args;
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
-    
+
     class ExpressionList:SyntaxTree
     {
         public List<SyntaxTree> exp_list = new List<SyntaxTree>();
-        public override void Accept(Visitor v, ref object data)
+        public override object Accept(Visitor v, object data = null)
         {
-            v.Visit(this, ref data);
+            return v.Visit(this, data);
         }
     }
 }
-    

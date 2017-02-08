@@ -161,7 +161,7 @@ namespace oms
             }
             return exp;
         }
-        SyntaxTree ParseExpList()
+        ExpressionList ParseExpList()
         {
             var exp = new ExpressionList();
             exp.exp_list.Add(ParseExp());
@@ -172,12 +172,12 @@ namespace oms
             }
             return exp;
         }
-        SyntaxTree ParseFunctionDef()
+        FunctionBody ParseFunctionDef()
         {
             NextToken();
             return ParseFunctionBody();
         }
-        SyntaxTree ParseVar(SyntaxTree table)
+        SyntaxTree ParseTableAccessor(SyntaxTree table)
         {
             NextToken();// skip '[' or '.'
 
@@ -266,7 +266,7 @@ namespace oms
                 if(LookAhead().m_type == (int)'['
                     || LookAhead().m_type == (int)'.')
                 {
-                    exp = ParseVar(exp);
+                    exp = ParseTableAccessor(exp);
                     last_type = PrefixExpType.Var;
                 }
                 else if(LookAhead().m_type == (int)':'
@@ -320,23 +320,23 @@ namespace oms
                 else
                 {
                     Debug.Assert(type == PrefixExpType.FuncCall);
+                    return exp;
                 }
             }
             else if (LookAhead().m_type == '(')
             {
                 // special handle, so can use (ok and dosomething())
                 PrefixExpType type;
-                exp = ParsePrefixExp(out type);
+                return ParsePrefixExp(out type);
             }
             else
             {
-                exp = null;
                 if (IsMainExp())
                     throw new ParserException("incomplete statement");
+                return null;
             }
-            return exp;
         }
-        SyntaxTree ParseTableIndexField()
+        TableIndexField ParseTableIndexField()
         {
             NextToken();
             var field = new TableIndexField();
@@ -348,7 +348,7 @@ namespace oms
             field.value = ParseExp();
             return field;
         }
-        SyntaxTree ParseTableNameField()
+        TableNameField ParseTableNameField()
         {
             var field = new TableNameField();
             field.name = NextToken();
@@ -356,13 +356,13 @@ namespace oms
             field.value = ParseExp();
             return field;
         }
-        SyntaxTree ParseTableArrayField()
+        TableArrayField ParseTableArrayField()
         {
             var field = new TableArrayField();
             field.value = ParseExp();
             return field;
         }
-        SyntaxTree ParseTableConstructor()
+        TableDefine ParseTableConstructor()
         {
             NextToken();
             var table = new TableDefine();
@@ -388,7 +388,7 @@ namespace oms
                 throw new ParserException("expect '}' for table");
             return table;
         }
-        SyntaxTree ParseChunk()
+        Chunk ParseChunk()
         {
             var block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.EOS)
@@ -397,7 +397,7 @@ namespace oms
             tree.block = block;
             return tree;
         }
-        SyntaxTree ParseBlock()
+        Block ParseBlock()
         {
             var block = new Block();
             for (; ; )
@@ -439,7 +439,7 @@ namespace oms
             }
             return block;
         }
-        SyntaxTree ParseReturnStatement()
+        ReturnStatement ParseReturnStatement()
         {
             NextToken();
             var statement = new ReturnStatement();
@@ -449,15 +449,15 @@ namespace oms
             }
             return statement;
         }
-        SyntaxTree ParseBreakStatement()
+        BreakStatement ParseBreakStatement()
         {
             return new BreakStatement();
         }
-        SyntaxTree ParseContinueStatement()
+        ContinueStatement ParseContinueStatement()
         {
             return new ContinueStatement();
         }
-        SyntaxTree ParseDoStatement()
+        DoStatement ParseDoStatement()
         {
             NextToken();// skip 'do'
 
@@ -467,7 +467,7 @@ namespace oms
                 throw new ParserException("expect 'end' for do-statement");
             return do_statement;
         }
-        SyntaxTree ParseWhileStatement()
+        WhileStatement ParseWhileStatement()
         {
             NextToken();// skip 'while'
 
@@ -484,7 +484,7 @@ namespace oms
             statement.block = block;
             return statement;
         }
-        SyntaxTree ParseIfStatement()
+        IfStatement ParseIfStatement()
         {
             NextToken();// skip 'if' or 'elseif'
 
@@ -505,6 +505,7 @@ namespace oms
         {
             if (LookAhead().m_type == (int)TokenType.ELSEIF)
             {
+                // syntax sugar for elseif
                 return ParseIfStatement();
             }
             else if (LookAhead().m_type == (int)TokenType.ELSE)
@@ -523,7 +524,7 @@ namespace oms
             else
                 throw new ParserException("expect 'end' for if-statement");
         }
-        SyntaxTree ParseFunctionStatement()
+        FunctionStatement ParseFunctionStatement()
         {
             NextToken();// skip 'function'
 
@@ -532,7 +533,7 @@ namespace oms
             statement.func_body = ParseFunctionBody();
             return statement;
         }
-        SyntaxTree ParseFunctionName()
+        FunctionName ParseFunctionName()
         {
             if (NextToken().m_type != (int)TokenType.NAME)
                 throw new ParserException("unexpect token after 'function'");
@@ -557,7 +558,7 @@ namespace oms
 
             return func_name;
         }
-        SyntaxTree ParseFunctionBody()
+        FunctionBody ParseFunctionBody()
         {
             if (NextToken().m_type != (int)'(')
                 throw new ParserException("expect '(' to start function-body");
@@ -571,7 +572,7 @@ namespace oms
             
             return statement;
         }
-        SyntaxTree ParseParamList()
+        ParamList ParseParamList()
         {
             if (LookAhead().m_type == (int)')')
                 return null;
@@ -615,7 +616,7 @@ namespace oms
             else
                 return ParseForInStatement();
         }
-        SyntaxTree ParseForNumStatement()
+        ForStatement ParseForNumStatement()
         {
             var name = NextToken();
             Debug.Assert(_current.m_type == (int)TokenType.NAME);
@@ -642,7 +643,7 @@ namespace oms
 
             return statement;
         }
-        SyntaxTree ParseForInStatement()
+        ForInStatement ParseForInStatement()
         {
             var statement = new ForInStatement();
             statement.name_list = ParseNameList();
@@ -658,7 +659,7 @@ namespace oms
 
             return statement;
         }
-        SyntaxTree ParseForEachStatement()
+        ForEachStatement ParseForEachStatement()
         {
             NextToken();// skip 'foreach'
 
@@ -701,7 +702,7 @@ namespace oms
             else
                 throw new ParserException("unexpect token after 'local'");
         }
-        SyntaxTree ParseLocalFunction()
+        LocalFunctionStatement ParseLocalFunction()
         {
             NextToken();// skip 'function'
 
@@ -713,7 +714,7 @@ namespace oms
             statement.func_body = ParseFunctionBody();
             return statement;
         }
-        SyntaxTree ParseLocalNameList()
+        LocalNameListStatement ParseLocalNameList()
         {
             var statement = new LocalNameListStatement();
             statement.name_list = ParseNameList();
@@ -724,7 +725,7 @@ namespace oms
             }
             return statement;
         }
-        SyntaxTree ParseNameList()
+        NameList ParseNameList()
         {
             var statement = new NameList();
             statement.names.Add(NextToken());

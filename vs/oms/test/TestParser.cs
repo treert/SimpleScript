@@ -36,7 +36,7 @@ namespace oms.test
         private SyntaxTree _root = null;
         private Type _type = null;
         private ASTCheck _check = null;
-        
+
         private SyntaxTree _result = null;
         public ASTFinder(SyntaxTree root_,Type type_,ASTCheck check_ = null)
         {
@@ -46,8 +46,7 @@ namespace oms.test
         }
         public SyntaxTree Find()
         {
-            object tmp = null;
-            _root.Accept(this, ref tmp);
+            _root.Accept(this);
             return _result;
         }
         private void _TrySetResult(SyntaxTree t)
@@ -69,246 +68,283 @@ namespace oms.test
                 }
             }
         }
-        public void Visit(Chunk tree, ref object data)
+        public object Visit(Chunk tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.block.Accept(this, ref data);
+            tree.block.Accept(this);
+            return null;
         }
-        public void Visit(Block tree, ref object data)
+        public object Visit(Block tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
             foreach(var statement in tree.statements)
             {
-                statement.Accept(this, ref data);
+                statement.Accept(this);
             }
+            return null;
         }
-        public void Visit(ReturnStatement tree, ref object data)
+        public object Visit(ReturnStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
-        }
-        public void Visit(BreakStatement tree, ref object data)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return;
-        }
-        public void Visit(ContinueStatement tree, ref object data)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return;
-        }
-        public void Visit(DoStatement tree, ref object data)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.block.Accept(this, ref data);
+            return null;
         }
-        public void Visit(WhileStatement tree, ref object data)
+        public object Visit(BreakStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.exp.Accept(this, ref data);
-            tree.block.Accept(this, ref data);
+            return null;
         }
-        public void Visit(IfStatement tree, ref object data)
+        public object Visit(ContinueStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.exp.Accept(this, ref data);
-            tree.true_branch.Accept(this, ref data);
+            return null;
+        }
+        public object Visit(DoStatement tree, object data = null)
+        {
+            _TrySetResult(tree);
+            if (_result != null) return null;
+
+            tree.block.Accept(this);
+            return null;
+        }
+        public object Visit(WhileStatement tree, object data = null)
+        {
+            _TrySetResult(tree);
+            if (_result != null) return null;
+
+            tree.exp.Accept(this);
+            tree.block.Accept(this);
+            return null;
+        }
+        public object Visit(IfStatement tree, object data = null)
+        {
+            _TrySetResult(tree);
+            if (_result != null) return null;
+
+            tree.exp.Accept(this);
+            tree.true_branch.Accept(this);
             if (tree.false_branch != null)
-                tree.false_branch.Accept(this, ref data);
+                tree.false_branch.Accept(this);
+            return null;
         }
-        public void Visit(ForStatement tree, ref object data)
+        public object Visit(ForStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.exp1.Accept(this, ref data);
-            tree.exp2.Accept(this, ref data);
+            tree.exp1.Accept(this);
+            tree.exp2.Accept(this);
             if (tree.exp3 != null)
-                tree.exp3.Accept(this, ref data);
-            tree.block.Accept(this, ref data);
+                tree.exp3.Accept(this);
+            tree.block.Accept(this);
+            return null;
         }
-        public void Visit(ForInStatement tree, ref object data)
+        public object Visit(ForInStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.name_list.Accept(this, ref data);
-            tree.exp_list.Accept(this, ref data);
-            tree.block.Accept(this, ref data);
+            tree.name_list.Accept(this);
+            tree.exp_list.Accept(this);
+            tree.block.Accept(this);
+            return null;
         }
-        public void Visit(ForEachStatement tree, ref object data)
+        public object Visit(ForEachStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.exp.Accept(this, ref data);
-            tree.block.Accept(this, ref data);
+            tree.exp.Accept(this);
+            tree.block.Accept(this);
+            return null;
         }
-        public void Visit(FunctionStatement tree, ref object data)
+        public object Visit(FunctionStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.func_name.Accept(this, ref data);
-            tree.func_body.Accept(this, ref data);
+            tree.func_name.Accept(this);
+            tree.func_body.Accept(this);
+            return null;
         }
-        public void Visit(FunctionName tree, ref object data)
+        public object Visit(FunctionName tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
+            return null;
         }
-        public void Visit(LocalFunctionStatement tree, ref object data)
+        public object Visit(LocalFunctionStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.func_body.Accept(this, ref data);
+            tree.func_body.Accept(this);
+            return null;
         }
-        public void Visit(LocalNameListStatement tree, ref object data)
+        public object Visit(LocalNameListStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.name_list.Accept(this, ref data);
-            tree.exp_list.Accept(this, ref data);
+            tree.name_list.Accept(this);
+            tree.exp_list.Accept(this);
+            return null;
         }
-        public void Visit(AssignStatement tree, ref object data)
+        public object Visit(AssignStatement tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.var_list.Accept(this, ref data);
-            tree.exp_list.Accept(this, ref data);
+            tree.var_list.Accept(this);
+            tree.exp_list.Accept(this);
+            return null;
         }
-        public void Visit(VarList tree, ref object data)
+        public object Visit(VarList tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
             foreach(var var_ in tree.var_list)
             {
-                var_.Accept(this, ref data);
+                var_.Accept(this);
             }
+            return null;
         }
-        public void Visit(Terminator tree, ref object data)
+        public object Visit(Terminator tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
+            return null;
         }
-        public void Visit(BinaryExpression tree, ref object data)
+        public object Visit(BinaryExpression tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.left.Accept(this, ref data);
+            tree.left.Accept(this);
+            return null;
         }
-        public void Visit(UnaryExpression tree, ref object data)
+        public object Visit(UnaryExpression tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.exp.Accept(this, ref data);
+            tree.exp.Accept(this);
+            return null;
         }
-        public void Visit(FunctionBody tree, ref object data)
+        public object Visit(FunctionBody tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.param_list.Accept(this, ref data);
-            tree.block.Accept(this, ref data);
+            tree.param_list.Accept(this);
+            tree.block.Accept(this);
+            return null;
         }
-        public void Visit(ParamList tree, ref object data)
+        public object Visit(ParamList tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
+            
+            return null;
         }
-        public void Visit(TableDefine tree, ref object data)
+        public object Visit(TableDefine tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
             foreach(var field in tree.fields)
             {
-                field.Accept(this, ref data);
+                field.Accept(this);
             }
+            return null;
         }
-        public void Visit(TableIndexField tree, ref object data)
+        public object Visit(TableIndexField tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.index.Accept(this, ref data);
-            tree.value.Accept(this, ref data);
+            tree.index.Accept(this);
+            tree.value.Accept(this);
+            return null;
         }
-        public void Visit(TableNameField tree, ref object data)
+        public object Visit(TableNameField tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.value.Accept(this, ref data);
+            tree.value.Accept(this);
+            return null;
         }
-        public void Visit(TableArrayField tree, ref object data)
+        public object Visit(TableArrayField tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.value.Accept(this, ref data);
+            tree.value.Accept(this);
+            return null;
         }
-        public void Visit(IndexAccessor tree, ref object data)
+        public object Visit(IndexAccessor tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.table.Accept(this, ref data);
-            tree.index.Accept(this, ref data);
+            tree.table.Accept(this);
+            tree.index.Accept(this);
+            return null;
         }
-        public void Visit(MemberAccessor tree, ref object data)
+        public object Visit(MemberAccessor tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.table.Accept(this, ref data);
+            tree.table.Accept(this);
+            return null;
         }
-        public void Visit(NormalFuncCall tree, ref object data)
+        public object Visit(NormalFuncCall tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.caller.Accept(this, ref data);
-            tree.args.Accept(this, ref data);
+            tree.caller.Accept(this);
+            tree.args.Accept(this);
+            return null;
         }
-        public void Visit(MemberFuncCall tree, ref object data)
+        public object Visit(MemberFuncCall tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
-            tree.caller.Accept(this, ref data);
-            tree.args.Accept(this, ref data);
+            tree.caller.Accept(this);
+            tree.args.Accept(this);
+            return null;
         }
-        public void Visit(ExpressionList tree, ref object data)
+        public object Visit(ExpressionList tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
 
             foreach(var exp in tree.exp_list)
             {
-                exp.Accept(this, ref data);
+                exp.Accept(this);
             }
+            return null;
         }
-        public void Visit(NameList tree, ref object data)
+        public object Visit(NameList tree, object data = null)
         {
             _TrySetResult(tree);
-            if (_result != null) return;
+            if (_result != null) return null;
+
+            return null;
         }
     }
     class TestParser_exp1 : TestBase
@@ -387,7 +423,7 @@ namespace oms.test
             bin_exp = bin_exp.left as BinaryExpression;
             ExpectTrue(bin_exp.op.m_type == (int)TokenType.AND);
 
-            // ((-1 + 1) * 2) / (1 ^ 2) 
+            // ((-1 + 1) * 2) / (1 ^ 2)
             bin_exp = bin_exp.left as BinaryExpression;
             ExpectTrue(bin_exp.op.m_type == '/');
 
