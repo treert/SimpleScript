@@ -24,7 +24,6 @@ namespace oms
         object Visit(LocalFunctionStatement tree, object data = null);
         object Visit(LocalNameListStatement tree, object data = null);
         object Visit(AssignStatement tree, object data = null);
-        object Visit(VarList tree, object data = null);
         object Visit(Terminator tree, object data = null);
         object Visit(BinaryExpression tree, object data = null);
         object Visit(UnaryExpression tree, object data = null);
@@ -41,6 +40,14 @@ namespace oms
         object Visit(ExpressionList tree, object data = null);
         object Visit(NameList tree, object data = null);
         //object Visit(SyntaxTree tree, object data = null);
+    }
+
+    enum LexicalScope
+    {
+        UnKown,
+        Global,
+        Upvalue,
+        Local,
     }
 
     abstract class SyntaxTree
@@ -174,6 +181,7 @@ namespace oms
     {
         public List<Token> names = new List<Token>();
         public Token member_name;
+        public LexicalScope scope;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -202,17 +210,8 @@ namespace oms
 
     class AssignStatement:SyntaxTree
     {
-        public VarList var_list;
-        public ExpressionList exp_list;
-        public override object Accept(Visitor v, object data = null)
-        {
-            return v.Visit(this, data);
-        }
-    }
-
-    class VarList:SyntaxTree
-    {
         public List<SyntaxTree> var_list = new List<SyntaxTree>();
+        public ExpressionList exp_list;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -232,6 +231,7 @@ namespace oms
     {
         public Token token;
         public bool is_read = true;
+        public LexicalScope scope;
         public Terminator(Token token_)
         {
             token = token_;
@@ -273,6 +273,7 @@ namespace oms
     {
         public ParamList param_list;
         public SyntaxTree block;
+        public bool has_self = false;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);

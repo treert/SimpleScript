@@ -296,8 +296,8 @@ namespace oms
                 if(type == PrefixExpType.Var)
                 {
                     // assign statement
-                    var var_list = new VarList();
-                    var_list.var_list.Add(exp);
+                    var assign_statement = new AssignStatement();
+                    assign_statement.var_list.Add(exp);
                     while(LookAhead().m_type != (int)'=')
                     {
                         if (NextToken().m_type != (int)',')
@@ -307,14 +307,11 @@ namespace oms
                         exp = ParsePrefixExp(out type);
                         if (type != PrefixExpType.Var)
                             throw new ParserException("expect var here");
-                        var_list.var_list.Add(exp);
+                        assign_statement.var_list.Add(exp);
                     }
                     NextToken();// skip '='
-                    var exp_list = ParseExpList();
+                    assign_statement.exp_list = ParseExpList();
 
-                    var assign_statement = new AssignStatement();
-                    assign_statement.var_list = var_list;
-                    assign_statement.exp_list = exp_list;
                     return assign_statement;
                 }
                 else

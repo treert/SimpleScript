@@ -204,19 +204,11 @@ namespace oms.test
             _TrySetResult(tree);
             if (_result != null) return null;
 
-            tree.var_list.Accept(this);
-            tree.exp_list.Accept(this);
-            return null;
-        }
-        public object Visit(VarList tree, object data = null)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return null;
-
-            foreach(var var_ in tree.var_list)
+            foreach(var exp in tree.var_list)
             {
-                var_.Accept(this);
+                exp.Accept(this);
             }
+            tree.exp_list.Accept(this);
             return null;
         }
         public object Visit(Terminator tree, object data = null)
