@@ -59,6 +59,7 @@
     <Compile Include="oms\CodeGenerate.cs" />
     <Compile Include="oms\Exception.cs" />
     <Compile Include="oms\Function.cs" />
+    <Compile Include="oms\OpCode.cs" />
     <Compile Include="oms\Parser.cs" />
     <Compile Include="oms\Semantic.cs" />
     <Compile Include="oms\SyntaxTree.cs" />

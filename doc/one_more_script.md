@@ -8,33 +8,37 @@
 
 chunk ::= block
 
-block ::= {stat [";"]} 
+block ::= {stat [";"]}
 
-stat ::=  varlist "=" explist | 
-     exp | 
-     "do" block "end" | 
-     "while" exp "do" block "end" | 
-     "repeat" block "until" exp | 
-     "if" exp "then" block {"elseif" exp "then" block} ["else" block] "end" | 
-     "for" Name "=" exp "," exp ["," exp] "do" block "end" | 
-     "for" namelist "in" explist "do" block "end" | 
+stat ::=
+     "do" block "end" |
+     "while" exp "do" block "end" |
+     "if" exp "then" block {"elseif" exp "then" block} ["else" block] "end" |
+     "for" Name "=" exp "," exp ["," exp] "do" block "end" |
+     "foreach" Name ["," Name] "in" exp "do" block "end" |
+     "for" namelist "in" explist "do" block "end" |
      "function" funcname funcbody |
-     "local" "function" Name funcbody | 
+     "local" "function" Name funcbody |
      "local" namelist ["=" explist] |
      "return" [explist] |
      "break" |
-     "continue"
+     "continue" |
+     varlist "=" explist |
+     (exp) |
+     funccall |
 
 namelist ::= Name {"," Name}
 
 varlist ::= var {"," var}
 
+var ::= Name | Name
+
 global ::= $"["exp"]" | $Name
 
-var ::= (global | Name) | 
-     (global | Name) {"[" exp "]" | "." Name | args | ":" Name args} ( "[" exp "]" | "." Name )  
+var ::= (global | Name) |
+     (global | Name) {"[" exp "]" | "." Name | args | ":" Name args} ( "[" exp "]" | "." Name )
 
-args ::=  "(" [explist] ")" | tableconstructor 
+args ::=  "(" [explist] ")" | tableconstructor
 
 funcname ::= Name {"." Name} [":" Name]
 
@@ -46,10 +50,10 @@ parlist ::= Name {"," Name} ["," "..."] | "..."
 
 explist ::= {exp ","} exp
 
-exp ::= mainexp | exp binop exp 
+exp ::= mainexp | exp binop exp
 
-mainexp ::= nil | false | true | Number | String | 
-     "..." | function | tableconstructor | 
+mainexp ::= nil | false | true | Number | String |
+     "..." | function | tableconstructor |
      prefixexp |
      unop exp|
 
@@ -65,8 +69,8 @@ field ::= "[" exp "]" "=" exp | Name "=" exp | exp
 
 fieldsep ::= "," | ";"
 
-binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." | 
-     "<" | "<=" | ">" | ">=" | "==" | "~=" | 
+binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." |
+     "<" | "<=" | ">" | ">=" | "==" | "~=" |
      "and" | "or"
 
 unop ::= "-" | "not" | "#"

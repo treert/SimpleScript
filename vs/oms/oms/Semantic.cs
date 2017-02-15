@@ -189,10 +189,6 @@ namespace oms
         public object Visit(FunctionStatement tree, object data = null)
         {
             tree.func_name.Accept(this);
-            if(tree.func_name.member_name != null)
-            {
-                tree.func_body.has_self = true;
-            }
             tree.func_body.Accept(this);
             return null;
         }

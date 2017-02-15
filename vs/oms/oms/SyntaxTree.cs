@@ -76,6 +76,7 @@ namespace oms
     class ReturnStatement:SyntaxTree
     {
         public ExpressionList exp_list;
+        public int ret_value_count = 0;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -372,6 +373,8 @@ namespace oms
     class ExpressionList:SyntaxTree
     {
         public List<SyntaxTree> exp_list = new List<SyntaxTree>();
+        public int return_value_count = -1;
+        public int expect_value_count = -1;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);

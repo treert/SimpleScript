@@ -11,6 +11,19 @@ namespace oms
 
     class Parser
     {
+        static bool IsExpReturnAnyCountValue(SyntaxTree t)
+        {
+            if(t is Terminator)
+            {
+                return (t as Terminator).token.m_type == (int)TokenType.DOTS;
+            }
+            else if(t is MemberFuncCall || t is NormalFuncCall)
+            {
+                return true;
+            }
+            return false;
+        }
+
         Lex _lex;
         Token _current;
         Token _look_ahead;
@@ -161,7 +174,7 @@ namespace oms
             }
             return exp;
         }
-        ExpressionList ParseExpList()
+        ExpressionList ParseExpList(int expect_value_count = -1)
         {
             var exp = new ExpressionList();
             exp.exp_list.Add(ParseExp());
@@ -170,6 +183,11 @@ namespace oms
                 NextToken();
                 exp.exp_list.Add(ParseExp());
             }
+            if(!IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count-1])
+            {
+                exp.return_value_count = exp.exp_list.Count;
+            }
+            exp.expect_value_count = expect_value_count;
             return exp;
         }
         FunctionBody ParseFunctionDef()
@@ -310,7 +328,7 @@ namespace oms
                         assign_statement.var_list.Add(exp);
                     }
                     NextToken();// skip '='
-                    assign_statement.exp_list = ParseExpList();
+                    assign_statement.exp_list = ParseExpList(assign_statement.var_list.Count);
 
                     return assign_statement;
                 }
@@ -526,15 +544,18 @@ namespace oms
             NextToken();// skip 'function'
 
             var statement = new FunctionStatement();
-            statement.func_name = ParseFunctionName();
+            bool add_self = false;
+            statement.func_name = ParseFunctionName(out add_self);
             statement.func_body = ParseFunctionBody();
+            statement.func_body.has_self = add_self;
             return statement;
         }
-        FunctionName ParseFunctionName()
+        FunctionName ParseFunctionName(out bool add_self)
         {
             if (NextToken().m_type != (int)TokenType.NAME)
                 throw new ParserException("unexpect token after 'function'");
 
+            add_self = false;
             var func_name = new FunctionName();
             func_name.names.Add(_current);
             while(LookAhead().m_type == (int)'.')
@@ -550,7 +571,8 @@ namespace oms
                 NextToken();
                 if (NextToken().m_type != (int)TokenType.NAME)
                     throw new ParserException("unexpect token in function name after ':'");
-                func_name.member_name = _current;
+                add_self = true;
+                func_name.names.Add(_current);
             }
 
             return func_name;
@@ -646,7 +668,8 @@ namespace oms
             statement.name_list = ParseNameList();
             if (NextToken().m_type != (int)TokenType.IN)
                 throw new ParserException("expect 'in' in for-in-statement");
-            statement.exp_list = ParseExpList();
+            // 这个结构特殊，返回的是迭代器，
+            statement.exp_list = ParseExpList(3);
 
             if (NextToken().m_type != (int)TokenType.DO)
                 throw new ParserException("expect 'do' to start for-in-body");
@@ -718,7 +741,7 @@ namespace oms
             if(LookAhead().m_type == (int)'=')
             {
                 NextToken();
-                statement.exp_list = ParseExpList();
+                statement.exp_list = ParseExpList(statement.name_list.names.Count);
             }
             return statement;
         }
