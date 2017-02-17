@@ -47,6 +47,10 @@ namespace oms
         {
             return null;
         }
+        int GetChildFunctionIndex()
+        {
+            return 0;
+        }
         void EnterBlock()
         {
 
@@ -365,9 +369,41 @@ namespace oms
             HandleFunctionBody(tree.func_body);
             HandleFunctionName(tree.func_name);
         }
+        void HandleParamList(ParamList tree)
+        {
+            var f = GetCurrentFunction();
+            // todo ajust any args
+            // todo increse function fix args count
+
+            int register = GetNextRegisterId();
+            for (int i = 0; i < tree.name_list.Count; ++i)
+            {
+                InsertName(tree.name_list[i].m_string, register + i);
+            }
+        }
         void HandleFunctionBody(FunctionBody tree)
         {
+            EnterFunction();
+            var f = GetCurrentFunction();
+            var child_index = GetChildFunctionIndex();
+            {
+                EnterBlock();
+                if(tree.has_self)
+                {
+                    var self_register = GenerateRegisterId();
+                    InsertName("self", self_register);
 
+                    //todo add fixed arg count by 1
+                }
+                if (tree.param_list != null)
+                    HandleParamList(tree.param_list);
+                HandleBlock(tree.block);
+                LeaveBlock();
+            }
+            LeaveFunction();
+
+            var code = Instruction.AsBx(OpType.OpType_Closure, GetNextRegisterId(), child_index);
+            f.AddInstruction(code, -1);
         }
         void HandleFunctionName(FunctionName tree)
         {
@@ -375,7 +411,7 @@ namespace oms
             var f = GetCurrentFunction();
             Instruction code = new Instruction();
 
-            bool has_member = tree.names.Count > 1 || tree.member_name != null;
+            bool has_member = tree.names.Count > 1;
             var first_name = tree.names[0];
             if(!has_member)
             {
@@ -459,11 +495,154 @@ namespace oms
         }
         void HandleOtherStatement(SyntaxTree tree)
         {
+            HandleExpRead(tree);
+        }
+        void HandleBinaryExp(BinaryExpression tree)
+        {
+            var f = GetCurrentFunction();
+            Instruction code;
+            OpType op_type = OpType.OpType_InValid;
+            var token_type = tree.op.m_type;
+            if(token_type == (int)TokenType.AND || token_type == (int)TokenType.OR)
+            {
+                HandleExpRead(tree.left);
 
+                // do not run right exp when then result or left exp satisfy operator
+                op_type = (token_type == (int)TokenType.AND) ?
+                    OpType.OpType_JmpFalse : OpType.OpType_JmpTrue;
+                code = Instruction.AsBx(op_type, GetNextRegisterId(), 0);
+                int index = f.AddInstruction(code, -1);
+
+                HandleExpRead(tree.right);
+
+                // todo fill jmp code
+                return;
+            }
+            HandleExpRead(tree.left);
+            var left_register = GenerateRegisterId();
+            HandleExpRead(tree.right);
+            var right_register = GenerateRegisterId();
+
+            switch (tree.op.m_type)
+            {
+                case '+': op_type = OpType.OpType_Add; break;
+                case '-': op_type = OpType.OpType_Sub; break;
+                case '*': op_type = OpType.OpType_Mul; break;
+                case '/': op_type = OpType.OpType_Div; break;
+                case '^': op_type = OpType.OpType_Pow; break;
+                case '%': op_type = OpType.OpType_Mod; break;
+                case '<': op_type = OpType.OpType_Less; break;
+                case '>': op_type = OpType.OpType_Greater; break;
+                case (int)TokenType.CONCAT: op_type = OpType.OpType_Concat; break;
+                case (int)TokenType.EQ: op_type = OpType.OpType_Equal; break;
+                case (int)TokenType.NE: op_type = OpType.OpType_UnEqual; break;
+                case (int)TokenType.LE: op_type = OpType.OpType_LessEqual; break;
+                case (int)TokenType.GE: op_type = OpType.OpType_GreaterEqual; break;
+                default: Debug.Assert(false); break;
+            }
+
+            code = Instruction.ABC(op_type, left_register, left_register, right_register);
+            f.AddInstruction(code, -1);
+        }
+        void HandleUnaryExp(UnaryExpression tree)
+        {
+            HandleExpRead(tree.exp);
+            var register = GetNextRegisterId();
+            OpType op_type = OpType.OpType_InValid;
+            switch(tree.op.m_type)
+            {
+                case '-': op_type = OpType.OpType_Neg; break;
+                case '#': op_type = OpType.OpType_Len; break;
+                case (int)TokenType.NOT: op_type = OpType.OpType_Not; break;
+                default: Debug.Assert(false); break;
+            }
+
+            var f = GetCurrentFunction();
+            var code = Instruction.A(op_type, register);
+            f.AddInstruction(code, -1);
+        }
+        void HandleFuncCall(FuncCall tree)
+        {
+            var f = GetCurrentFunction();
+            Instruction code;
+            HandleExpRead(tree.caller);
+            var caller_register = GenerateRegisterId();
+            if(tree.member_name != null)
+            {
+                // set table as first arg
+                var arg_register = GenerateRegisterId();
+                code = Instruction.AB(OpType.OpType_Move, arg_register, caller_register);
+                f.AddInstruction(code, -1);
+
+                // get caller from table
+                int key_register = arg_register + 1;
+                int index = f.AddConstString(tree.member_name.m_string);
+                code = Instruction.AsBx(OpType.OpType_LoadConst, key_register, index);
+                f.AddInstruction(code, -1);
+                code = Instruction.ABC(OpType.OpType_GetTable, caller_register, key_register, caller_register);
+                f.AddInstruction(code, -1);
+            }
+            HandleExpList(tree.args);
+
+            // todo call arg count need fix
+            code = Instruction.A(OpType.OpType_Call, caller_register);
+            f.AddInstruction(code, -1);
         }
         void HandleExpRead(SyntaxTree tree)
         {
+            if (tree is Terminator)
+            {
+                var f = GetCurrentFunction();
+                var value_register = GetNextRegisterId();
+                var term = tree as Terminator;
+                Debug.Assert(term.token.m_type == (int)TokenType.NAME);
+                if (term.scope == LexicalScope.Global)
+                {
+                    var index = f.AddConstString(term.token.m_string);
+                    var code = Instruction.AsBx(OpType.OpType_GetGlobal, value_register, index);
+                    f.AddInstruction(code, -1);
+                }
+                else if (term.scope == LexicalScope.Local)
+                {
+                    var index = SearchLocalName(term.token.m_string);
+                    var code = Instruction.AB(OpType.OpType_Move, value_register, index);
+                }
+                else
+                {
+                    Debug.Assert(term.scope == LexicalScope.Upvalue);
+                    var index = PrepareUpvalue(term.token.m_string);
+                    var code = Instruction.AB(OpType.OpType_GetUpvalue, value_register, index);
+                }
+            }
+            else if (tree is TableAccess)
+            {
+                var f = GetCurrentFunction();
+                var table_access = tree as TableAccess;
+                HandleExpRead(table_access.table);
+                var table_register = GenerateRegisterId();
+                HandleExpRead(table_access.index);
+                var key_register = GenerateRegisterId();
 
+                var code = Instruction.ABC(OpType.OpType_GetTable,
+                    table_register, key_register, table_register);
+                f.AddInstruction(code, -1);
+            }
+            else if(tree is FuncCall)
+            {
+                HandleFuncCall(tree as FuncCall);
+            }
+            else if(tree is BinaryExpression)
+            {
+                HandleBinaryExp(tree as BinaryExpression);
+            }
+            else if(tree is UnaryExpression)
+            {
+                HandleUnaryExp(tree as UnaryExpression);
+            }
+            else
+            {
+                Debug.Assert(false);
+            }
         }
         void HandleVarWrite(SyntaxTree tree, int value_register)
         {
@@ -508,7 +687,17 @@ namespace oms
         }
         void HandleExpList(ExpressionList tree)
         {
+            int start_register = GetNextRegisterId();
+            for(int i = 0; i < tree.exp_list.Count; ++i)
+            {
+                HandleExpRead(tree.exp_list[i]);
+                GenerateRegisterId();
+            }
+            // todo ajust value count
+            if(tree.expect_value_count != -1)
+            {
 
+            }
         }
 
         void HandleNameList(NameList tree)

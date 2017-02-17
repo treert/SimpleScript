@@ -177,7 +177,6 @@ namespace oms
     class FunctionName:SyntaxTree
     {
         public List<Token> names = new List<Token>();
-        public Token member_name;
         public LexicalScope scope;
         public override object Accept(Visitor v, object data = null)
         {

@@ -8,7 +8,8 @@ namespace oms
 {
     enum OpType
     {
-        OpType_LoadNil = 1,             // A    A: register
+        OpType_InValid = 0,
+        OpType_LoadNil,                 // A    A: register
         OpType_LoadBool,                // AB   A: register B: 1 true 0 false
         OpType_LoadInt,                 // ABx  A: register Bx: const unsigned int
         OpType_LoadConst,               // ABx  A: register Bx: const index
