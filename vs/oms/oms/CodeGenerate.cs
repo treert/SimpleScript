@@ -134,7 +134,7 @@ namespace oms
                 else if (stmt is AssignStatement)
                     HandleAssignStatement(stmt as AssignStatement);
                 else
-                    HandleOtherStatement(stmt);
+                    HandleExpRead(stmt);
             }
         }
 
@@ -492,10 +492,6 @@ namespace oms
         void HandleContinueStatement(ContinueStatement tree)
         {
             // todo jump loop
-        }
-        void HandleOtherStatement(SyntaxTree tree)
-        {
-            HandleExpRead(tree);
         }
         void HandleBinaryExp(BinaryExpression tree)
         {
