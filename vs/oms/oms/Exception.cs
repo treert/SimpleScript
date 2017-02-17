@@ -58,4 +58,12 @@ namespace oms
             SetInfo(msg);
         }
     }
+
+    class CodeGenerateException : BaseException
+    {
+        public CodeGenerateException(string msg)
+        {
+            SetInfo(msg);
+        }
+    }
 }

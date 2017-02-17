@@ -260,32 +260,17 @@ namespace oms.test
             }
             return null;
         }
-        public object Visit(TableIndexField tree, object data = null)
+        public object Visit(TableField tree, object data = null)
         {
             _TrySetResult(tree);
             if (_result != null) return null;
 
-            tree.index.Accept(this);
+            if (tree.index != null)
+                tree.index.Accept(this);
             tree.value.Accept(this);
             return null;
         }
-        public object Visit(TableNameField tree, object data = null)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return null;
-
-            tree.value.Accept(this);
-            return null;
-        }
-        public object Visit(TableArrayField tree, object data = null)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return null;
-
-            tree.value.Accept(this);
-            return null;
-        }
-        public object Visit(IndexAccessor tree, object data = null)
+        public object Visit(TableAccess tree, object data = null)
         {
             _TrySetResult(tree);
             if (_result != null) return null;
@@ -294,24 +279,7 @@ namespace oms.test
             tree.index.Accept(this);
             return null;
         }
-        public object Visit(MemberAccessor tree, object data = null)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return null;
-
-            tree.table.Accept(this);
-            return null;
-        }
-        public object Visit(NormalFuncCall tree, object data = null)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return null;
-
-            tree.caller.Accept(this);
-            tree.args.Accept(this);
-            return null;
-        }
-        public object Visit(MemberFuncCall tree, object data = null)
+        public object Visit(FuncCall tree, object data = null)
         {
             _TrySetResult(tree);
             if (_result != null) return null;

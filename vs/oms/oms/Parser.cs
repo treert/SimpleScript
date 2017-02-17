@@ -17,7 +17,7 @@ namespace oms
             {
                 return (t as Terminator).token.m_type == (int)TokenType.DOTS;
             }
-            else if(t is MemberFuncCall || t is NormalFuncCall)
+            else if(t is FuncCall)
             {
                 return true;
             }
@@ -183,7 +183,7 @@ namespace oms
                 NextToken();
                 exp.exp_list.Add(ParseExp());
             }
-            if(!IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count-1])
+            if(!IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count-1]))
             {
                 exp.return_value_count = exp.exp_list.Count;
             }
@@ -195,68 +195,59 @@ namespace oms
             NextToken();
             return ParseFunctionBody();
         }
-        SyntaxTree ParseTableAccessor(SyntaxTree table)
+        TableAccess ParseTableAccessor(SyntaxTree table)
         {
             NextToken();// skip '[' or '.'
 
+            var index_access = new TableAccess();
+            index_access.table = table;
             if(_current.m_type == (int)'[')
             {
-                var index_access = new IndexAccessor();
-                index_access.table = table;
                 index_access.index = ParseExp();
                 if (NextToken().m_type != (int)']')
                     throw new ParserException("expect ']'");
-                return index_access;
             }
             else
             {
-                var member_access = new MemberAccessor();
                 if (NextToken().m_type != (int)TokenType.NAME)
                     throw new ParserException("expect 'id' after '.'");
-                member_access.table = table;
-                member_access.member_name = _current;
-                return member_access;
+                index_access.index = new Terminator(new Token(_current.m_string));
             }
+            return index_access;
         }
-        SyntaxTree ParseFunctionCall(SyntaxTree caller)
+        FuncCall ParseFunctionCall(SyntaxTree caller)
         {
+            var func_call = new FuncCall();
+            func_call.caller = caller;
             if(LookAhead().m_type == (int)':')
             {
                 NextToken();
                 if (NextToken().m_type != (int)TokenType.NAME)
                     throw new ParserException("expect 'id' after ':'");
-                var member_call = new MemberFuncCall();
-                member_call.caller = caller;
-                member_call.member_name = _current;
-                member_call.args = ParseArgs();
-                return member_call;
+                func_call.member_name = _current;
             }
-            else
-            {
-                var normal_call = new NormalFuncCall();
-                normal_call.caller = caller;
-                normal_call.args = ParseArgs();
-                return normal_call;
-            }
+            func_call.args = ParseArgs();
+            return func_call;
         }
-        SyntaxTree ParseArgs()
+        ExpressionList ParseArgs()
         {
-            if(LookAhead().m_type == (int)'{')
-            {
-                return ParseTableConstructor();
-            }
-            else if(LookAhead().m_type == (int)'(')
+            ExpressionList exp_list = null;
+            if(LookAhead().m_type == (int)'(')
             {
                 NextToken();
-                SyntaxTree args = null;
                 if (LookAhead().m_type != (int)')')
-                    args = ParseExpList();
+                    exp_list = ParseExpList();
                 if (NextToken().m_type != (int)')')
                     throw new ParserException("expect '(' to end function-args");
-                return args;
+            }
+            else if(LookAhead().m_type == (int)'{')
+            {
+                exp_list = new ExpressionList();
+                exp_list.exp_list.Add(ParseTableConstructor());
             }
             else
                 throw new ParserException("expect '(' or '{' to start function-args");
+            return exp_list;
         }
         SyntaxTree ParsePrefixExp(out PrefixExpType type_)
         {
@@ -351,10 +342,10 @@ namespace oms
                 return null;
             }
         }
-        TableIndexField ParseTableIndexField()
+        TableField ParseTableIndexField()
         {
             NextToken();
-            var field = new TableIndexField();
+            var field = new TableField();
             field.index = ParseExp();
             if (NextToken().m_type != ']')
                 throw new ParserException("expect ']'");
@@ -363,17 +354,18 @@ namespace oms
             field.value = ParseExp();
             return field;
         }
-        TableNameField ParseTableNameField()
+        TableField ParseTableNameField()
         {
-            var field = new TableNameField();
-            field.name = NextToken();
-            NextToken();
+            var field = new TableField();
+            field.index = new Terminator(new Token(NextToken().m_string));
+            NextToken();// skip '='
             field.value = ParseExp();
             return field;
         }
-        TableArrayField ParseTableArrayField()
+        TableField ParseTableArrayField()
         {
-            var field = new TableArrayField();
+            var field = new TableField();
+            field.index = null;// default is null
             field.value = ParseExp();
             return field;
         }

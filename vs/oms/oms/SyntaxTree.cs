@@ -30,13 +30,9 @@ namespace oms
         object Visit(FunctionBody tree, object data = null);
         object Visit(ParamList tree, object data = null);
         object Visit(TableDefine tree, object data = null);
-        object Visit(TableIndexField tree, object data = null);
-        object Visit(TableNameField tree, object data = null);
-        object Visit(TableArrayField tree, object data = null);
-        object Visit(IndexAccessor tree, object data = null);
-        object Visit(MemberAccessor tree, object data = null);
-        object Visit(NormalFuncCall tree, object data = null);
-        object Visit(MemberFuncCall tree, object data = null);
+        object Visit(TableField tree, object data = null);
+        object Visit(TableAccess tree, object data = null);
+        object Visit(FuncCall tree, object data = null);
         object Visit(ExpressionList tree, object data = null);
         object Visit(NameList tree, object data = null);
         //object Visit(SyntaxTree tree, object data = null);
@@ -273,7 +269,7 @@ namespace oms
     class FunctionBody:SyntaxTree
     {
         public ParamList param_list;
-        public SyntaxTree block;
+        public Block block;
         public bool has_self = false;
         public override object Accept(Visitor v, object data = null)
         {
@@ -291,14 +287,14 @@ namespace oms
     }
     class TableDefine:SyntaxTree
     {
-        public List<SyntaxTree> fields = new List<SyntaxTree>();
+        public List<TableField> fields = new List<TableField>();
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
         }
     }
 
-    class TableIndexField:SyntaxTree
+    class TableField:SyntaxTree
     {
         public SyntaxTree index;
         public SyntaxTree value;
@@ -308,26 +304,7 @@ namespace oms
         }
     }
 
-    class TableNameField:SyntaxTree
-    {
-        public Token name;
-        public SyntaxTree value;
-        public override object Accept(Visitor v, object data = null)
-        {
-            return v.Visit(this, data);
-        }
-    }
-
-    class TableArrayField:SyntaxTree
-    {
-        public SyntaxTree value;
-        public override object Accept(Visitor v, object data = null)
-        {
-            return v.Visit(this, data);
-        }
-    }
-
-    class IndexAccessor:SyntaxTree
+    class TableAccess:SyntaxTree
     {
         public SyntaxTree table;
         public SyntaxTree index;
@@ -338,32 +315,11 @@ namespace oms
         }
     }
 
-    class MemberAccessor:SyntaxTree
-    {
-        public SyntaxTree table;
-        public Token member_name;
-        public bool is_read = true;
-        public override object Accept(Visitor v, object data = null)
-        {
-            return v.Visit(this, data);
-        }
-    }
-
-    class NormalFuncCall:SyntaxTree
-    {
-        public SyntaxTree caller;
-        public SyntaxTree args;
-        public override object Accept(Visitor v, object data = null)
-        {
-            return v.Visit(this, data);
-        }
-    }
-
-    class MemberFuncCall:SyntaxTree
+    class FuncCall:SyntaxTree
     {
         public SyntaxTree caller;
         public Token member_name;
-        public SyntaxTree args;
+        public ExpressionList args;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);

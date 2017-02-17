@@ -20,10 +20,8 @@ namespace oms
             // only three type support write
             if (var_ is Terminator)
                 (var_ as Terminator).is_read = false;
-            else if (var_ is IndexAccessor)
-                (var_ as IndexAccessor).is_read = false;
-            else if (var_ is MemberAccessor)
-                (var_ as MemberAccessor).is_read = false;
+            else if (var_ is TableAccess)
+                (var_ as TableAccess).is_read = false;
             
         }
         void EnterFunction()
@@ -265,37 +263,17 @@ namespace oms
             return null;
         }
 
-        public object Visit(TableIndexField tree, object data = null)
+        public object Visit(TableField tree, object data = null)
         {
             return null;
         }
 
-        public object Visit(TableNameField tree, object data = null)
+        public object Visit(TableAccess tree, object data = null)
         {
             return null;
         }
 
-        public object Visit(TableArrayField tree, object data = null)
-        {
-            return null;
-        }
-
-        public object Visit(IndexAccessor tree, object data = null)
-        {
-            return null;
-        }
-
-        public object Visit(MemberAccessor tree, object data = null)
-        {
-            return null;
-        }
-
-        public object Visit(NormalFuncCall tree, object data = null)
-        {
-            return null;
-        }
-
-        public object Visit(MemberFuncCall tree, object data = null)
+        public object Visit(FuncCall tree, object data = null)
         {
             return null;
         }

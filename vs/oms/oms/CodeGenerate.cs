@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -145,7 +146,7 @@ namespace oms
             EnterLoop(tree);
 
             var register_id = GetNextRegisterId();
-            HandleExp(tree.exp);
+            HandleExpRead(tree.exp);
 
             // jump to loop tail when expression return false
             var f = GetCurrentFunction();
@@ -168,10 +169,10 @@ namespace oms
             Instruction code;
 
             // init name, limit, step
-            HandleExp(tree.exp1);
+            HandleExpRead(tree.exp1);
             int var_register = GenerateRegisterId();
 
-            HandleExp(tree.exp2);
+            HandleExpRead(tree.exp2);
             int limit_register = GenerateRegisterId();
 
             if(tree.exp3 == null)
@@ -182,11 +183,11 @@ namespace oms
             }
             else
             {
-                HandleExp(tree.exp3);
+                HandleExpRead(tree.exp3);
             }
             int step_register = GenerateRegisterId();
 
-            
+
             EnterLoop(tree);
             {
                 EnterBlock();
@@ -213,7 +214,7 @@ namespace oms
             }
             // todo jump to loop head
             LeaveLoop();
-            
+
             LeaveBlock();
         }
         void HandleForEachStatement(ForEachStatement tree)
@@ -224,7 +225,7 @@ namespace oms
             Instruction code;
 
             // init table
-            HandleExp(tree.exp);
+            HandleExpRead(tree.exp);
             var table_register = GenerateRegisterId();
 
             EnterLoop(tree);
@@ -332,7 +333,7 @@ namespace oms
             var f = GetCurrentFunction();
             Instruction code;
             {
-                HandleExp(tree.exp);
+                HandleExpRead(tree.exp);
                 int register = GetNextRegisterId();
                 code = Instruction.AsBx(OpType.OpType_JmpFalse, register, 0);
                 // todo jump to false branch
@@ -442,7 +443,7 @@ namespace oms
             if(tree.exp_list != null)
             {
                 value_count = tree.exp_list.return_value_count;
-                HandleExpressList(tree.exp_list);
+                HandleExpList(tree.exp_list);
             }
             var f = GetCurrentFunction();
             var instruction = Instruction.AsBx(OpType.OpType_Ret, register_id, value_count);
@@ -460,40 +461,108 @@ namespace oms
         {
 
         }
-        void HandleExp(SyntaxTree tree)
+        void HandleExpRead(SyntaxTree tree)
         {
 
+        }
+        void HandleVarWrite(SyntaxTree tree, int value_register)
+        {
+            var f = GetCurrentFunction();
+            if(tree is Terminator)
+            {
+                var term = tree as Terminator;
+                Debug.Assert(term.token.m_type == (int)TokenType.NAME);
+                if(term.scope == LexicalScope.Global)
+                {
+                    var index = f.AddConstString(term.token.m_string);
+                    var code = Instruction.AsBx(OpType.OpType_SetGlobal, value_register, index);
+                    f.AddInstruction(code, -1);
+                }
+                else if(term.scope == LexicalScope.Local)
+                {
+                    var index = SearchLocalName(term.token.m_string);
+                    var code = Instruction.AB(OpType.OpType_Move, index, value_register);
+                }
+                else
+                {
+                    Debug.Assert(term.scope == LexicalScope.Upvalue);
+                    var index = PrepareUpvalue(term.token.m_string);
+                    var code = Instruction.AB(OpType.OpType_SetUpvalue, value_register, index);
+                }
+            }
+            else if(tree is TableAccess)
+            {
+                var index_access = tree as TableAccess;
+                HandleExpRead(index_access.index);
+                var key_register = GenerateRegisterId();
+                HandleExpRead(index_access.table);
+                var table_register = GenerateRegisterId();
+                var code = Instruction.ABC(OpType.OpType_SetTable,
+                    table_register, key_register, value_register);
+                f.AddInstruction(code, -1);
+            }
+            else
+            {
+                Debug.Assert(false);
+            }
         }
         void HandleExpList(ExpressionList tree)
         {
 
         }
 
-        void HandleExpressList(ExpressionList tree)
-        {
-            throw new NotImplementedException();
-        }
         void HandleNameList(NameList tree)
         {
+            int register = GetNextRegisterId();
             for(int i = 0; i < tree.names.Count; ++i)
             {
-                var register = GenerateRegisterId();
-                InsertName(tree.names[i].m_string, register);
+                InsertName(tree.names[i].m_string, register + i);
             }
         }
 
         void HandleAssignStatement(AssignStatement tree)
         {
-	        throw new NotImplementedException();
+            HandleExpList(tree.exp_list);
+            // var list
+            int register = GetNextRegisterId();
+            ResetRegisterId(register + tree.var_list.Count);
+            for(int i = 0; i < tree.var_list.Count; ++i)
+            {
+                HandleVarWrite(tree.var_list[i], register + i);
+            }
         }
         void HandleLocalNameListStatement(LocalNameListStatement tree)
         {
-            throw new NotImplementedException();
+            if(tree.exp_list != null)
+            {
+                HandleExpList(tree.exp_list);
+            }
+            else
+            {
+                FillNil(GetNextRegisterId(), GetNextRegisterId() + tree.name_list.names.Count, -1);
+            }
+            HandleNameList(tree.name_list);
         }
         void HandleLocalFunctionStatement(LocalFunctionStatement tree)
         {
             InsertName(tree.name.m_string, GetNextRegisterId());
             HandleFunctionBody(tree.func_body);
         }
+
+        void FillNil(int start_register, int end_register, int line)
+        {
+            var f = GetCurrentFunction();
+            while(start_register < end_register)
+            {
+                var code = Instruction.A(OpType.OpType_LoadNil, start_register++);
+                f.AddInstruction(code, line);
+            }
+        }
+
+        void Throw(string msg)
+        {
+            throw new CodeGenerateException(msg);
+        }
+
     }
 }
