@@ -183,10 +183,7 @@ namespace oms
                 NextToken();
                 exp.exp_list.Add(ParseExp());
             }
-            if(!IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count-1]))
-            {
-                exp.return_value_count = exp.exp_list.Count;
-            }
+            exp.return_any_value = IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count - 1]);
             exp.expect_value_count = expect_value_count;
             return exp;
         }
@@ -538,8 +535,7 @@ namespace oms
             var statement = new FunctionStatement();
             bool add_self = false;
             statement.func_name = ParseFunctionName(out add_self);
-            statement.func_body = ParseFunctionBody();
-            statement.func_body.has_self = add_self;
+            statement.func_body = ParseFunctionBody(add_self);
             return statement;
         }
         FunctionName ParseFunctionName(out bool add_self)
@@ -569,12 +565,12 @@ namespace oms
 
             return func_name;
         }
-        FunctionBody ParseFunctionBody()
+        FunctionBody ParseFunctionBody(bool add_self = false)
         {
             if (NextToken().m_type != (int)'(')
                 throw new ParserException("expect '(' to start function-body");
             var statement = new FunctionBody();
-            statement.param_list = ParseParamList();
+            statement.param_list = ParseParamList(add_self);
             if (NextToken().m_type != (int)')')
                 throw new ParserException("expect ')' after param-list");
             statement.block = ParseBlock();
@@ -583,11 +579,16 @@ namespace oms
             
             return statement;
         }
-        ParamList ParseParamList()
+        ParamList ParseParamList(bool add_self)
         {
-            if (LookAhead().m_type == (int)')')
-                return null;
             var statement = new ParamList();
+            if (add_self)
+            {
+                statement.name_list.Add(new Token("self"));
+            }
+            if (LookAhead().m_type == (int)')')
+                return statement;
+            
             if(LookAhead().m_type == (int)TokenType.NAME)
             {
                 statement.name_list.Add(NextToken());

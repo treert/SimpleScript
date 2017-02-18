@@ -19,7 +19,7 @@ namespace oms
         OpType_GetGlobal,               // ABx  A: value register Bx: const index
         OpType_SetGlobal,               // ABx  A: value register Bx: const index
         OpType_Closure,                 // ABx  A: register Bx: proto index
-        OpType_Call,                    // ABC  A: register B: arg count C: is any arg
+        OpType_Call,                    // ABC  A: register B: fix arg count C: is any arg
         OpType_VarArg,                  // A    A: register
         OpType_Ret,                     // ABC  A: return value start register B: return value count C: return any count
         OpType_JmpFalse,                // AsBx A: register sBx: diff of instruction index

@@ -29,24 +29,23 @@ namespace oms
             
         }
 
+        public void FillInstructionBx(int index, int bx)
+        {
+
+        }
+        public void SetHasVarArg()
+        {
+
+        }
+
         // 添加指令，返回添加的指令的index
         public int AddInstruction(Instruction i, int line)
         {
             return 0;
         }
-
-        public void AddFixedArgCount(int add_count)
-        {
-
-        }
         public int FixedArgCount()
         {
             return 0;
-        }
-
-        public void SetHasVararg()
-        {
-
         }
         public bool HasVararg()
         {
@@ -65,17 +64,22 @@ namespace oms
         {
             return 0;
         }
-        public void AddChildFunction(Function child)
+        public int AddChildFunction(Function child)
+        {
+            return 0;
+        }
+        // debug info 
+        public void AddLocalVar(string name,int register, int begin_pc, int end_pc)
         {
 
         }
-        public void AddLocalVar(string name,int register_id, int begin_pc, int end_pc)
+        public void AddUpValue(string name,int register, bool parent_local)
         {
 
         }
-        public void AddUpValue(string name,int register_id, bool parent_local)
+        public int SearchUpValue(string name)
         {
-
+            return -1;
         }
     }
 }

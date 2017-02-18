@@ -14,83 +14,209 @@ namespace oms
     {
         class LocalNameInfo
         {
-            // Name register id
-            public int register_id = 0;
-            // Name begin instruction
+            // name register id
+            public int register = 0;
+            // name begin and end instruction
             public int begin_pc = 0;
 
-            public LocalNameInfo(int register_id_ = 0, int begin_pc_ = 0)
+            public LocalNameInfo(int register_, int begin_pc_)
             {
-                register_id = register_id_;
+                register = register_;
                 begin_pc = begin_pc_;
             }
         };
-
-        int SearchLocalName(string name)
+        enum JumpType
         {
-            return 0;
+            JumpHead,
+            JumpTail,
+        }
+        class LoopJumpInfo
+        {
+            public JumpType jump_type;
+            public int instruction_index;// Instruction need to fill Bx
+            public LoopJumpInfo(JumpType jump_type_,int index_)
+            {
+                jump_type = jump_type_;
+                instruction_index = index_;
+            }
+        }
+        class GenerateLoop
+        {
+            public GenerateLoop parent;
+            public int start_index;
+            public List<LoopJumpInfo> jumps = new List<LoopJumpInfo>();
+        }
+        class GenerateBlock
+        {
+            public GenerateBlock parent;
+            public Dictionary<string, LocalNameInfo> names;
         }
 
-        void Reset()
+        class GenerateFunction
         {
+            public GenerateFunction parent;
+            public GenerateBlock current_block;
+            public GenerateLoop current_loop;
+            public Function function;
+            public int func_index = 0;// index in parent
+            public int register = 0;// next free register index
+        }
 
+        GenerateFunction _current_func = null;
+
+        void InsertName(string name, int register)
+        {
+            var f = GetCurrentFunction();
+            int begin_pc = f.OpCodeSize();
+            var names = _current_func.current_block.names;
+            LocalNameInfo name_info = null;
+            if (names.TryGetValue(name,out name_info))
+            {
+                // add old one to function
+                f.AddLocalVar(name, name_info.register, name_info.begin_pc, begin_pc);
+                // replace old one
+                names[name] = new LocalNameInfo(register,begin_pc);
+            }
+            else
+            {
+                names.Add(name, new LocalNameInfo(register, begin_pc));
+            }
+        }
+        int SearchLocalName(string name)
+        {
+            return SearchFunctionLocalName(_current_func, name);
+        }
+        int SearchFunctionLocalName(GenerateFunction func,string name)
+        {
+            var block = func.current_block;
+            while(block != null)
+            {
+                LocalNameInfo name_info = null;
+                if (block.names.TryGetValue(name, out name_info))
+                {
+                    return name_info.register;
+                }
+                else
+                    block = block.parent;
+            }
+            return -1;
         }
         void EnterFunction()
         {
+            var func = new GenerateFunction();
+            var parent = _current_func;
+            func.parent = parent;
+            _current_func = func;
+
+            if(parent != null)
+            {
+                var index = parent.function.AddChildFunction(func.function);
+                func.func_index = index;
+                func.function.SetParent(parent.function);
+            }
 
         }
         void LeaveFunction()
         {
-
+            // auto gc, just forget about it
+            _current_func = _current_func.parent;
         }
         Function GetCurrentFunction()
         {
-            return null;
+            return _current_func.function;
         }
-        int GetChildFunctionIndex()
+        int GetFunctionIndex()
         {
-            return 0;
+            return _current_func.func_index;
         }
         void EnterBlock()
         {
-
+            var block = new GenerateBlock();
+            block.parent = _current_func.current_block;
+            _current_func.current_block = block;
         }
+
         void LeaveBlock()
         {
-
+            var block = _current_func.current_block;
+            // add all local variables to function
+            var f = _current_func.function;
+            int end_pc = f.OpCodeSize();
+            foreach(var item in block.names)
+            {
+                f.AddLocalVar(item.Key, item.Value.register,
+                    item.Value.begin_pc, end_pc);
+            }
+            // todo think about, it seem no need to close upvalue
+            // auto gc
+            _current_func.current_block = block.parent;
         }
-        void EnterLoop(SyntaxTree loop)
+        void EnterLoop()
         {
-            return;
+            var loop = new GenerateLoop();
+            loop.start_index = GetCurrentFunction().OpCodeSize();
+            loop.parent = _current_func.current_loop;
+            _current_func.current_loop = loop;
+        }
+        void AddLoopJumpInfo(JumpType jump_type_,int instruction_index_)
+        {
+            _current_func.current_loop.jumps.Add(new LoopJumpInfo(jump_type_, instruction_index_));
         }
         void LeaveLoop()
         {
+            var f = GetCurrentFunction();
+            var loop = _current_func.current_loop;
+            int end_index = f.OpCodeSize();
+            foreach(var jump in loop.jumps)
+            {
+                int diff = 0;
+                if (jump.jump_type == JumpType.JumpHead)
+                    diff = loop.start_index - jump.instruction_index;
+                else if (jump.jump_type == JumpType.JumpTail)
+                    diff = end_index - jump.instruction_index;
 
-        }
-        SyntaxTree GetCurrentLoop()
-        {
-            return null;
+                f.FillInstructionBx(jump.instruction_index, diff);
+            }
+
+            // auto gc
+            _current_func.current_loop = loop.parent;
         }
         int GetNextRegisterId()
         {
-            return 0;
+            return _current_func.register;
         }
         int ResetRegisterId(int register)
         {
-            return 0;
+            return _current_func.register = register;
         }
         int GenerateRegisterId()
         {
-            return 0;
+            return _current_func.register++;
         }
-        void InsertName(string name, int register)
-        {
 
-        }
-        int PrepareUpvalue(string name)
+        int PrepareUpvalue(string name_)
         {
+            var f = GetCurrentFunction();
+
+            Func<GenerateFunction, string, int> prepare_upvalue =
+                (GenerateFunction func, string name) =>
+                {
+                    int local_index = SearchFunctionLocalName(func, name);
+                    if (local_index > 0)
+                    {
+                        return local_index;
+                    }
+
+                    //int index = f.SearchUpValue(name);
+                    //if (index > 0)
+                    //    return index;
+                    // ask parent
+
+                    return 0;
+                };
             return 0;
         }
+        
         void HandleChunk(Chunk tree)
         {
             EnterFunction();
@@ -147,7 +273,7 @@ namespace oms
         void HandleWhileStatement(WhileStatement tree)
         {
             EnterBlock();
-            EnterLoop(tree);
+            EnterLoop();
 
             var register_id = GetNextRegisterId();
             HandleExpRead(tree.exp);
@@ -192,7 +318,7 @@ namespace oms
             int step_register = GenerateRegisterId();
 
 
-            EnterLoop(tree);
+            EnterLoop();
             {
                 EnterBlock();
 
@@ -223,54 +349,53 @@ namespace oms
         }
         void HandleForEachStatement(ForEachStatement tree)
         {
-            EnterBlock();
+            // todo think about it... has relate with hash implement
+            //EnterBlock();
 
-            var f = GetCurrentFunction();
-            Instruction code;
+            //var f = GetCurrentFunction();
+            //Instruction code;
 
-            // init table
-            HandleExpRead(tree.exp);
-            var table_register = GenerateRegisterId();
+            //// init table
+            //HandleExpRead(tree.exp);
+            //var table_register = GenerateRegisterId();
 
-            EnterLoop(tree);
-            {
-                EnterBlock();
+            //EnterLoop();
+            //{
+            //    EnterBlock();
 
-                // todo think about it...
+            //    // alloca registers for k,v
+            //    int v_register = GenerateRegisterId();
+            //    int k_register = GenerateRegisterId();
+            //    InsertName(tree.v.m_string, v_register);
+            //    if (tree.k != null)
+            //        InsertName(tree.k.m_string, k_register);
 
-                // alloca registers for k,v
-                int v_register = GenerateRegisterId();
-                int k_register = GenerateRegisterId();
-                InsertName(tree.v.m_string, v_register);
-                if (tree.k != null)
-                    InsertName(tree.k.m_string, k_register);
+            //    int temp_table = v_register;
 
-                int temp_table = v_register;
+            //    // call iterate function
+            //    Action<int, int> move = (int dst, int src) =>
+            //    {
+            //        var l_code = Instruction.AB(OpType.OpType_Move, dst, src);
+            //        f.AddInstruction(l_code, -1);
+            //    };
+            //    move(temp_table, table_register);
 
-                // call iterate function
-                Action<int, int> move = (int dst, int src) =>
-                {
-                    var l_code = Instruction.AB(OpType.OpType_Move, dst, src);
-                    f.AddInstruction(l_code, -1);
-                };
-                move(temp_table, table_register);
+            //    code = Instruction.A(OpType.OpType_TableNext, temp_table);
+            //    f.AddInstruction(code, -1);
 
-                code = Instruction.A(OpType.OpType_TableNext, temp_table);
-                f.AddInstruction(code, -1);
+            //    // break the loop when the first name value is nil
+            //    code = Instruction.AsBx(OpType.OpType_JmpNil, v_register, 0);
+            //    f.AddInstruction(code, -1);
+            //    // todo jump to loop tail
 
-                // break the loop when the first name value is nil
-                code = Instruction.AsBx(OpType.OpType_JmpNil, v_register, 0);
-                f.AddInstruction(code, -1);
-                // todo jump to loop tail
+            //    HandleBlock(tree.block);
 
-                HandleBlock(tree.block);
+            //    LeaveBlock();
+            //}
+            //// todo jump to loop head
+            //LeaveLoop();
 
-                LeaveBlock();
-            }
-            // todo jump to loop head
-            LeaveLoop();
-
-            LeaveBlock();
+            //LeaveBlock();
         }
         void HandleForInStatement(ForInStatement tree)
         {
@@ -285,7 +410,7 @@ namespace oms
             var state_register = GenerateRegisterId();
             var var_register = GenerateRegisterId();
 
-            EnterLoop(tree);
+            EnterLoop();
             {
                 EnterBlock();
 
@@ -372,37 +497,28 @@ namespace oms
         void HandleParamList(ParamList tree)
         {
             var f = GetCurrentFunction();
-            // todo ajust any args
-            // todo increse function fix args count
+            if (tree.is_var_arg)
+                f.SetHasVarArg();
 
-            int register = GetNextRegisterId();
             for (int i = 0; i < tree.name_list.Count; ++i)
             {
-                InsertName(tree.name_list[i].m_string, register + i);
+                InsertName(tree.name_list[i].m_string, GenerateRegisterId());
             }
         }
         void HandleFunctionBody(FunctionBody tree)
         {
             EnterFunction();
             var f = GetCurrentFunction();
-            var child_index = GetChildFunctionIndex();
+            var func_index = GetFunctionIndex();
             {
                 EnterBlock();
-                if(tree.has_self)
-                {
-                    var self_register = GenerateRegisterId();
-                    InsertName("self", self_register);
-
-                    //todo add fixed arg count by 1
-                }
-                if (tree.param_list != null)
-                    HandleParamList(tree.param_list);
+                HandleParamList(tree.param_list);
                 HandleBlock(tree.block);
                 LeaveBlock();
             }
             LeaveFunction();
 
-            var code = Instruction.AsBx(OpType.OpType_Closure, GetNextRegisterId(), child_index);
+            var code = Instruction.AsBx(OpType.OpType_Closure, GetNextRegisterId(), func_index);
             f.AddInstruction(code, -1);
         }
         void HandleFunctionName(FunctionName tree)
@@ -476,14 +592,16 @@ namespace oms
         {
             int register_id = GetNextRegisterId();
             int value_count = 0;
+            int is_any_value = 0;
             if(tree.exp_list != null)
             {
-                value_count = tree.exp_list.return_value_count;
+                is_any_value = tree.exp_list.return_any_value ? 1 : 0; 
+                value_count = tree.exp_list.exp_list.Count;
                 HandleExpList(tree.exp_list);
             }
             var f = GetCurrentFunction();
-            var instruction = Instruction.AsBx(OpType.OpType_Ret, register_id, value_count);
-            f.AddInstruction(instruction,-1);
+            var code = Instruction.ABC(OpType.OpType_Ret, register_id, value_count, is_any_value);
+            f.AddInstruction(code, -1);
         }
         void HandleBreakStatement(BreakStatement tree)
         {
@@ -563,14 +681,16 @@ namespace oms
             Instruction code;
             HandleExpRead(tree.caller);
             var caller_register = GenerateRegisterId();
+            int arg_count = 0;
             if(tree.member_name != null)
             {
-                // set table as first arg
+                arg_count++;
+                // first_arg = caller_table
                 var arg_register = GenerateRegisterId();
                 code = Instruction.AB(OpType.OpType_Move, arg_register, caller_register);
                 f.AddInstruction(code, -1);
 
-                // get caller from table
+                // caller = caller_table[member_name]
                 int key_register = arg_register + 1;
                 int index = f.AddConstString(tree.member_name.m_string);
                 code = Instruction.AsBx(OpType.OpType_LoadConst, key_register, index);
@@ -578,10 +698,12 @@ namespace oms
                 code = Instruction.ABC(OpType.OpType_GetTable, caller_register, key_register, caller_register);
                 f.AddInstruction(code, -1);
             }
+            arg_count += tree.args.exp_list.Count;
+            int is_any_arg = tree.args.return_any_value ? 1 : 0;
             HandleExpList(tree.args);
 
-            // todo call arg count need fix
-            code = Instruction.A(OpType.OpType_Call, caller_register);
+            // call function
+            code = Instruction.ABC(OpType.OpType_Call, caller_register,arg_count,is_any_arg);
             f.AddInstruction(code, -1);
         }
         void HandleExpRead(SyntaxTree tree)
@@ -689,10 +811,24 @@ namespace oms
                 HandleExpRead(tree.exp_list[i]);
                 GenerateRegisterId();
             }
-            // todo ajust value count
+            // ajust value count
             if(tree.expect_value_count != -1)
             {
-
+                int fix_value_count = tree.exp_list.Count;
+                if(fix_value_count < tree.expect_value_count)
+                {
+                    // need fill nil when need
+                    if(tree.return_any_value)
+                    {
+                        var f = GetCurrentFunction();
+                        var code = Instruction.A(OpType.OpType_SetTop, start_register + tree.expect_value_count);
+                        f.AddInstruction(code, -1);
+                    }
+                    else
+                    {
+                        FillNil(start_register + fix_value_count, start_register + tree.expect_value_count, -1);
+                    }
+                }
             }
         }
 
@@ -743,7 +879,6 @@ namespace oms
                 f.AddInstruction(code, line);
             }
         }
-
         void Throw(string msg)
         {
             throw new CodeGenerateException(msg);

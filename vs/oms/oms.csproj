@@ -61,7 +61,6 @@
     <Compile Include="oms\Function.cs" />
     <Compile Include="oms\OpCode.cs" />
     <Compile Include="oms\Parser.cs" />
-    <Compile Include="oms\Semantic.cs" />
     <Compile Include="oms\SyntaxTree.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

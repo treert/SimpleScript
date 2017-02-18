@@ -72,7 +72,6 @@ namespace oms
     class ReturnStatement:SyntaxTree
     {
         public ExpressionList exp_list;
-        public int ret_value_count = 0;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -81,8 +80,6 @@ namespace oms
 
     class BreakStatement:SyntaxTree
     {
-        // for semantic
-        public SyntaxTree loop;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -91,8 +88,6 @@ namespace oms
 
     class ContinueStatement:SyntaxTree
     {
-        // for semantic
-        public SyntaxTree loop;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -226,7 +221,6 @@ namespace oms
     class Terminator:SyntaxTree
     {
         public Token token;
-        public bool is_read = true;
         public LexicalScope scope;
         public Terminator(Token token_)
         {
@@ -269,7 +263,6 @@ namespace oms
     {
         public ParamList param_list;
         public Block block;
-        public bool has_self = false;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -307,7 +300,6 @@ namespace oms
     {
         public SyntaxTree table;
         public SyntaxTree index;
-        public bool is_read = true;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -328,7 +320,7 @@ namespace oms
     class ExpressionList:SyntaxTree
     {
         public List<SyntaxTree> exp_list = new List<SyntaxTree>();
-        public int return_value_count = -1;
+        public bool return_any_value = false;
         public int expect_value_count = -1;
         public override object Accept(Visitor v, object data = null)
         {
