@@ -349,20 +349,20 @@ namespace oms.test
     {
         public override void Run()
         {
-            var root = TestUtils.Parse("a = 1 + 2 ^ 3 ^ 4");
+            var root = TestUtils.Parse("a = 2+5*6*7 and 3");
             var exp_list = ASTFinder.Find<ExpressionList>(root);
             ExpectTrue(exp_list.exp_list.Count == 1);
             var bin_exp = exp_list.exp_list[0] as BinaryExpression;
-            ExpectTrue(bin_exp.op.m_type == '+');
+            ExpectTrue(bin_exp.op.m_type == (int)TokenType.AND);
 
-            // (2)^(3^4)
+            // 2+2*2*2 
+            bin_exp = bin_exp.left as BinaryExpression;
+            ExpectTrue(bin_exp.op.m_type == '+');
+            // (2*2)*2
             bin_exp = bin_exp.right as BinaryExpression;
-            ExpectTrue(bin_exp.op.m_type == '^');
-            // 3^4
-            bin_exp = bin_exp.right as BinaryExpression;
-            ExpectTrue(bin_exp.op.m_type == '^');
-            var num = bin_exp.left as Terminator;
-            ExpectTrue(num.token.m_number == 3 && num.token.m_type == (int)TokenType.NUMBER);
+            ExpectTrue(bin_exp.op.m_type == '*');
+            var num = bin_exp.right as Terminator;
+            ExpectTrue(num.token.m_number == 7 && num.token.m_type == (int)TokenType.NUMBER);
         }
     }
 
@@ -400,7 +400,7 @@ namespace oms.test
     {
         public override void Run()
         {
-            TestUtils.Parse("a = -123 ^ 2 ^ -2 * 1 / 2 % 2 * 2 ^ 10 + 10 - 5 .. 'str' == 'str' and true or false");
+            TestUtils.Parse("a = -123 ^ 2 ^ -2 * 1 / 2 % 2 * 2 ^ 10 + 10 - 5 .. 'str' == 'str' and true or false or not not false");
             ExpectTrue(TestUtils.IsEOF());
         }
     }

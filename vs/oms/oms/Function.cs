@@ -43,7 +43,11 @@ namespace oms
         {
             return 0;
         }
-        public int FixedArgCount()
+        public void SetFixedArgCount(int fixed_arg_count_)
+        {
+
+        }
+        public int GetFixedArgCount()
         {
             return 0;
         }

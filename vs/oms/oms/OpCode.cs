@@ -43,6 +43,7 @@ namespace oms
         OpType_LessEqual,               // ABC  A: dst register B: operand1 register C: operand2 register
         OpType_GreaterEqual,            // ABC  A: dst register B: operand1 register C: operand2 register
         OpType_NewTable,                // A    A: register of table
+        OpType_AppendTable,             // AB   A: register of table B: start value register 
         OpType_SetTable,                // ABC  A: register of table B: key register C: value register
         OpType_GetTable,                // ABC  A: register of table B: key register C: value register
         OpType_TableNext,               // A    A: register of table  return A: value A+1: key

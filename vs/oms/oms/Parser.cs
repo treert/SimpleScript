@@ -174,7 +174,7 @@ namespace oms
             }
             return exp;
         }
-        ExpressionList ParseExpList(int expect_value_count = -1)
+        ExpressionList ParseExpList()
         {
             var exp = new ExpressionList();
             exp.exp_list.Add(ParseExp());
@@ -184,7 +184,6 @@ namespace oms
                 exp.exp_list.Add(ParseExp());
             }
             exp.return_any_value = IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count - 1]);
-            exp.expect_value_count = expect_value_count;
             return exp;
         }
         FunctionBody ParseFunctionDef()
@@ -316,7 +315,7 @@ namespace oms
                         assign_statement.var_list.Add(exp);
                     }
                     NextToken();// skip '='
-                    assign_statement.exp_list = ParseExpList(assign_statement.var_list.Count);
+                    assign_statement.exp_list = ParseExpList();
 
                     return assign_statement;
                 }
@@ -370,15 +369,18 @@ namespace oms
         {
             NextToken();
             var table = new TableDefine();
+            TableField last_field = null;
             while(LookAhead().m_type != '}')
             {
                 if (LookAhead().m_type == (int)'[')
-                    table.fields.Add(ParseTableIndexField());
+                    last_field = ParseTableIndexField();
                 else if(LookAhead().m_type == (int)TokenType.NAME
                     && LookAhead2().m_type == (int)'=')
-                    table.fields.Add(ParseTableNameField());
+                    last_field = ParseTableNameField();
                 else
-                    table.fields.Add(ParseTableArrayField());
+                    last_field = ParseTableArrayField();
+
+                table.fields.Add(last_field);
 
                 if(LookAhead().m_type != '}')
                 {
@@ -390,6 +392,12 @@ namespace oms
             }
             if (NextToken().m_type != '}')
                 throw new ParserException("expect '}' for table");
+
+            if(last_field != null && last_field.index == null)
+            {
+                table.last_field_append_table = IsExpReturnAnyCountValue(last_field.value);
+            }
+
             return table;
         }
         Chunk ParseChunk()
@@ -662,7 +670,7 @@ namespace oms
             if (NextToken().m_type != (int)TokenType.IN)
                 throw new ParserException("expect 'in' in for-in-statement");
             // 这个结构特殊，返回的是迭代器，
-            statement.exp_list = ParseExpList(3);
+            statement.exp_list = ParseExpList();
 
             if (NextToken().m_type != (int)TokenType.DO)
                 throw new ParserException("expect 'do' to start for-in-body");
@@ -734,7 +742,7 @@ namespace oms
             if(LookAhead().m_type == (int)'=')
             {
                 NextToken();
-                statement.exp_list = ParseExpList(statement.name_list.names.Count);
+                statement.exp_list = ParseExpList();
             }
             return statement;
         }

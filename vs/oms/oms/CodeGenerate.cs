@@ -49,7 +49,8 @@ namespace oms
         class GenerateBlock
         {
             public GenerateBlock parent;
-            public Dictionary<string, LocalNameInfo> names;
+            public Dictionary<string, LocalNameInfo> names = new Dictionary<string,LocalNameInfo>();
+            public int start_register;
         }
 
         class GenerateFunction
@@ -132,6 +133,7 @@ namespace oms
         void EnterBlock()
         {
             var block = new GenerateBlock();
+            block.start_register = GetNextRegisterId();
             block.parent = _current_func.current_block;
             _current_func.current_block = block;
         }
@@ -139,7 +141,7 @@ namespace oms
         void LeaveBlock()
         {
             var block = _current_func.current_block;
-            // add all local variables to function
+            // add all local variables info to function
             var f = _current_func.function;
             int end_pc = f.OpCodeSize();
             foreach(var item in block.names)
@@ -147,7 +149,9 @@ namespace oms
                 f.AddLocalVar(item.Key, item.Value.register,
                     item.Value.begin_pc, end_pc);
             }
-            // todo think about, it seem no need to close upvalue
+            // collect register, it seem no need to close upvalue
+            ResetRegisterId(block.start_register);
+            // todo think about
             // auto gc
             _current_func.current_block = block.parent;
         }
@@ -405,7 +409,7 @@ namespace oms
             Instruction code;
 
             // init iterrate function
-            HandleExpList(tree.exp_list);
+            HandleExpList(tree.exp_list, 3);
             var func_register = GenerateRegisterId();
             var state_register = GenerateRegisterId();
             var var_register = GenerateRegisterId();
@@ -497,6 +501,7 @@ namespace oms
         void HandleParamList(ParamList tree)
         {
             var f = GetCurrentFunction();
+            f.SetFixedArgCount(tree.name_list.Count);
             if (tree.is_var_arg)
                 f.SetHasVarArg();
 
@@ -527,9 +532,8 @@ namespace oms
             var f = GetCurrentFunction();
             Instruction code = new Instruction();
 
-            bool has_member = tree.names.Count > 1;
             var first_name = tree.names[0];
-            if(!has_member)
+            if (tree.names.Count == 1)
             {
                 if (tree.scope == LexicalScope.Global)
                 {
@@ -579,14 +583,17 @@ namespace oms
                 for (int i = 1; i < tree.names.Count - 1; ++i)
                 {
                     load_key(tree.names[i]);
-                    code = Instruction.A(OpType.OpType_GetTable, table_register);
+                    code = Instruction.ABC(OpType.OpType_GetTable,
+                        table_register, key_register, table_register);
                     f.AddInstruction(code, -1);
                 }
                 load_key(tree.names.Last<Token>());
-                code = Instruction.ABC(OpType.OpType_SetTable, table_register,key_register,func_register);
+                code = Instruction.ABC(OpType.OpType_SetTable,
+                    table_register,key_register,func_register);
                 f.AddInstruction(code, -1);
             }
-
+            // 回收寄存器
+            ResetRegisterId(func_register);
         }
         void HandleReturnStatement(ReturnStatement tree)
         {
@@ -597,7 +604,7 @@ namespace oms
             {
                 is_any_value = tree.exp_list.return_any_value ? 1 : 0; 
                 value_count = tree.exp_list.exp_list.Count;
-                HandleExpList(tree.exp_list);
+                HandleExpList(tree.exp_list, -1);
             }
             var f = GetCurrentFunction();
             var code = Instruction.ABC(OpType.OpType_Ret, register_id, value_count, is_any_value);
@@ -613,6 +620,7 @@ namespace oms
         }
         void HandleBinaryExp(BinaryExpression tree)
         {
+            var start_register = GetNextRegisterId();
             var f = GetCurrentFunction();
             Instruction code;
             OpType op_type = OpType.OpType_InValid;
@@ -657,6 +665,8 @@ namespace oms
 
             code = Instruction.ABC(op_type, left_register, left_register, right_register);
             f.AddInstruction(code, -1);
+
+            ResetRegisterId(start_register);
         }
         void HandleUnaryExp(UnaryExpression tree)
         {
@@ -700,11 +710,13 @@ namespace oms
             }
             arg_count += tree.args.exp_list.Count;
             int is_any_arg = tree.args.return_any_value ? 1 : 0;
-            HandleExpList(tree.args);
+            HandleExpList(tree.args, -1);
 
             // call function
             code = Instruction.ABC(OpType.OpType_Call, caller_register,arg_count,is_any_arg);
             f.AddInstruction(code, -1);
+
+            ResetRegisterId(caller_register);
         }
         void HandleExpRead(SyntaxTree tree)
         {
@@ -736,18 +748,27 @@ namespace oms
             {
                 var f = GetCurrentFunction();
                 var table_access = tree as TableAccess;
-                HandleExpRead(table_access.table);
-                var table_register = GenerateRegisterId();
                 HandleExpRead(table_access.index);
                 var key_register = GenerateRegisterId();
-
+                HandleExpRead(table_access.table);
+                var table_register = GenerateRegisterId();
                 var code = Instruction.ABC(OpType.OpType_GetTable,
-                    table_register, key_register, table_register);
+                    table_register, key_register, key_register);
                 f.AddInstruction(code, -1);
+
+                ResetRegisterId(key_register);
             }
             else if(tree is FuncCall)
             {
                 HandleFuncCall(tree as FuncCall);
+            }
+            else if (tree is TableDefine)
+            {
+                HandleTableDefine(tree as TableDefine);
+            }
+            else if (tree is FunctionBody)
+            {
+                HandleFunctionBody(tree as FunctionBody);
             }
             else if(tree is BinaryExpression)
             {
@@ -797,13 +818,59 @@ namespace oms
                 var code = Instruction.ABC(OpType.OpType_SetTable,
                     table_register, key_register, value_register);
                 f.AddInstruction(code, -1);
+
+                ResetRegisterId(key_register);
             }
             else
             {
                 Debug.Assert(false);
             }
         }
-        void HandleExpList(ExpressionList tree)
+        void HandleTableDefine(TableDefine tree)
+        {
+            var f = GetCurrentFunction();
+            Instruction code;
+            // new table
+            int table_register = GenerateRegisterId();
+            code = Instruction.A(OpType.OpType_NewTable, table_register);
+            f.AddInstruction(code, -1);
+
+            // add field
+            int count = tree.last_field_append_table ? tree.fields.Count - 1 : tree.fields.Count;
+            int arr_index = 1;//number index start from 1
+            int key_register = table_register + 1;
+            int value_register = table_register + 2;
+            for(int i = 0; i < count; ++i)
+            {
+                var field = tree.fields[i];
+                if(field.index == null)
+                {
+                    code = Instruction.AsBx(OpType.OpType_LoadInt, key_register, arr_index++);
+                    f.AddInstruction(code, -1);
+                }
+                else
+                {
+                    HandleExpRead(field.index);
+                    GenerateRegisterId();
+                }
+                HandleExpRead(field.value);
+
+                code = Instruction.ABC(OpType.OpType_SetTable, table_register, key_register, value_register);
+                f.AddInstruction(code, -1);
+                ResetRegisterId(key_register);
+            }
+            // last field
+            if(tree.last_field_append_table)
+            {
+                var last_field = tree.fields[count];
+                HandleExpRead(last_field.value);
+                code = Instruction.AB(OpType.OpType_AppendTable, table_register, key_register);
+                f.AddInstruction(code, -1);
+            }
+
+            ResetRegisterId(table_register);
+        }
+        void HandleExpList(ExpressionList tree, int expect_value_count)
         {
             int start_register = GetNextRegisterId();
             for(int i = 0; i < tree.exp_list.Count; ++i)
@@ -812,38 +879,38 @@ namespace oms
                 GenerateRegisterId();
             }
             // ajust value count
-            if(tree.expect_value_count != -1)
+            if (expect_value_count != -1)
             {
                 int fix_value_count = tree.exp_list.Count;
-                if(fix_value_count < tree.expect_value_count)
+                if (fix_value_count < expect_value_count)
                 {
                     // need fill nil when need
                     if(tree.return_any_value)
                     {
                         var f = GetCurrentFunction();
-                        var code = Instruction.A(OpType.OpType_SetTop, start_register + tree.expect_value_count);
+                        var code = Instruction.A(OpType.OpType_SetTop, start_register + expect_value_count);
                         f.AddInstruction(code, -1);
                     }
                     else
                     {
-                        FillNil(start_register + fix_value_count, start_register + tree.expect_value_count, -1);
+                        FillNil(start_register + fix_value_count, start_register + expect_value_count, -1);
                     }
                 }
             }
+            ResetRegisterId(start_register);
         }
 
         void HandleNameList(NameList tree)
         {
-            int register = GetNextRegisterId();
             for(int i = 0; i < tree.names.Count; ++i)
             {
-                InsertName(tree.names[i].m_string, register + i);
+                InsertName(tree.names[i].m_string, GenerateRegisterId());
             }
         }
 
         void HandleAssignStatement(AssignStatement tree)
         {
-            HandleExpList(tree.exp_list);
+            HandleExpList(tree.exp_list, tree.var_list.Count);
             // var list
             int register = GetNextRegisterId();
             ResetRegisterId(register + tree.var_list.Count);
@@ -856,7 +923,7 @@ namespace oms
         {
             if(tree.exp_list != null)
             {
-                HandleExpList(tree.exp_list);
+                HandleExpList(tree.exp_list, tree.name_list.names.Count);
             }
             else
             {
@@ -868,6 +935,7 @@ namespace oms
         {
             InsertName(tree.name.m_string, GetNextRegisterId());
             HandleFunctionBody(tree.func_body);
+            GenerateRegisterId();
         }
 
         void FillNil(int start_register, int end_register, int line)

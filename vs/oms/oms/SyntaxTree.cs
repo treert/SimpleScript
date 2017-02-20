@@ -280,6 +280,7 @@ namespace oms
     class TableDefine:SyntaxTree
     {
         public List<TableField> fields = new List<TableField>();
+        public bool last_field_append_table = false;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
