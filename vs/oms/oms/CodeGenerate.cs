@@ -149,9 +149,11 @@ namespace oms
                 f.AddLocalVar(item.Key, item.Value.register,
                     item.Value.begin_pc, end_pc);
             }
-            // collect register, it seem no need to close upvalue
+            //close upvalues, collect register
+            var code = Instruction.A(OpType.OpType_CloseUpvalue, block.start_register);
+            f.AddInstruction(code, -1);
             ResetRegisterId(block.start_register);
-            // todo think about
+
             // auto gc
             _current_func.current_block = block.parent;
         }
@@ -725,38 +727,41 @@ namespace oms
                 var f = GetCurrentFunction();
                 var value_register = GetNextRegisterId();
                 var term = tree as Terminator;
-                Debug.Assert(term.token.m_type == (int)TokenType.NAME);
-                if (term.scope == LexicalScope.Global)
+                if (term.token.m_type == (int)TokenType.NAME)
                 {
-                    var index = f.AddConstString(term.token.m_string);
-                    var code = Instruction.AsBx(OpType.OpType_GetGlobal, value_register, index);
-                    f.AddInstruction(code, -1);
+                    if (term.scope == LexicalScope.Global)
+                    {
+                        var index = f.AddConstString(term.token.m_string);
+                        var code = Instruction.AsBx(OpType.OpType_GetGlobal, value_register, index);
+                        f.AddInstruction(code, -1);
+                    }
+                    else if (term.scope == LexicalScope.Local)
+                    {
+                        var index = SearchLocalName(term.token.m_string);
+                        var code = Instruction.AB(OpType.OpType_Move, value_register, index);
+                    }       
+                    else
+                    {
+                        Debug.Assert(term.scope == LexicalScope.Upvalue);
+                        var index = PrepareUpvalue(term.token.m_string);
+                        var code = Instruction.AB(OpType.OpType_GetUpvalue, value_register, index);
+                    }
                 }
-                else if (term.scope == LexicalScope.Local)
-                {
-                    var index = SearchLocalName(term.token.m_string);
-                    var code = Instruction.AB(OpType.OpType_Move, value_register, index);
-                }
-                else
-                {
-                    Debug.Assert(term.scope == LexicalScope.Upvalue);
-                    var index = PrepareUpvalue(term.token.m_string);
-                    var code = Instruction.AB(OpType.OpType_GetUpvalue, value_register, index);
-                }
+                // todo other const value
             }
             else if (tree is TableAccess)
             {
                 var f = GetCurrentFunction();
                 var table_access = tree as TableAccess;
-                HandleExpRead(table_access.index);
-                var key_register = GenerateRegisterId();
                 HandleExpRead(table_access.table);
                 var table_register = GenerateRegisterId();
+                HandleExpRead(table_access.index);
+                var key_register = GenerateRegisterId();
                 var code = Instruction.ABC(OpType.OpType_GetTable,
-                    table_register, key_register, key_register);
+                    table_register, key_register, table_register);
                 f.AddInstruction(code, -1);
 
-                ResetRegisterId(key_register);
+                ResetRegisterId(table_register);
             }
             else if(tree is FuncCall)
             {
@@ -811,15 +816,15 @@ namespace oms
             else if(tree is TableAccess)
             {
                 var index_access = tree as TableAccess;
-                HandleExpRead(index_access.index);
-                var key_register = GenerateRegisterId();
                 HandleExpRead(index_access.table);
                 var table_register = GenerateRegisterId();
+                HandleExpRead(index_access.index);
+                var key_register = GenerateRegisterId();
                 var code = Instruction.ABC(OpType.OpType_SetTable,
                     table_register, key_register, value_register);
                 f.AddInstruction(code, -1);
 
-                ResetRegisterId(key_register);
+                ResetRegisterId(table_register);
             }
             else
             {
@@ -918,6 +923,7 @@ namespace oms
             {
                 HandleVarWrite(tree.var_list[i], register + i);
             }
+            ResetRegisterId(register);
         }
         void HandleLocalNameListStatement(LocalNameListStatement tree)
         {

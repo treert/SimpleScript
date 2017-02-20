@@ -172,7 +172,7 @@ namespace oms
     class FunctionName:SyntaxTree
     {
         public List<Token> names = new List<Token>();
-        public LexicalScope scope;
+        public LexicalScope scope = LexicalScope.UnKown;
         public override object Accept(Visitor v, object data = null)
         {
             return v.Visit(this, data);
@@ -221,7 +221,7 @@ namespace oms
     class Terminator:SyntaxTree
     {
         public Token token;
-        public LexicalScope scope;
+        public LexicalScope scope = LexicalScope.UnKown;
         public Terminator(Token token_)
         {
             token = token_;
