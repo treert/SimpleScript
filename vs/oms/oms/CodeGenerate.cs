@@ -305,8 +305,8 @@ namespace oms
         }
         void HandleWhileStatement(WhileStatement tree)
         {
-            EnterBlock();
             EnterLoop();
+            EnterBlock();
 
             var register_id = GetNextRegisterId();
             HandleExpRead(tree.exp);
@@ -315,14 +315,16 @@ namespace oms
             var f = GetCurrentFunction();
             var code = Instruction.AsBx(OpType.OpType_JmpFalse, register_id, 0);
             int index = f.AddInstruction(code, -1);
-            // todo jump to tail
+            AddLoopJumpInfo(JumpType.JumpTail, index);
 
             HandleBlock(tree.block);
 
-            // todo jump to head
-
-            LeaveLoop();
             LeaveBlock();
+            // jump to loop head
+            code = Instruction.SBx(OpType.OpType_Jmp, 0);
+            index = f.AddInstruction(code, -1);
+            AddLoopJumpInfo(JumpType.JumpHead, index);
+            LeaveLoop();
         }
         void HandleForStatement(ForStatement tree)
         {
@@ -359,7 +361,10 @@ namespace oms
                 code = Instruction.A(OpType.OpType_ForStep, var_register);
                 f.AddInstruction(code, -1);
 
-                // todo next code jump to loop tail
+                // next code jump to loop tail
+                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                int index = f.AddInstruction(code, -1);
+                AddLoopJumpInfo(JumpType.JumpTail, index);
 
                 var name_register = GenerateRegisterId();
                 InsertName(tree.name.m_string, name_register);
@@ -374,8 +379,12 @@ namespace oms
                 HandleBlock(tree.block);
 
                 LeaveBlock();
+
+                // jump to loop head
+                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                index = f.AddInstruction(code, -1);
+                AddLoopJumpInfo(JumpType.JumpTail, index);
             }
-            // todo jump to loop head
             LeaveLoop();
 
             LeaveBlock();
@@ -383,52 +392,6 @@ namespace oms
         void HandleForEachStatement(ForEachStatement tree)
         {
             // todo think about it... has relate with hash implement
-            //EnterBlock();
-
-            //var f = GetCurrentFunction();
-            //Instruction code;
-
-            //// init table
-            //HandleExpRead(tree.exp);
-            //var table_register = GenerateRegisterId();
-
-            //EnterLoop();
-            //{
-            //    EnterBlock();
-
-            //    // alloca registers for k,v
-            //    int v_register = GenerateRegisterId();
-            //    int k_register = GenerateRegisterId();
-            //    InsertName(tree.v.m_string, v_register);
-            //    if (tree.k != null)
-            //        InsertName(tree.k.m_string, k_register);
-
-            //    int temp_table = v_register;
-
-            //    // call iterate function
-            //    Action<int, int> move = (int dst, int src) =>
-            //    {
-            //        var l_code = Instruction.AB(OpType.OpType_Move, dst, src);
-            //        f.AddInstruction(l_code, -1);
-            //    };
-            //    move(temp_table, table_register);
-
-            //    code = Instruction.A(OpType.OpType_TableNext, temp_table);
-            //    f.AddInstruction(code, -1);
-
-            //    // break the loop when the first name value is nil
-            //    code = Instruction.AsBx(OpType.OpType_JmpNil, v_register, 0);
-            //    f.AddInstruction(code, -1);
-            //    // todo jump to loop tail
-
-            //    HandleBlock(tree.block);
-
-            //    LeaveBlock();
-            //}
-            //// todo jump to loop head
-            //LeaveLoop();
-
-            //LeaveBlock();
         }
         void HandleForInStatement(ForInStatement tree)
         {
@@ -473,10 +436,10 @@ namespace oms
                 code = Instruction.A(OpType.OpType_SetTop, name_end);
                 f.AddInstruction(code, -1);
 
-                // break the loop when the first name value is nil
+                // jump to loop tail when the first name value is nil
                 code = Instruction.AsBx(OpType.OpType_JmpNil, name_start, 0);
-                f.AddInstruction(code, -1);
-                // todo jump to loop tail
+                int index = f.AddInstruction(code, -1);
+                AddLoopJumpInfo(JumpType.JumpTail, index);
 
                 // var = name1
                 move(var_register, name_start);
@@ -484,8 +447,12 @@ namespace oms
                 HandleBlock(tree.block);
 
                 LeaveBlock();
+                // jump to loop head
+                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                index = f.AddInstruction(code, -1);
+                AddLoopJumpInfo(JumpType.JumpHead, index);
             }
-            // todo jump to loop head
+            
             LeaveLoop();
 
             LeaveBlock();
@@ -494,20 +461,23 @@ namespace oms
         {
             var f = GetCurrentFunction();
             Instruction code;
+            int jmp_if_end_index = 0;
             {
                 HandleExpRead(tree.exp);
                 int register = GetNextRegisterId();
                 code = Instruction.AsBx(OpType.OpType_JmpFalse, register, 0);
-                // todo jump to false branch
+                int jmp_false_index = f.AddInstruction(code, -1);
+
                 EnterBlock();
                 HandleBlock(tree.true_branch);
                 LeaveBlock();
 
-                // todo jump to if end
+                // jump to if end
                 code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                jmp_if_end_index = f.AddInstruction(code, -1);
 
-                int index = f.OpCodeSize();
-                // todo jump to false branch
+                // jump to if false branch
+                f.FillInstructionBx(jmp_false_index, f.OpCodeSize() - jmp_false_index);
             }
             if(tree.false_branch != null)
             {
@@ -515,12 +485,15 @@ namespace oms
                     HandleIfStatement(tree.false_branch as IfStatement);
                 else
                 {
+                    Debug.Assert(tree.false_branch is Block);
                     EnterBlock();
                     HandleBlock(tree.false_branch as Block);
                     LeaveBlock();
                 }
             }
-            // todo jump to if end
+            // jump to if end
+            int index = f.OpCodeSize();
+            f.FillInstructionBx(jmp_if_end_index, f.OpCodeSize() - jmp_if_end_index);
         }
         void HandleFunctionStatement(FunctionStatement tree)
         {
@@ -625,11 +598,17 @@ namespace oms
         }
         void HandleBreakStatement(BreakStatement tree)
         {
-            // todo jump loop
+            // jump to loop tail
+            var code = Instruction.SBx(OpType.OpType_Jmp, 0);
+            int index = GetCurrentFunction().AddInstruction(code, -1);
+            AddLoopJumpInfo(JumpType.JumpTail, index);
         }
         void HandleContinueStatement(ContinueStatement tree)
         {
-            // todo jump loop
+            // jump to loop head
+            var code = Instruction.SBx(OpType.OpType_Jmp, 0);
+            int index = GetCurrentFunction().AddInstruction(code, -1);
+            AddLoopJumpInfo(JumpType.JumpHead, index);
         }
         void HandleBinaryExp(BinaryExpression tree)
         {
@@ -650,7 +629,8 @@ namespace oms
 
                 HandleExpRead(tree.right);
 
-                // todo fill jmp code
+                // jump to skip right exp
+                f.FillInstructionBx(index, f.OpCodeSize() - index);
                 return;
             }
             HandleExpRead(tree.left);
