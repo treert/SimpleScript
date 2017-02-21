@@ -60,9 +60,9 @@ namespace oms
         {
 
         }
-        public void AddConstNumber(double num)
+        public int AddConstNumber(double num)
         {
-
+            return 0;
         }
         public int AddConstString(string str)
         {

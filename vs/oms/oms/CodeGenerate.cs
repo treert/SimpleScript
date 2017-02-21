@@ -7,6 +7,13 @@ using System.Threading.Tasks;
 
 namespace oms
 {
+    enum LexicalScope
+    {
+        UnKown,
+        Global,
+        Upvalue,
+        Local,
+    }
     /// <summary>
     /// 生成函数Funtion
     /// </summary>
@@ -83,9 +90,21 @@ namespace oms
                 names.Add(name, new LocalNameInfo(register, begin_pc));
             }
         }
-        int SearchLocalName(string name)
+        int SearchNameAndScope(string name, out LexicalScope scope)
         {
-            return SearchFunctionLocalName(_current_func, name);
+            bool is_local = false;
+            int index = PrepareUpvalue(_current_func, name, out is_local);
+            if (index > 0)
+            {
+                scope = is_local ? LexicalScope.Local : LexicalScope.Upvalue;
+                return index;
+            }
+            else
+            {
+                // is global
+                scope = LexicalScope.Global;
+                return _current_func.function.AddConstString(name);
+            }
         }
         int SearchFunctionLocalName(GenerateFunction func,string name)
         {
@@ -100,6 +119,37 @@ namespace oms
                 else
                     block = block.parent;
             }
+            return -1;
+        }
+        int PrepareUpvalue(GenerateFunction func,string name, out bool is_local)
+        {
+            int index;
+            index = SearchFunctionLocalName(func, name);
+            if (index >= 0)
+            {
+                is_local = true;
+                return index;
+            }
+
+            index = func.function.SearchUpValue(name);
+            if (index >= 0)
+            {
+                is_local = false;
+                return index;
+            }
+
+            if(func.parent != null)
+            {
+                index = PrepareUpvalue(func.parent, name, out is_local);
+                if (index >= 0)
+                {
+                    func.function.AddUpValue(name, index, is_local);
+                    is_local = false;
+                    return index;
+                }
+            }
+
+            is_local = false;
             return -1;
         }
         void EnterFunction()
@@ -198,29 +248,6 @@ namespace oms
         int GenerateRegisterId()
         {
             return _current_func.register++;
-        }
-
-        int PrepareUpvalue(string name_)
-        {
-            var f = GetCurrentFunction();
-
-            Func<GenerateFunction, string, int> prepare_upvalue =
-                (GenerateFunction func, string name) =>
-                {
-                    int local_index = SearchFunctionLocalName(func, name);
-                    if (local_index > 0)
-                    {
-                        return local_index;
-                    }
-
-                    //int index = f.SearchUpValue(name);
-                    //if (index > 0)
-                    //    return index;
-                    // ask parent
-
-                    return 0;
-                };
-            return 0;
         }
         
         void HandleChunk(Chunk tree)
@@ -535,23 +562,16 @@ namespace oms
             Instruction code = new Instruction();
 
             var first_name = tree.names[0];
+            LexicalScope scope;
+            int index = SearchNameAndScope(first_name.m_string, out scope);
             if (tree.names.Count == 1)
             {
-                if (tree.scope == LexicalScope.Global)
-                {
-                    int index = f.AddConstString(first_name.m_string);
+                if (scope == LexicalScope.Global)
                     code = Instruction.AsBx(OpType.OpType_SetGlobal, func_register, index);
-                }
-                else if(tree.scope == LexicalScope.Upvalue)
-                {
-                    int index = PrepareUpvalue(first_name.m_string);
-                    code = Instruction.AB(OpType.OpType_SetUpvalue, func_register, index);
-                }
-                else if (tree.scope == LexicalScope.Local)
-                {
-                    int index = SearchLocalName(first_name.m_string);
+                else if(scope == LexicalScope.Upvalue)
+                    code = Instruction.AsBx(OpType.OpType_SetUpvalue, func_register, index);
+                else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, func_register);
-                }
                 f.AddInstruction(code, -1);
             }
             else
@@ -559,26 +579,17 @@ namespace oms
                 var table_register = GenerateRegisterId();
                 int key_register = GenerateRegisterId();
 
-                if (tree.scope == LexicalScope.Global)
-                {
-                    int index = f.AddConstString(first_name.m_string);
+                if (scope == LexicalScope.Global)
                     code = Instruction.AsBx(OpType.OpType_GetGlobal, table_register, index);
-                }
-                else if (tree.scope == LexicalScope.Upvalue)
-                {
-                    int index = PrepareUpvalue(first_name.m_string);
+                else if (scope == LexicalScope.Upvalue)
                     code = Instruction.AB(OpType.OpType_GetUpvalue, table_register, index);
-                }
-                else if (tree.scope == LexicalScope.Local)
-                {
-                    int index = SearchLocalName(first_name.m_string);
+                else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, table_register, index);
-                }
                 f.AddInstruction(code, -1);
 
                 Action<Token> load_key = (Token name)=>{
-                    int index = f.AddConstString(name.m_string);
-                    var l_code = Instruction.AsBx(OpType.OpType_LoadConst, key_register, index);
+                    int l_index = f.AddConstString(name.m_string);
+                    var l_code = Instruction.AsBx(OpType.OpType_LoadConst, key_register, l_index);
                     f.AddInstruction(l_code, -1);
                 };
 
@@ -727,27 +738,43 @@ namespace oms
                 var f = GetCurrentFunction();
                 var value_register = GetNextRegisterId();
                 var term = tree as Terminator;
-                if (term.token.m_type == (int)TokenType.NAME)
+                int token_type = term.token.m_type;
+                Instruction code = new Instruction();
+                if (token_type == (int)TokenType.NAME)
                 {
-                    if (term.scope == LexicalScope.Global)
-                    {
-                        var index = f.AddConstString(term.token.m_string);
-                        var code = Instruction.AsBx(OpType.OpType_GetGlobal, value_register, index);
-                        f.AddInstruction(code, -1);
-                    }
-                    else if (term.scope == LexicalScope.Local)
-                    {
-                        var index = SearchLocalName(term.token.m_string);
-                        var code = Instruction.AB(OpType.OpType_Move, value_register, index);
-                    }       
-                    else
-                    {
-                        Debug.Assert(term.scope == LexicalScope.Upvalue);
-                        var index = PrepareUpvalue(term.token.m_string);
-                        var code = Instruction.AB(OpType.OpType_GetUpvalue, value_register, index);
-                    }
+                    LexicalScope scope;
+                    int index = SearchNameAndScope(term.token.m_string, out scope);
+                    if (scope == LexicalScope.Global)
+                        code = Instruction.AsBx(OpType.OpType_GetGlobal, value_register, index);
+                    else if (scope == LexicalScope.Upvalue)
+                        code = Instruction.AsBx(OpType.OpType_GetUpvalue, value_register, index);
+                    else if (scope == LexicalScope.Local)
+                        code = Instruction.AB(OpType.OpType_Move, value_register, index);
+                    
                 }
-                // todo other const value
+                else if (token_type == (int)TokenType.NIL)
+                    code = Instruction.A(OpType.OpType_LoadNil, value_register);
+                else if (token_type == (int)TokenType.TRUE)
+                    code = Instruction.AsBx(OpType.OpType_LoadBool, value_register, 1);
+                else if (token_type == (int)TokenType.FALSE)
+                    code = Instruction.AsBx(OpType.OpType_LoadBool, value_register, 0);
+                else if (token_type == (int)TokenType.DOTS)
+                    code = Instruction.A(OpType.OpType_VarArg, value_register);
+                else if (token_type == (int)TokenType.NUMBER)
+                {
+                    var index = f.AddConstNumber(term.token.m_number);
+                    code = Instruction.AsBx(OpType.OpType_LoadConst, value_register, index);
+                }
+                else if (token_type == (int)TokenType.STRING)
+                {
+                    var index = f.AddConstString(term.token.m_string);
+                    code = Instruction.AsBx(OpType.OpType_LoadConst, value_register, index);
+                }
+                else
+                {
+                    Debug.Assert(false);
+                }
+                f.AddInstruction(code, -1);
             }
             else if (tree is TableAccess)
             {
@@ -795,23 +822,16 @@ namespace oms
             {
                 var term = tree as Terminator;
                 Debug.Assert(term.token.m_type == (int)TokenType.NAME);
-                if(term.scope == LexicalScope.Global)
-                {
-                    var index = f.AddConstString(term.token.m_string);
-                    var code = Instruction.AsBx(OpType.OpType_SetGlobal, value_register, index);
-                    f.AddInstruction(code, -1);
-                }
-                else if(term.scope == LexicalScope.Local)
-                {
-                    var index = SearchLocalName(term.token.m_string);
-                    var code = Instruction.AB(OpType.OpType_Move, index, value_register);
-                }
-                else
-                {
-                    Debug.Assert(term.scope == LexicalScope.Upvalue);
-                    var index = PrepareUpvalue(term.token.m_string);
-                    var code = Instruction.AB(OpType.OpType_SetUpvalue, value_register, index);
-                }
+                LexicalScope scope;
+                int index = SearchNameAndScope(term.token.m_string, out scope);
+                Instruction code = new Instruction();
+                if (scope == LexicalScope.Global)
+                    code = Instruction.AsBx(OpType.OpType_SetGlobal, value_register, index);
+                else if (scope == LexicalScope.Upvalue)
+                    code = Instruction.AsBx(OpType.OpType_SetUpvalue, value_register, index);
+                else if (scope == LexicalScope.Local)
+                    code = Instruction.AB(OpType.OpType_Move, index, value_register);
+                f.AddInstruction(code, -1);
             }
             else if(tree is TableAccess)
             {
