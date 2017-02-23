@@ -54,15 +54,10 @@ namespace oms
     }
     struct Instruction
     {
-        int _opcode;
+        System.Int32 _opcode;
         public Instruction(OpType op, int a)
         {
             _opcode = (((int)op) << 24) | (a & 0xffff);
-        }
-
-        public static Instruction AsBx(OpType op, int a, int sbx)
-        {
-            return new Instruction(op, a);
         }
         public static Instruction A(OpType op, int a)
         {
@@ -76,7 +71,11 @@ namespace oms
         {
             return new Instruction(op, a);
         }
-        public static Instruction SBx(OpType op, int b)
+        public static Instruction ABx(OpType op, int a, int sbx)
+        {
+            return new Instruction(op, a);
+        }
+        public static Instruction Bx(OpType op, int b)
         {
             return new Instruction(op, b);
         }

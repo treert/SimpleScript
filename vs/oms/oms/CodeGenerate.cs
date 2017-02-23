@@ -313,7 +313,7 @@ namespace oms
 
             // jump to loop tail when expression return false
             var f = GetCurrentFunction();
-            var code = Instruction.AsBx(OpType.OpType_JmpFalse, register_id, 0);
+            var code = Instruction.ABx(OpType.OpType_JmpFalse, register_id, 0);
             int index = f.AddInstruction(code, -1);
             AddLoopJumpInfo(JumpType.JumpTail, index);
 
@@ -321,7 +321,7 @@ namespace oms
 
             LeaveBlock();
             // jump to loop head
-            code = Instruction.SBx(OpType.OpType_Jmp, 0);
+            code = Instruction.Bx(OpType.OpType_Jmp, 0);
             index = f.AddInstruction(code, -1);
             AddLoopJumpInfo(JumpType.JumpHead, index);
             LeaveLoop();
@@ -343,7 +343,7 @@ namespace oms
             if(tree.exp3 == null)
             {
                 // default step is 1
-                code = Instruction.AsBx(OpType.OpType_LoadInt, GetNextRegisterId(), 1);
+                code = Instruction.ABx(OpType.OpType_LoadInt, GetNextRegisterId(), 1);
                 f.AddInstruction(code, -1);
             }
             else
@@ -362,7 +362,7 @@ namespace oms
                 f.AddInstruction(code, -1);
 
                 // next code jump to loop tail
-                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                code = Instruction.Bx(OpType.OpType_Jmp, 0);
                 int index = f.AddInstruction(code, -1);
                 AddLoopJumpInfo(JumpType.JumpTail, index);
 
@@ -381,7 +381,7 @@ namespace oms
                 LeaveBlock();
 
                 // jump to loop head
-                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                code = Instruction.Bx(OpType.OpType_Jmp, 0);
                 index = f.AddInstruction(code, -1);
                 AddLoopJumpInfo(JumpType.JumpTail, index);
             }
@@ -437,7 +437,7 @@ namespace oms
                 f.AddInstruction(code, -1);
 
                 // jump to loop tail when the first name value is nil
-                code = Instruction.AsBx(OpType.OpType_JmpNil, name_start, 0);
+                code = Instruction.ABx(OpType.OpType_JmpNil, name_start, 0);
                 int index = f.AddInstruction(code, -1);
                 AddLoopJumpInfo(JumpType.JumpTail, index);
 
@@ -448,7 +448,7 @@ namespace oms
 
                 LeaveBlock();
                 // jump to loop head
-                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                code = Instruction.Bx(OpType.OpType_Jmp, 0);
                 index = f.AddInstruction(code, -1);
                 AddLoopJumpInfo(JumpType.JumpHead, index);
             }
@@ -465,7 +465,7 @@ namespace oms
             {
                 HandleExpRead(tree.exp);
                 int register = GetNextRegisterId();
-                code = Instruction.AsBx(OpType.OpType_JmpFalse, register, 0);
+                code = Instruction.ABx(OpType.OpType_JmpFalse, register, 0);
                 int jmp_false_index = f.AddInstruction(code, -1);
 
                 EnterBlock();
@@ -473,7 +473,7 @@ namespace oms
                 LeaveBlock();
 
                 // jump to if end
-                code = Instruction.SBx(OpType.OpType_Jmp, 0);
+                code = Instruction.Bx(OpType.OpType_Jmp, 0);
                 jmp_if_end_index = f.AddInstruction(code, -1);
 
                 // jump to if false branch
@@ -525,7 +525,7 @@ namespace oms
             }
             LeaveFunction();
 
-            var code = Instruction.AsBx(OpType.OpType_Closure, GetNextRegisterId(), func_index);
+            var code = Instruction.ABx(OpType.OpType_Closure, GetNextRegisterId(), func_index);
             f.AddInstruction(code, -1);
         }
         void HandleFunctionName(FunctionName tree)
@@ -540,9 +540,9 @@ namespace oms
             if (tree.names.Count == 1)
             {
                 if (scope == LexicalScope.Global)
-                    code = Instruction.AsBx(OpType.OpType_SetGlobal, func_register, index);
+                    code = Instruction.ABx(OpType.OpType_SetGlobal, func_register, index);
                 else if(scope == LexicalScope.Upvalue)
-                    code = Instruction.AsBx(OpType.OpType_SetUpvalue, func_register, index);
+                    code = Instruction.ABx(OpType.OpType_SetUpvalue, func_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, func_register);
                 f.AddInstruction(code, -1);
@@ -553,7 +553,7 @@ namespace oms
                 int key_register = GenerateRegisterId();
 
                 if (scope == LexicalScope.Global)
-                    code = Instruction.AsBx(OpType.OpType_GetGlobal, table_register, index);
+                    code = Instruction.ABx(OpType.OpType_GetGlobal, table_register, index);
                 else if (scope == LexicalScope.Upvalue)
                     code = Instruction.AB(OpType.OpType_GetUpvalue, table_register, index);
                 else if (scope == LexicalScope.Local)
@@ -562,7 +562,7 @@ namespace oms
 
                 Action<Token> load_key = (Token name)=>{
                     int l_index = f.AddConstString(name.m_string);
-                    var l_code = Instruction.AsBx(OpType.OpType_LoadConst, key_register, l_index);
+                    var l_code = Instruction.ABx(OpType.OpType_LoadConst, key_register, l_index);
                     f.AddInstruction(l_code, -1);
                 };
 
@@ -599,14 +599,14 @@ namespace oms
         void HandleBreakStatement(BreakStatement tree)
         {
             // jump to loop tail
-            var code = Instruction.SBx(OpType.OpType_Jmp, 0);
+            var code = Instruction.Bx(OpType.OpType_Jmp, 0);
             int index = GetCurrentFunction().AddInstruction(code, -1);
             AddLoopJumpInfo(JumpType.JumpTail, index);
         }
         void HandleContinueStatement(ContinueStatement tree)
         {
             // jump to loop head
-            var code = Instruction.SBx(OpType.OpType_Jmp, 0);
+            var code = Instruction.Bx(OpType.OpType_Jmp, 0);
             int index = GetCurrentFunction().AddInstruction(code, -1);
             AddLoopJumpInfo(JumpType.JumpHead, index);
         }
@@ -624,7 +624,7 @@ namespace oms
                 // do not run right exp when then result or left exp satisfy operator
                 op_type = (token_type == (int)TokenType.AND) ?
                     OpType.OpType_JmpFalse : OpType.OpType_JmpTrue;
-                code = Instruction.AsBx(op_type, GetNextRegisterId(), 0);
+                code = Instruction.ABx(op_type, GetNextRegisterId(), 0);
                 int index = f.AddInstruction(code, -1);
 
                 HandleExpRead(tree.right);
@@ -696,7 +696,7 @@ namespace oms
                 // caller = caller_table[member_name]
                 int key_register = arg_register + 1;
                 int index = f.AddConstString(tree.member_name.m_string);
-                code = Instruction.AsBx(OpType.OpType_LoadConst, key_register, index);
+                code = Instruction.ABx(OpType.OpType_LoadConst, key_register, index);
                 f.AddInstruction(code, -1);
                 code = Instruction.ABC(OpType.OpType_GetTable, caller_register, key_register, caller_register);
                 f.AddInstruction(code, -1);
@@ -725,9 +725,9 @@ namespace oms
                     LexicalScope scope;
                     int index = SearchNameAndScope(term.token.m_string, out scope);
                     if (scope == LexicalScope.Global)
-                        code = Instruction.AsBx(OpType.OpType_GetGlobal, value_register, index);
+                        code = Instruction.ABx(OpType.OpType_GetGlobal, value_register, index);
                     else if (scope == LexicalScope.Upvalue)
-                        code = Instruction.AsBx(OpType.OpType_GetUpvalue, value_register, index);
+                        code = Instruction.ABx(OpType.OpType_GetUpvalue, value_register, index);
                     else if (scope == LexicalScope.Local)
                         code = Instruction.AB(OpType.OpType_Move, value_register, index);
                     
@@ -735,20 +735,20 @@ namespace oms
                 else if (token_type == (int)TokenType.NIL)
                     code = Instruction.A(OpType.OpType_LoadNil, value_register);
                 else if (token_type == (int)TokenType.TRUE)
-                    code = Instruction.AsBx(OpType.OpType_LoadBool, value_register, 1);
+                    code = Instruction.ABx(OpType.OpType_LoadBool, value_register, 1);
                 else if (token_type == (int)TokenType.FALSE)
-                    code = Instruction.AsBx(OpType.OpType_LoadBool, value_register, 0);
+                    code = Instruction.ABx(OpType.OpType_LoadBool, value_register, 0);
                 else if (token_type == (int)TokenType.DOTS)
                     code = Instruction.A(OpType.OpType_VarArg, value_register);
                 else if (token_type == (int)TokenType.NUMBER)
                 {
                     var index = f.AddConstNumber(term.token.m_number);
-                    code = Instruction.AsBx(OpType.OpType_LoadConst, value_register, index);
+                    code = Instruction.ABx(OpType.OpType_LoadConst, value_register, index);
                 }
                 else if (token_type == (int)TokenType.STRING)
                 {
                     var index = f.AddConstString(term.token.m_string);
-                    code = Instruction.AsBx(OpType.OpType_LoadConst, value_register, index);
+                    code = Instruction.ABx(OpType.OpType_LoadConst, value_register, index);
                 }
                 else
                 {
@@ -806,9 +806,9 @@ namespace oms
                 int index = SearchNameAndScope(term.token.m_string, out scope);
                 Instruction code = new Instruction();
                 if (scope == LexicalScope.Global)
-                    code = Instruction.AsBx(OpType.OpType_SetGlobal, value_register, index);
+                    code = Instruction.ABx(OpType.OpType_SetGlobal, value_register, index);
                 else if (scope == LexicalScope.Upvalue)
-                    code = Instruction.AsBx(OpType.OpType_SetUpvalue, value_register, index);
+                    code = Instruction.ABx(OpType.OpType_SetUpvalue, value_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, value_register);
                 f.AddInstruction(code, -1);
@@ -850,7 +850,7 @@ namespace oms
                 var field = tree.fields[i];
                 if(field.index == null)
                 {
-                    code = Instruction.AsBx(OpType.OpType_LoadInt, key_register, arr_index++);
+                    code = Instruction.ABx(OpType.OpType_LoadInt, key_register, arr_index++);
                     f.AddInstruction(code, -1);
                 }
                 else
