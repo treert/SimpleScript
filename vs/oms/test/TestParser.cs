@@ -25,7 +25,99 @@ namespace oms.test
     {
         bool Check(SyntaxTree t);
     }
-    class ASTFinder:Visitor
+
+    abstract class SyntaxVisitor
+    {
+        protected void VisitAnySyntaxTree(SyntaxTree tree)
+        {
+            if (tree is Chunk)
+                VisitChunk(tree as Chunk);
+            else if (tree is Block)
+                VisitBlock(tree as Block);
+            else if (tree is ReturnStatement)
+                VisitReturnStatement(tree as ReturnStatement);
+            else if (tree is BreakStatement)
+                VisitBreakStatement(tree as BreakStatement);
+            else if (tree is ContinueStatement)
+                VisitContinueStatement(tree as ContinueStatement);
+            else if (tree is DoStatement)
+                VisitDoStatement(tree as DoStatement);
+            else if (tree is WhileStatement)
+                VisitWhileStatement(tree as WhileStatement);
+            else if (tree is IfStatement)
+                VisitIfStatement(tree as IfStatement);
+            else if (tree is ForStatement)
+                VisitForStatement(tree as ForStatement);
+            else if (tree is ForInStatement)
+                VisitForInStatement(tree as ForInStatement);
+            else if (tree is ForEachStatement)
+                VisitForEachStatement(tree as ForEachStatement);
+            else if (tree is FunctionStatement)
+                VisitFunctionStatement(tree as FunctionStatement);
+            else if (tree is FunctionName)
+                VisitFunctionName(tree as FunctionName);
+            else if (tree is LocalFunctionStatement)
+                VisitLocalFunctionStatement(tree as LocalFunctionStatement);
+            else if (tree is LocalNameListStatement)
+                VisitLocalNameListStatement(tree as LocalNameListStatement);
+            else if (tree is AssignStatement)
+                VisitAssignStatement(tree as AssignStatement);
+            else if (tree is Terminator)
+                VisitTerminator(tree as Terminator);
+            else if (tree is BinaryExpression)
+                VisitBinaryExpression(tree as BinaryExpression);
+            else if (tree is UnaryExpression)
+                VisitUnaryExpression(tree as UnaryExpression);
+            else if (tree is FunctionBody)
+                VisitFunctionBody(tree as FunctionBody);
+            else if (tree is ParamList)
+                VisitParamList(tree as ParamList);
+            else if (tree is TableDefine)
+                VisitTableDefine(tree as TableDefine);
+            else if (tree is TableField)
+                VisitTableField(tree as TableField);
+            else if (tree is TableAccess)
+                VisitTableAccess(tree as TableAccess);
+            else if (tree is FuncCall)
+                VisitFuncCall(tree as FuncCall);
+            else if (tree is ExpressionList)
+                VisitExpressionList(tree as ExpressionList);
+            else if (tree is NameList)
+                VisitNameList(tree as NameList);
+            else
+                throw new Exception("unsupport type " + tree.GetType().FullName);
+        }
+
+        protected abstract void VisitChunk(Chunk tree);
+        protected abstract void VisitBlock(Block tree);
+        protected abstract void VisitReturnStatement(ReturnStatement tree);
+        protected abstract void VisitBreakStatement(BreakStatement tree);
+        protected abstract void VisitContinueStatement(ContinueStatement tree);
+        protected abstract void VisitDoStatement(DoStatement tree);
+        protected abstract void VisitWhileStatement(WhileStatement tree);
+        protected abstract void VisitIfStatement(IfStatement tree);
+        protected abstract void VisitForStatement(ForStatement tree);
+        protected abstract void VisitForInStatement(ForInStatement tree);
+        protected abstract void VisitForEachStatement(ForEachStatement tree);
+        protected abstract void VisitFunctionStatement(FunctionStatement tree);
+        protected abstract void VisitFunctionName(FunctionName tree);
+        protected abstract void VisitLocalFunctionStatement(LocalFunctionStatement tree);
+        protected abstract void VisitLocalNameListStatement(LocalNameListStatement tree);
+        protected abstract void VisitAssignStatement(AssignStatement tree);
+        protected abstract void VisitTerminator(Terminator tree);
+        protected abstract void VisitBinaryExpression(BinaryExpression tree);
+        protected abstract void VisitUnaryExpression(UnaryExpression tree);
+        protected abstract void VisitFunctionBody(FunctionBody tree);
+        protected abstract void VisitParamList(ParamList tree);
+        protected abstract void VisitTableDefine(TableDefine tree);
+        protected abstract void VisitTableField(TableField tree);
+        protected abstract void VisitTableAccess(TableAccess tree);
+        protected abstract void VisitFuncCall(FuncCall tree);
+        protected abstract void VisitExpressionList(ExpressionList tree);
+        protected abstract void VisitNameList(NameList tree);
+    }
+
+    class ASTFinder : SyntaxVisitor
     {
         public static T Find<T>(SyntaxTree root, ASTCheck check = null) where T : SyntaxTree
         {
@@ -46,7 +138,7 @@ namespace oms.test
         }
         public SyntaxTree Find()
         {
-            _root.Accept(this);
+            VisitAnySyntaxTree(_root);
             return _result;
         }
         private void _TrySetResult(SyntaxTree t)
@@ -68,243 +160,218 @@ namespace oms.test
                 }
             }
         }
-        public object Visit(Chunk tree, object data = null)
+
+
+        protected override void VisitChunk(Chunk tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.block.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(Block tree, object data = null)
+        protected override void VisitBlock(Block tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            foreach(var statement in tree.statements)
+            foreach (var statement in tree.statements)
             {
-                statement.Accept(this);
+                VisitAnySyntaxTree(statement);
             }
-            return null;
         }
-        public object Visit(ReturnStatement tree, object data = null)
+        protected override void VisitReturnStatement(ReturnStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            return null;
         }
-        public object Visit(BreakStatement tree, object data = null)
+        protected override void VisitBreakStatement(BreakStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            return null;
         }
-        public object Visit(ContinueStatement tree, object data = null)
+        protected override void VisitContinueStatement(ContinueStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            return null;
         }
-        public object Visit(DoStatement tree, object data = null)
+        protected override void VisitDoStatement(DoStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.block.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(WhileStatement tree, object data = null)
+        protected override void VisitWhileStatement(WhileStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.exp.Accept(this);
-            tree.block.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.exp);
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(IfStatement tree, object data = null)
+        protected override void VisitIfStatement(IfStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.exp.Accept(this);
-            tree.true_branch.Accept(this);
+            VisitAnySyntaxTree(tree.exp);
+            VisitAnySyntaxTree(tree.true_branch);
             if (tree.false_branch != null)
-                tree.false_branch.Accept(this);
-            return null;
+                VisitAnySyntaxTree(tree.false_branch);
         }
-        public object Visit(ForStatement tree, object data = null)
+        protected override void VisitForStatement(ForStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.exp1.Accept(this);
-            tree.exp2.Accept(this);
+            VisitAnySyntaxTree(tree.exp1);
+            VisitAnySyntaxTree(tree.exp2);
             if (tree.exp3 != null)
-                tree.exp3.Accept(this);
-            tree.block.Accept(this);
-            return null;
+                VisitAnySyntaxTree(tree.exp3);
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(ForInStatement tree, object data = null)
+        protected override void VisitForInStatement(ForInStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.name_list.Accept(this);
-            tree.exp_list.Accept(this);
-            tree.block.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.name_list);
+            VisitAnySyntaxTree(tree.exp_list);
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(ForEachStatement tree, object data = null)
+        protected override void VisitForEachStatement(ForEachStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.exp.Accept(this);
-            tree.block.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.exp);
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(FunctionStatement tree, object data = null)
+        protected override void VisitFunctionStatement(FunctionStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.func_name.Accept(this);
-            tree.func_body.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.func_name);
+            VisitAnySyntaxTree(tree.func_body);
         }
-        public object Visit(FunctionName tree, object data = null)
+        protected override void VisitFunctionName(FunctionName tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
-            return null;
+            if (_result != null) return;
         }
-        public object Visit(LocalFunctionStatement tree, object data = null)
+        protected override void VisitLocalFunctionStatement(LocalFunctionStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.func_body.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.func_body);
         }
-        public object Visit(LocalNameListStatement tree, object data = null)
+        protected override void VisitLocalNameListStatement(LocalNameListStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.name_list.Accept(this);
-            tree.exp_list.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.name_list);
+            VisitAnySyntaxTree(tree.exp_list);
         }
-        public object Visit(AssignStatement tree, object data = null)
+        protected override void VisitAssignStatement(AssignStatement tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            foreach(var exp in tree.var_list)
+            foreach (var exp in tree.var_list)
             {
-                exp.Accept(this);
+                VisitAnySyntaxTree(exp);
             }
-            tree.exp_list.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.exp_list);
         }
-        public object Visit(Terminator tree, object data = null)
+        protected override void VisitTerminator(Terminator tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
-            return null;
+            if (_result != null) return;
         }
-        public object Visit(BinaryExpression tree, object data = null)
+        protected override void VisitBinaryExpression(BinaryExpression tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.left.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.left);
         }
-        public object Visit(UnaryExpression tree, object data = null)
+        protected override void VisitUnaryExpression(UnaryExpression tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.exp.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.exp);
         }
-        public object Visit(FunctionBody tree, object data = null)
+        protected override void VisitFunctionBody(FunctionBody tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.param_list.Accept(this);
-            tree.block.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.param_list);
+            VisitAnySyntaxTree(tree.block);
         }
-        public object Visit(ParamList tree, object data = null)
+        protected override void VisitParamList(ParamList tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
-            
-            return null;
-        }
-        public object Visit(TableDefine tree, object data = null)
-        {
-            _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            foreach(var field in tree.fields)
+        }
+        protected override void VisitTableDefine(TableDefine tree)
+        {
+            _TrySetResult(tree);
+            if (_result != null) return;
+
+            foreach (var field in tree.fields)
             {
-                field.Accept(this);
+                VisitAnySyntaxTree(field);
             }
-            return null;
         }
-        public object Visit(TableField tree, object data = null)
+        protected override void VisitTableField(TableField tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
             if (tree.index != null)
-                tree.index.Accept(this);
-            tree.value.Accept(this);
-            return null;
+                VisitAnySyntaxTree(tree.index);
+            VisitAnySyntaxTree(tree.value);
         }
-        public object Visit(TableAccess tree, object data = null)
+        protected override void VisitTableAccess(TableAccess tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.table.Accept(this);
-            tree.index.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.table);
+            VisitAnySyntaxTree(tree.index);
         }
-        public object Visit(FuncCall tree, object data = null)
+        protected override void VisitFuncCall(FuncCall tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            tree.caller.Accept(this);
-            tree.args.Accept(this);
-            return null;
+            VisitAnySyntaxTree(tree.caller);
+            VisitAnySyntaxTree(tree.args);
         }
-        public object Visit(ExpressionList tree, object data = null)
+        protected override void VisitExpressionList(ExpressionList tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            foreach(var exp in tree.exp_list)
+            foreach (var exp in tree.exp_list)
             {
-                exp.Accept(this);
+                VisitAnySyntaxTree(exp);
             }
-            return null;
         }
-        public object Visit(NameList tree, object data = null)
+        protected override void VisitNameList(NameList tree)
         {
             _TrySetResult(tree);
-            if (_result != null) return null;
+            if (_result != null) return;
 
-            return null;
         }
     }
     class TestParser_exp1 : TestBase
