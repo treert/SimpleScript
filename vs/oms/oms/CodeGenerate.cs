@@ -19,6 +19,12 @@ namespace oms
     /// </summary>
     class CodeGenerate
     {
+        public Function Generate(SyntaxTree tree)
+        {
+            Debug.Assert(tree is Chunk);
+            return HandleChunk(tree as Chunk);
+        }
+
         class LocalNameInfo
         {
             // name register id
@@ -157,6 +163,7 @@ namespace oms
             var func = new GenerateFunction();
             var parent = _current_func;
             func.parent = parent;
+            func.function = new Function();
             _current_func = func;
 
             if(parent != null)
@@ -165,7 +172,6 @@ namespace oms
                 func.func_index = index;
                 func.function.SetParent(parent.function);
             }
-
         }
         void LeaveFunction()
         {
@@ -241,25 +247,33 @@ namespace oms
         {
             return _current_func.register;
         }
+
         int ResetRegisterId(int register)
         {
+            if (register >= OmsConf.MAX_FUNC_REGISTER)
+            {
+                Throw("to many local variables");
+            }
             return _current_func.register = register;
         }
         int GenerateRegisterId()
         {
+            if (_current_func.register + 1 >= OmsConf.MAX_FUNC_REGISTER)
+            {
+                Throw("to many local variables");
+            }
             return _current_func.register++;
         }
         
-        void HandleChunk(Chunk tree)
+        Function HandleChunk(Chunk tree)
         {
             EnterFunction();
-            {
-                var f = GetCurrentFunction();
-                EnterBlock();
-                HandleBlock(tree.block);
-                LeaveBlock();
-            }
+            var f = GetCurrentFunction();
+            EnterBlock();
+            HandleBlock(tree.block);
+            LeaveBlock();
             LeaveFunction();
+            return f;
         }
 
         void HandleBlock(Block tree)
@@ -957,6 +971,5 @@ namespace oms
         {
             throw new CodeGenerateException(msg);
         }
-
     }
 }

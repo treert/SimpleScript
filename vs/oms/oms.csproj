@@ -57,6 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="oms\CodeGenerate.cs" />
+    <Compile Include="oms\Common.cs" />
     <Compile Include="oms\Exception.cs" />
     <Compile Include="oms\Function.cs" />
     <Compile Include="oms\Value.cs" />
@@ -74,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="test\test.lua" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">

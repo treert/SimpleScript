@@ -55,29 +55,53 @@ namespace oms
     struct Instruction
     {
         System.Int32 _opcode;
-        public Instruction(OpType op, int a)
+        public Instruction(OpType op, int res)
         {
-            _opcode = (((int)op) << 24) | (a & 0xffff);
+            _opcode = (((int)op) << 24) | (res & 0xffffff);
+        }
+        public void SetBx(int bx)
+        {
+            _opcode = _opcode | (bx & 0xffff);
+        }
+        public int GetBx()
+        {
+            return (Int16)(_opcode & 0xffff);
+        }
+        public OpType GetOp()
+        {
+            return (OpType)((_opcode >> 24) & 0xff);
+        }
+        public int GetA()
+        {
+            return (_opcode >> 16) & 0xff;
+        }
+        public int GetB()
+        {
+            return (_opcode >> 8) & 0xff;
+        }
+        public int GetC()
+        {
+            return _opcode & 0xff;
         }
         public static Instruction A(OpType op, int a)
         {
-            return new Instruction(op, a);
+            return new Instruction(op, a << 16);
         }
         public static Instruction AB(OpType op, int a, int b)
         {
-            return new Instruction(op, a);
+            return new Instruction(op, (a<<16) | (b<<8));
         }
         public static Instruction ABC(OpType op, int a, int b,int c)
         {
-            return new Instruction(op, a);
+            return new Instruction(op, (a << 16) | (b << 8) | (c));
         }
-        public static Instruction ABx(OpType op, int a, int sbx)
+        public static Instruction ABx(OpType op, int a, int bx)
         {
-            return new Instruction(op, a);
+            return new Instruction(op, (a<<16) | bx);
         }
-        public static Instruction Bx(OpType op, int b)
+        public static Instruction Bx(OpType op, int bx)
         {
-            return new Instruction(op, b);
+            return new Instruction(op, bx);
         }
     }
 }
