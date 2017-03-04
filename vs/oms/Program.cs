@@ -21,6 +21,10 @@ namespace oms
             vm.DoString(content);
             _PrintTypeName(1);
             _PrintTypeName(1.0 is double);
+            _PrintTypeName(ValueUtils.IsFalse(null));
+            _PrintTypeName(ValueUtils.IsFalse(false));
+            _PrintTypeName(ValueUtils.IsFalse(true));
+            _PrintTypeName(ValueUtils.IsFalse(""));
         }
     }
 }

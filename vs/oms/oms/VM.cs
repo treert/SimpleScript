@@ -24,7 +24,11 @@ namespace oms
             th.Resume();
         }
 
+        public Table m_global;
+
         /*****************************************************************/
+
+        
 
         LinkedList<Thread> _free_threads = new LinkedList<Thread>();
         HashSet<Thread> _used_threads = new HashSet<Thread>();

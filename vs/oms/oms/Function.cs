@@ -35,6 +35,10 @@ namespace oms
             _codes.Add(i);
             return _codes.Count - 1;
         }
+        public Instruction GetInstruction(int idx)
+        {
+            return _codes[idx];
+        }
         public void SetFixedArgCount(int fixed_arg_count_)
         {
             _fixed_arg_count = fixed_arg_count_;
@@ -58,13 +62,17 @@ namespace oms
         }
         public int AddConstNumber(double num)
         {
-            _const_numbers.Add(num);
-            return _const_numbers.Count - 1;
+            _const_objs.Add(num);
+            return _const_objs.Count - 1;
         }
         public int AddConstString(string str)
         {
-            _const_strings.Add(str);
-            return _const_strings.Count - 1;
+            _const_objs.Add(str);
+            return _const_objs.Count - 1;
+        }
+        public object GetConstValue(int i)
+        {
+            return _const_objs[i];
         }
         public int AddChildFunction(Function child)
         {
@@ -77,14 +85,14 @@ namespace oms
         }
         public void AddUpValue(string name,int register, bool parent_local)
         {
-            _upvalues.Add(name, new UpValueInfo(name, register, parent_local));
+            _upvalues.Add(new UpValueInfo(name, register, parent_local));
         }
         public int SearchUpValue(string name)
         {
-            UpValueInfo upvalue = null;
-            if (_upvalues.TryGetValue(name,out upvalue))
+            for(int i = 0; i < _upvalues.Count; ++i)
             {
-                return upvalue.register;
+                if (_upvalues[i].name == name)
+                    return i;
             }
             return -1;
         }
@@ -103,11 +111,10 @@ namespace oms
             }
         }
 
-        Dictionary<string, UpValueInfo> _upvalues = new Dictionary<string,UpValueInfo>();
+        List<UpValueInfo> _upvalues = new List<UpValueInfo>();
 
         List<Function> _child_functions = new List<Function>();
-        List<string> _const_strings = new List<string>();
-        List<double> _const_numbers = new List<double>();
+        List<object> _const_objs = new List<object>();
         Function _parent = null;
         bool _has_vararg = false;
         int _fixed_arg_count = 0;
