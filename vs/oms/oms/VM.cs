@@ -24,7 +24,12 @@ namespace oms
             th.Resume();
         }
 
-        public Table m_global;
+        public Table m_global = new Table();
+
+        public void RegisterGlobalFunc(string name, CFunction cfunc)
+        {
+            m_global.SetValue(name,cfunc);
+        }
 
         /*****************************************************************/
 

@@ -22,7 +22,52 @@ namespace oms
     /// </summary>
     class Thread
     {
+        public VM VM
+        {
+            get
+            {
+                return _vm;
+            }
+        }
+
+        public int GetStatckSize()
+        {
+            return _top - _register;
+        }
+
+        public object GetValue(int idx)
+        {
+            int index;
+            if (idx < 0)
+                index = _top + idx;
+            else
+                index = _register + idx;
+
+            if (_register <= index && index < _top)
+                return _stack[index];
+            else
+                return null;
+        }
+
         object[] _stack = new object[OmsConf.MAX_STACK_SIZE];
+        int _top = 0;
+        // save register base for cfunction call
+        int _register = 0;
+        LinkedList<UpValue> _upvalues = new LinkedList<UpValue>();
+        void CloseUpvalueTo(int a)
+        {
+            while(_upvalues.Count > 0)
+            {
+                UpValue upvalue = _upvalues.Last<UpValue>();
+                if (upvalue.idx >= a)
+                {
+                    upvalue.Close(_stack[upvalue.idx]);
+                    _upvalues.RemoveLast();
+                }
+                else
+                    break;
+            }
+        }
         
         class CallInfo
         {
@@ -31,8 +76,9 @@ namespace oms
             public int func_idx;
         }
 
-        List<CallInfo> _calls = new List<CallInfo>();
+        LinkedList<CallInfo> _calls = new LinkedList<CallInfo>();
 
+        string _error_msg = null;
         ThreadStatus _status = ThreadStatus.Stop;
         public ThreadStatus GetStatus()
         {
@@ -56,19 +102,97 @@ namespace oms
             call.pc = 0;
             call.func_idx = 0;
             _calls.Clear();
-            _calls.Add(call);
+            _calls.AddLast(call);
         }
-
-
 
         public void Resume()
         {
-
+            _status = ThreadStatus.Runing;
+            Execute();
         }
 
         public void StopToWait()
         {
+            _status = ThreadStatus.Stop;
+        }
 
+        public void Error(string msg)
+        {
+            _error_msg = msg;
+            _status = ThreadStatus.Error;
+        }
+
+        bool Call(int a,int b,bool any_value)
+        {
+            if(any_value)
+            {
+                b = _top - a - 1;
+            }
+
+            if(_stack[a] is Closure)
+            {
+                CallClosure(_stack[a] as Closure, a, b);
+                return true;
+            }
+            else
+            {
+                CallCFunction(_stack[a] as CFunction, a, b);
+                return false;
+            }
+        }
+
+        void CallClosure(Closure closure,int base_idx, int arg_count)
+        {
+            CallInfo call = new CallInfo();
+            Function func = closure.func;
+
+            call.func_idx = base_idx;
+            call.pc = 0;
+
+            int fixed_args = func.GetFixedArgCount();
+            int arg_idx = base_idx + 1;
+            if(func.HasVararg())
+            {
+                // move args for var_arg
+                int old_arg = arg_idx;
+                arg_idx += arg_count;
+                for (int i = 0; i < arg_count && i < fixed_args; ++i)
+                    _stack[arg_idx + i] = _stack[old_arg++];
+            }
+            call.register_idx = arg_idx;
+            // fill nil for rest fixed_arg
+            for(int i = arg_count; i < fixed_args; ++i)
+            {
+                _stack[arg_idx + i] = null;
+            }
+
+            _calls.AddLast(call);
+        }
+
+        void CallCFunction(CFunction cfunc,int base_idx, int arg_count)
+        {
+            _top = base_idx + 1 + arg_count;
+            _register = base_idx + 1;
+            // call c function
+            int ret_count = cfunc(this);
+
+            // copy result to stack
+            int src = _top - ret_count;
+            int dst = base_idx;
+            for(int i = 0; i < ret_count; ++i)
+            {
+                _stack[dst + i] = _stack[src + i];
+            }
+            _top = dst + ret_count;
+        }
+
+
+        void Execute()
+        {
+            while(_status == ThreadStatus.Runing && _calls.Count > 0)
+            {
+                ExecuteFrame();
+            }
         }
 
         void ExecuteFrame()
@@ -76,22 +200,20 @@ namespace oms
             CallInfo call = _calls.Last<CallInfo>();
             Closure closure = _stack[call.func_idx] as Closure;
             Function func = closure.func;
-
-            int pc = call.pc;
             int code_size = func.OpCodeSize();
-            int register = call.register_idx;
 
             int a, b, c, bx;
             UpValue upvalue;
 
-            while(pc < code_size)
-            {
-                Instruction i = func.GetInstruction(pc);
-                ++pc;
 
-                a = register + i.GetA();
-                b = register + i.GetB();
-                c = register + i.GetC();
+            while (call.pc < code_size)
+            {
+                Instruction i = func.GetInstruction(call.pc);
+                ++call.pc;
+
+                a = call.register_idx + i.GetA();
+                b = call.register_idx + i.GetB();
+                c = call.register_idx + i.GetC();
                 bx = i.GetBx();
 
                 switch(i.GetOp())
@@ -112,7 +234,13 @@ namespace oms
                         _stack[a] = _stack[b];
                         break;
                     case OpType.OpType_Call:
-                        // todo
+                        if (Call(a, i.GetB(), i.GetC() == 1))
+                        {
+                            // 1. will enter next frame
+                            return;
+                        }
+                        if (_status != ThreadStatus.Runing)
+                            return;
                         break;
                     case OpType.OpType_GetUpvalue:
                         upvalue = closure.GetUpvalue(bx);
@@ -144,19 +272,19 @@ namespace oms
                         // todo
                         break;
                     case OpType.OpType_Jmp:
-                        pc += -1 + bx;
+                        call.pc += -1 + bx;
                         break;
                     case OpType.OpType_JmpFalse:
                         if (ValueUtils.IsFalse(_stack[a]))
-                            pc += -1 + bx;
+                            call.pc += -1 + bx;
                         break;
                     case OpType.OpType_JmpTrue:
                         if (!ValueUtils.IsFalse(_stack[a]))
-                            pc += -1 + bx;
+                            call.pc += -1 + bx;
                         break;
                     case OpType.OpType_JmpNil:
                         if (null == _stack[a])
-                            pc += -1 + bx;
+                            call.pc += -1 + bx;
                         break;
                     case OpType.OpType_Neg:
                         _stack[a] = -ValueUtils.ToNumber(_stack[a]);
@@ -219,16 +347,22 @@ namespace oms
                         // todo
                         break;
                     case OpType.OpType_CloseUpvalue:
-                        // todo
+                        CloseUpvalueTo(a);
                         break;
                     case OpType.OpType_SetTop:
-                        // todo
+                        while(_top < a)
+                        {
+                            _stack[_top++] = null;
+                        }
                         break;
                     default:
                         Debug.Assert(false);
                         break;
                 }
             }
+
+            _top = call.func_idx;
+            _calls.RemoveLast();
         }
     }
 }

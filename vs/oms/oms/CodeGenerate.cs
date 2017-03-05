@@ -100,7 +100,7 @@ namespace oms
         {
             bool is_local = false;
             int index = PrepareUpvalue(_current_func, name, out is_local);
-            if (index > 0)
+            if (index >= 0)
             {
                 scope = is_local ? LexicalScope.Local : LexicalScope.Upvalue;
                 return index;
@@ -444,7 +444,7 @@ namespace oms
                 move(temp_state, state_register);
                 move(temp_var, var_register);
 
-                code = Instruction.A(OpType.OpType_Call, temp_func);
+                code = Instruction.ABC(OpType.OpType_Call, temp_func, 2, 0);
                 f.AddInstruction(code, -1);
 
                 code = Instruction.A(OpType.OpType_SetTop, name_end);

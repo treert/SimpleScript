@@ -12,19 +12,45 @@ namespace oms
         {
             Console.WriteLine("{0} {1}",xx , xx.GetType().FullName);
         }
+        static void ExecuteFile(string file_name,VM vm)
+        {
+            var content = System.IO.File.ReadAllText(file_name);
+            vm.DoString(content);
+        }
+
+        static void ExecuteConsole(VM vm)
+        {
+            Console.WriteLine("OMS 0.1 Copyright (C) 2017");
+
+            for(;;)
+            {
+                try
+                {
+                    Console.Write("> ");
+                    var line = Console.ReadLine();
+                    vm.DoString(line);
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e);
+                }
+            }
+        }
+
         static void Main(string[] args)
         {
             test.TestManager.RunTest();
             VM vm = new VM();
+            LibBase.Register(vm);
 
-            var content = System.IO.File.ReadAllText("test/test.lua");
-            vm.DoString(content);
-            _PrintTypeName(1);
-            _PrintTypeName(1.0 is double);
-            _PrintTypeName(ValueUtils.IsFalse(null));
-            _PrintTypeName(ValueUtils.IsFalse(false));
-            _PrintTypeName(ValueUtils.IsFalse(true));
-            _PrintTypeName(ValueUtils.IsFalse(""));
+            if(args.Length > 0)
+            {
+                ExecuteConsole(vm);
+            }
+            else
+            {
+                ExecuteFile("test/test.lua", vm);
+            }
         }
     }
 }

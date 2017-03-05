@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -43,6 +44,12 @@ namespace oms
         {
             return idx == -1;
         }
+
+        public void Close(object obj_)
+        {
+            obj = obj_;
+            idx = -1;
+        }
     }
     class Closure
     {
@@ -65,11 +72,18 @@ namespace oms
     {
         public void SetValue(object key, object value)
         {
-
+            Debug.Assert(key != null);
+            _dic[key] = value;
         }
         public object GetValue(object key)
         {
+            if (_dic.ContainsKey(key))
+                return _dic[key];
             return null;
         }
+
+        Dictionary<object, object> _dic = new Dictionary<object, object>();
     }
+
+    delegate int CFunction(Thread th);
 }
