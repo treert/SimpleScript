@@ -14,6 +14,7 @@ namespace oms
     /// string      : string
     /// bool        : bool
     /// closure     : Closure
+    /// coroutine   : Thread
     /// userdata    : other
     /// </summary>
     class ValueUtils

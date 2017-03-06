@@ -35,6 +35,11 @@ namespace oms
             return _top - _register;
         }
 
+        public void ConsumeAllResult()
+        {
+            _top = _register;
+        }
+
         public object GetValue(int idx)
         {
             int index;
@@ -47,6 +52,11 @@ namespace oms
                 return _stack[index];
             else
                 return null;
+        }
+
+        public void PushValue(object obj)
+        {
+            _stack[_top++] = obj;
         }
 
         object[] _stack = new object[OmsConf.MAX_STACK_SIZE];
@@ -96,6 +106,21 @@ namespace oms
             var closure = new Closure();
             closure.func = func;
             _stack[0] = closure;
+            _top = 1;
+
+            var call = new CallInfo();
+            call.register_idx = 1;
+            call.pc = 0;
+            call.func_idx = 0;
+            _calls.Clear();
+            _calls.AddLast(call);
+            
+        }
+
+        public void Reset(Closure closure)
+        {
+            _stack[0] = closure;
+            _top = 1;
 
             var call = new CallInfo();
             call.register_idx = 1;
@@ -184,14 +209,102 @@ namespace oms
                 _stack[dst + i] = _stack[src + i];
             }
             _top = dst + ret_count;
+            _stack[_top] = null;
+            // yield or chunck return can get all args
+            _register = base_idx;
         }
 
+        void GenerateClosure(int a,Function func)
+        {
+            var call = _calls.Last.Value;
+            Closure closure = _stack[call.func_idx] as Closure;
+
+
+            Closure new_closure = new Closure();
+            new_closure.func = func;
+            _stack[a] = new_closure;
+
+            // prepare upvalues
+            int count = func.GetUpValueCount();
+            for(int i = 0; i < count; ++i)
+            {
+                var upvalue_info = func.GetUpValueInfo(i);
+                if(upvalue_info.is_local)
+                {
+                    UpValue upvalue = null;
+                    int reg = call.register_idx + upvalue_info.register;
+                    // find upvalue
+                    var iter = _upvalues.Last;
+                    while(iter != null)
+                    {
+                        if(iter.Value.idx <= reg)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            iter = iter.Previous;
+                        }
+                    }
+                    if(iter == null)
+                    {
+                        upvalue = new UpValue();
+                        upvalue.idx = reg;
+                        _upvalues.AddFirst(upvalue);
+                    }
+                    else if(iter.Value.idx < reg)
+                    {
+                        upvalue = new UpValue();
+                        upvalue.idx = reg;
+                        _upvalues.AddAfter(iter, upvalue);
+                    }
+                    else
+                    {
+                        upvalue = iter.Value;
+                    }
+                    new_closure.AddUpvalue(upvalue);
+                }
+                else
+                {
+                    var upvalue = closure.GetUpvalue(upvalue_info.register);
+                    new_closure.AddUpvalue(upvalue);
+                }
+            }
+        }
+
+        void Return(int a, int ret_count, bool ret_any)
+        {
+            var call = _calls.Last.Value;
+            int src = a;
+            int dst = call.func_idx;
+
+            // ret will copy result over regiter, need close upvalue now
+            CloseUpvalueTo(dst);
+            if(ret_any)
+            {
+                ret_count = _top - src;
+            }
+            for(int i = 0; i < ret_count; ++i)
+            {
+                _stack[dst + i] = _stack[src + i];
+            }
+
+            // set new top and pop current callinfo
+            _top = dst + ret_count;
+            _stack[_top] = null;
+            _calls.RemoveLast();
+        }
 
         void Execute()
         {
             while(_status == ThreadStatus.Runing && _calls.Count > 0)
             {
                 ExecuteFrame();
+            }
+            if(_status == ThreadStatus.Runing)
+            {
+                _status = ThreadStatus.Finished;
+                _register = 0;
             }
         }
 
@@ -236,11 +349,13 @@ namespace oms
                     case OpType.OpType_Call:
                         if (Call(a, i.GetB(), i.GetC() == 1))
                         {
-                            // 1. will enter next frame
+                            // will enter next frame
                             return;
                         }
-                        if (_status != ThreadStatus.Runing)
+                        if (_status == ThreadStatus.Stop)
+                        {
                             return;
+                        }
                         break;
                     case OpType.OpType_GetUpvalue:
                         upvalue = closure.GetUpvalue(bx);
@@ -263,14 +378,15 @@ namespace oms
                         _vm.m_global.SetValue(func.GetConstValue(bx), _stack[a]);
                         break;
                     case OpType.OpType_Closure:
-                        // todo
+                        GenerateClosure(a, func.GetChildFunction(bx));
                         break;
                     case OpType.OpType_VarArg:
                         // todo
                         break;
                     case OpType.OpType_Ret:
-                        // todo
-                        break;
+                        Return(a, i.GetB(), i.GetC() == 1);
+                        return;
+                        //break;
                     case OpType.OpType_Jmp:
                         call.pc += -1 + bx;
                         break;
@@ -338,10 +454,10 @@ namespace oms
                         // todo
                         break;
                     case OpType.OpType_SetTable:
-                        // todo
+                        (_stack[a] as Table).SetValue(_stack[b], _stack[c]);
                         break;
                     case OpType.OpType_GetTable:
-                        // todo
+                        _stack[c] = (_stack[a] as Table).GetValue(_stack[b]);
                         break;
                     case OpType.OpType_ForStep:
                         // todo
@@ -362,6 +478,7 @@ namespace oms
             }
 
             _top = call.func_idx;
+            _stack[_top] = null;
             _calls.RemoveLast();
         }
     }

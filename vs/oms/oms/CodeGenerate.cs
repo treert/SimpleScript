@@ -149,7 +149,7 @@ namespace oms
                 index = PrepareUpvalue(func.parent, name, out is_local);
                 if (index >= 0)
                 {
-                    func.function.AddUpValue(name, index, is_local);
+                    index = func.function.AddUpValue(name, index, is_local);
                     is_local = false;
                     return index;
                 }
@@ -529,7 +529,6 @@ namespace oms
         void HandleFunctionBody(FunctionBody tree)
         {
             EnterFunction();
-            var f = GetCurrentFunction();
             var func_index = GetFunctionIndex();
             {
                 EnterBlock();
@@ -539,6 +538,7 @@ namespace oms
             }
             LeaveFunction();
 
+            var f = GetCurrentFunction();
             var code = Instruction.ABx(OpType.OpType_Closure, GetNextRegisterId(), func_index);
             f.AddInstruction(code, -1);
         }
@@ -715,9 +715,13 @@ namespace oms
                 code = Instruction.ABC(OpType.OpType_GetTable, caller_register, key_register, caller_register);
                 f.AddInstruction(code, -1);
             }
-            arg_count += tree.args.exp_list.Count;
-            int is_any_arg = tree.args.return_any_value ? 1 : 0;
-            HandleExpList(tree.args, -1);
+            int is_any_arg = 0;
+            if(tree.args != null)
+            {
+                arg_count += tree.args.exp_list.Count;
+                is_any_arg = tree.args.return_any_value ? 1 : 0;
+                HandleExpList(tree.args, -1);
+            }
 
             // call function
             code = Instruction.ABC(OpType.OpType_Call, caller_register,arg_count,is_any_arg);

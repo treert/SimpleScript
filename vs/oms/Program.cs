@@ -39,9 +39,10 @@ namespace oms
 
         static void Main(string[] args)
         {
-            test.TestManager.RunTest();
+            
             VM vm = new VM();
             LibBase.Register(vm);
+            LibCoroutine.Register(vm);
 
             if(args.Length > 0)
             {
@@ -51,6 +52,7 @@ namespace oms
             {
                 ExecuteFile("test/test.lua", vm);
             }
+            // test.TestManager.RunTest();
         }
     }
 }

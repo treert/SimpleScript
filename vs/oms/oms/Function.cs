@@ -27,7 +27,9 @@ namespace oms
 
         public void FillInstructionBx(int index, int bx)
         {
-            _codes[index].SetBx(bx);
+            var i = _codes[index];
+            i.SetBx(bx);
+            _codes[index] = i;
         }
         // 添加指令，返回添加的指令的index
         public int AddInstruction(Instruction i, int line)
@@ -79,13 +81,26 @@ namespace oms
             _child_functions.Add(child);
             return _child_functions.Count - 1;
         }
+        public Function GetChildFunction(int idx)
+        {
+            return _child_functions[idx];
+        }
         public void AddLocalVar(string name,int register, int begin_pc, int end_pc)
         {
             // todo ...
         }
-        public void AddUpValue(string name,int register, bool parent_local)
+        public int AddUpValue(string name,int register, bool parent_local)
         {
             _upvalues.Add(new UpValueInfo(name, register, parent_local));
+            return _upvalues.Count - 1;
+        }
+        public int GetUpValueCount()
+        {
+            return _upvalues.Count;
+        }
+        public UpValueInfo GetUpValueInfo(int idx)
+        {
+            return _upvalues[idx];
         }
         public int SearchUpValue(string name)
         {
@@ -98,7 +113,7 @@ namespace oms
         }
 
 
-        class UpValueInfo
+        public class UpValueInfo
         {
             public string name;
             public int register;
