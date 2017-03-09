@@ -264,7 +264,7 @@ namespace oms
             }
             return _current_func.register++;
         }
-        
+
         Function HandleChunk(Chunk tree)
         {
             EnterFunction();
@@ -372,7 +372,7 @@ namespace oms
                 EnterBlock();
 
                 // check 'for', continue loop or not
-                code = Instruction.A(OpType.OpType_ForStep, var_register);
+                code = Instruction.ABC(OpType.OpType_ForStep, var_register, limit_register, step_register);
                 f.AddInstruction(code, -1);
 
                 // next code jump to loop tail
@@ -397,7 +397,7 @@ namespace oms
                 // jump to loop head
                 code = Instruction.Bx(OpType.OpType_Jmp, 0);
                 index = f.AddInstruction(code, -1);
-                AddLoopJumpInfo(JumpType.JumpTail, index);
+                AddLoopJumpInfo(JumpType.JumpHead, index);
             }
             LeaveLoop();
 
@@ -466,7 +466,7 @@ namespace oms
                 index = f.AddInstruction(code, -1);
                 AddLoopJumpInfo(JumpType.JumpHead, index);
             }
-            
+
             LeaveLoop();
 
             LeaveBlock();
@@ -602,7 +602,7 @@ namespace oms
             int is_any_value = 0;
             if(tree.exp_list != null)
             {
-                is_any_value = tree.exp_list.return_any_value ? 1 : 0; 
+                is_any_value = tree.exp_list.return_any_value ? 1 : 0;
                 value_count = tree.exp_list.exp_list.Count;
                 HandleExpList(tree.exp_list, -1);
             }
@@ -748,7 +748,7 @@ namespace oms
                         code = Instruction.ABx(OpType.OpType_GetUpvalue, value_register, index);
                     else if (scope == LexicalScope.Local)
                         code = Instruction.AB(OpType.OpType_Move, value_register, index);
-                    
+
                 }
                 else if (token_type == (int)TokenType.NIL)
                     code = Instruction.A(OpType.OpType_LoadNil, value_register);

@@ -6,51 +6,57 @@ using System.Threading.Tasks;
 
 namespace oms
 {
+    /*
+    code: int32_t
+    A   : uint8_t
+    B   : uint8_t
+    C   : uint8_t
+    Bx  : int16_t (B+C)
+    */
     enum OpType
     {
         OpType_InValid = 0,
-        OpType_LoadNil,                 // A    A: register
-        OpType_LoadBool,                // AB   A: register B: 1 true 0 false
-        OpType_LoadInt,                 // ABx  A: register Bx: const unsigned int
-        OpType_LoadConst,               // ABx  A: register Bx: const index
-        OpType_Move,                    // AB   A: dst register B: src register
-        OpType_GetUpvalue,              // AB   A: register B: upvalue index
-        OpType_SetUpvalue,              // AB   A: register B: upvalue index
-        OpType_GetGlobal,               // ABx  A: value register Bx: const index
-        OpType_SetGlobal,               // ABx  A: value register Bx: const index
-        OpType_Closure,                 // ABx  A: register Bx: proto index
-        OpType_Call,                    // ABC  A: register B: fix arg count C: is any arg
-        OpType_VarArg,                  // A    A: register
-        OpType_Ret,                     // ABC  A: return value start register B: return value count C: return any count
-        OpType_JmpFalse,                // AsBx A: register sBx: diff of instruction index
-        OpType_JmpTrue,                 // AsBx A: register sBx: diff of instruction index
-        OpType_JmpNil,                  // AsBx A: register sBx: diff of instruction index
-        OpType_Jmp,                     // sBx  sBx: diff of instruction index
-        OpType_Neg,                     // A    A: operand register and dst register
-        OpType_Not,                     // A    A: operand register and dst register
-        OpType_Len,                     // A    A: operand register and dst register
-        OpType_Add,                     // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Sub,                     // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Mul,                     // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Div,                     // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Pow,                     // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Mod,                     // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Concat,                  // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Less,                    // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Greater,                 // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_Equal,                   // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_UnEqual,                 // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_LessEqual,               // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_GreaterEqual,            // ABC  A: dst register B: operand1 register C: operand2 register
-        OpType_NewTable,                // A    A: register of table
-        OpType_AppendTable,             // AB   A: register of table B: start value register 
-        OpType_SetTable,                // ABC  A: register of table B: key register C: value register
-        OpType_GetTable,                // ABC  A: register of table B: key register C: value register
-        OpType_TableNext,               // A    A: register of table  return A: value A+1: key
-        OpType_ForInit,                 // ABC  A: var register B: limit register    C: step register
-        OpType_ForStep,                 // ABC  ABC same with OpType_ForInit, next instruction sBx: diff of instruction index
-        OpType_CloseUpvalue,            // A    A: close upvalue to this register
-        OpType_SetTop,                  // A    A: set new top to this register,current for exp list and table define last exp
+        OpType_LoadNil,                 // A    R(A) := nil
+        OpType_LoadBool,                // AB   R(A) := (B == 1)
+        OpType_LoadInt,                 // ABx  R(A) := Bx
+        OpType_LoadConst,               // ABx  R(A) := Const(Bx)
+        OpType_Move,                    // AB   R(A) := R(B)
+        OpType_GetUpvalue,              // ABx  R(A) := Upvalue(Bx)
+        OpType_SetUpvalue,              // ABx  Upvalue(Bx) := R(A)
+        OpType_GetGlobal,               // ABx  R(A) := Global(Bx)
+        OpType_SetGlobal,               // ABx  Global(Bx) := R(A)
+        OpType_Closure,                 // ABx  R(A) := Closure(ChildFunc(Bx))
+        OpType_Call,                    // ABC  R(A)..R(top-1) := Call(R(A),B:fix arg count,C==1:any arg to top)
+        OpType_VarArg,                  // A    R(A)..R(top-1) := ...
+        OpType_Ret,                     // ABC  return C!=1 ? R(A)..R(B) : R(A)..R(top-1)
+        OpType_JmpFalse,                // ABx  if not R(A) then pc += Bx
+        OpType_JmpTrue,                 // ABx  if R(A) then pc += Bx
+        OpType_JmpNil,                  // ABx  if R(A) == nil then pc += Bx
+        OpType_Jmp,                     // Bx   pc += Bx
+        OpType_Neg,                     // A    R(A) = -R(A)
+        OpType_Not,                     // A    R(A) = not R(A)
+        OpType_Len,                     // A    R(A) = #R(A)
+        OpType_Add,                     // ABC  R(A) = R(B) + R(C)
+        OpType_Sub,                     // ABC  R(A) = R(B) - R(C)
+        OpType_Mul,                     // ABC  R(A) = R(B) * R(C)
+        OpType_Div,                     // ABC  R(A) = R(B) / R(C)
+        OpType_Pow,                     // ABC  R(A) = R(B) ^ R(C)
+        OpType_Mod,                     // ABC  R(A) = R(B) % R(C)
+        OpType_Concat,                  // ABC  R(A) = R(B) .. R(C)
+        OpType_Less,                    // ABC  R(A) = R(B) < R(C)
+        OpType_Greater,                 // ABC  R(A) = R(B) > R(C)
+        OpType_Equal,                   // ABC  R(A) = R(B) == R(C)
+        OpType_UnEqual,                 // ABC  R(A) = R(B) ~= R(C)
+        OpType_LessEqual,               // ABC  R(A) = R(B) <= R(C)
+        OpType_GreaterEqual,            // ABC  R(A) = R(B) >= R(C)
+        OpType_NewTable,                // A    R(A) = {}
+        OpType_AppendTable,             // AB   R(A).append(R(B)..R(top-1))
+        OpType_SetTable,                // ABC  R(A)[R(B)] = R(C)
+        OpType_GetTable,                // ABC  R(C) = R(A)[R(B)]
+        OpType_TableNext,               // A    todo
+        OpType_ForStep,                 // ABC  if CheckStep(R(A),R(B),R(C)) { ++pc } next code is jmp tail
+        OpType_CloseUpvalue,            // A    close upvalue to R(A)
+        OpType_SetTop,                  // A    R(top)..R(A) := nil; top = A
     }
     struct Instruction
     {
