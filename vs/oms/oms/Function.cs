@@ -117,12 +117,12 @@ namespace oms
         {
             public string name;
             public int register;
-            public bool is_local;
-            public UpValueInfo(string name_, int register_, bool is_local_)
+            public bool is_parent_local;
+            public UpValueInfo(string name_, int register_, bool is_parent_local_)
             {
                 name = name_;
                 register = register_;
-                is_local = is_local_;
+                is_parent_local = is_parent_local_;
             }
         }
 

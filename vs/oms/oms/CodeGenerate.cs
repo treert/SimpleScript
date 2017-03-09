@@ -138,25 +138,19 @@ namespace oms
             }
 
             index = func.function.SearchUpValue(name);
-            if (index >= 0)
-            {
-                is_local = false;
-                return index;
-            }
 
-            if(func.parent != null)
+            if(index < 0 && func.parent != null)
             {
-                index = PrepareUpvalue(func.parent, name, out is_local);
+                bool is_from_parent = false;
+                index = PrepareUpvalue(func.parent, name, out is_from_parent);
                 if (index >= 0)
                 {
-                    index = func.function.AddUpValue(name, index, is_local);
-                    is_local = false;
-                    return index;
+                    index = func.function.AddUpValue(name, index, is_from_parent);
                 }
             }
 
             is_local = false;
-            return -1;
+            return index;
         }
         void EnterFunction()
         {

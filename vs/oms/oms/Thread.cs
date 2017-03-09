@@ -229,7 +229,7 @@ namespace oms
             for(int i = 0; i < count; ++i)
             {
                 var upvalue_info = func.GetUpValueInfo(i);
-                if(upvalue_info.is_local)
+                if(upvalue_info.is_parent_local)
                 {
                     UpValue upvalue = null;
                     int reg = call.register_idx + upvalue_info.register;
