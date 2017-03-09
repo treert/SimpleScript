@@ -24,6 +24,11 @@ namespace oms
             return false;
         }
 
+        static bool IsVar(SyntaxTree t)
+        {
+            return t is TableAccess || t is Terminator;
+        }
+
         Lex _lex;
         Token _current;
         Token _look_ahead;
@@ -54,12 +59,6 @@ namespace oms
             if (_look_ahead2 == null)
                 _look_ahead2 = _lex.GetNextToken();
             return _look_ahead2;
-        }
-        enum PrefixExpType
-        {
-            Var,// Name or table access, can be used in left or '='
-            FuncCall,
-            Normal,
         }
         bool IsMainExp()
         {
@@ -154,8 +153,7 @@ namespace oms
                     break;
                 case (int)TokenType.NAME:
                 case (int)'(':
-                    PrefixExpType type;
-                    exp = ParsePrefixExp(out type);
+                    exp = ParsePrefixExp();
                     break;
                 case (int)'{':
                     exp = ParseTableConstructor();
@@ -245,20 +243,17 @@ namespace oms
                 throw new ParserException("expect '(' or '{' to start function-args");
             return exp_list;
         }
-        SyntaxTree ParsePrefixExp(out PrefixExpType type_)
+        SyntaxTree ParsePrefixExp()
         {
             NextToken();
             Debug.Assert(_current.m_type == (int)TokenType.NAME
                 || _current.m_type == (int)'(');
             SyntaxTree exp;
-            PrefixExpType the_type = PrefixExpType.Var;
-            PrefixExpType last_type = PrefixExpType.Var;
             if(_current.m_type == (int)'(')
             {
                 exp = ParseExp();
                 if (NextToken().m_type != (int)')')
                     throw new ParserException("expect ')'");
-                the_type = PrefixExpType.Normal;
             }
             else
             {
@@ -272,33 +267,29 @@ namespace oms
                     || LookAhead().m_type == (int)'.')
                 {
                     exp = ParseTableAccessor(exp);
-                    last_type = PrefixExpType.Var;
                 }
                 else if(LookAhead().m_type == (int)':'
                     || LookAhead().m_type == (int)'('
                     || LookAhead().m_type == (int)'{')
                 {
                     exp = ParseFunctionCall(exp);
-                    last_type = PrefixExpType.FuncCall;
                 }
                 else
                 {
                     break;
                 }
             }
-            type_ = (the_type == PrefixExpType.Var) ? last_type : PrefixExpType.Normal;
             return exp;
         }
         SyntaxTree ParseOtherStatement()
         {
             // lua做了限制，其他语句只有两种，assign statement and func call
-            // oms放松了些，可以有PrefixExpType = normal的语句存在，也就是'('开头的语句
+            // oms放松了些，可以有'('开头的prefixexp
             SyntaxTree exp;
             if (LookAhead().m_type == (int)TokenType.NAME)
             {
-                PrefixExpType type;
-                exp = ParsePrefixExp(out type);
-                if(type == PrefixExpType.Var)
+                exp = ParsePrefixExp();
+                if(IsVar(exp))
                 {
                     // assign statement
                     var assign_statement = new AssignStatement();
@@ -309,8 +300,8 @@ namespace oms
                             throw new ParserException("expect ',' to split var-list");
                         if (LookAhead().m_type != (int)TokenType.NAME)
                             throw new ParserException("expect 'id' to start var");
-                        exp = ParsePrefixExp(out type);
-                        if (type != PrefixExpType.Var)
+                        exp = ParsePrefixExp();
+                        if (!IsVar(exp))
                             throw new ParserException("expect var here");
                         assign_statement.var_list.Add(exp);
                     }
@@ -321,15 +312,14 @@ namespace oms
                 }
                 else
                 {
-                    Debug.Assert(type == PrefixExpType.FuncCall);
+                    Debug.Assert(exp is FuncCall);
                     return exp;
                 }
             }
             else if (LookAhead().m_type == '(')
             {
                 // special handle, so can use (ok and dosomething())
-                PrefixExpType type;
-                return ParsePrefixExp(out type);
+                return ParsePrefixExp();
             }
             else
             {

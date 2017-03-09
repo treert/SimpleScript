@@ -24,42 +24,21 @@ stat ::=
      "break" |
      "continue" |
      varlist "=" explist |
-     (exp) |
-     funccall |
+     Name {tableindex | funccall} funccall
 
 namelist ::= Name {"," Name}
 
 varlist ::= var {"," var}
 
-var ::= Name | Name
-
-global ::= $"["exp"]" | $Name
-
-var ::= (global | Name) |
-     (global | Name) {"[" exp "]" | "." Name | args | ":" Name args} ( "[" exp "]" | "." Name )
-
-args ::=  "(" [explist] ")" | tableconstructor
+var ::= Name [{tableindex | funccall} tableindex]
 
 funcname ::= Name {"." Name} [":" Name]
-
-function ::= "function" funcbody
 
 funcbody ::= "(" [parlist] ")" block "end"
 
 parlist ::= Name {"," Name} ["," "..."] | "..."
 
 explist ::= {exp ","} exp
-
-exp ::= mainexp | exp binop exp
-
-mainexp ::= nil | false | true | Number | String |
-     "..." | function | tableconstructor |
-     prefixexp |
-     unop exp|
-
-prefixexp ::= var |
-     (global | Name) {"[" exp "]" | "." Name | args | ":" Name args} |
-     (exp) {"[" exp "]" | "." Name | args | ":" Name args}
 
 tableconstructor ::= "{" [fieldlist] "}"
 
@@ -68,6 +47,23 @@ fieldlist ::= field {fieldsep field} [fieldsep]
 field ::= "[" exp "]" "=" exp | Name "=" exp | exp
 
 fieldsep ::= "," | ";"
+
+exp ::= mainexp | exp binop exp
+
+mainexp ::= nil | false | true | Number | String |
+     "..." | function | tableconstructor |
+     prefixexp |
+     unop exp|
+
+function ::= "function" funcbody
+
+prefixexp ::= (Name | "(" exp ")") {tableindex | funccall}
+
+tableindex ::= "[" exp "]" | "." Name
+
+funccall ::= args | ":" Name args
+
+args ::=  "(" [explist] ")" | tableconstructor
 
 binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." |
      "<" | "<=" | ">" | ">=" | "==" | "~=" |
