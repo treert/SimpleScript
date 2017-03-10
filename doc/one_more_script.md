@@ -5,7 +5,7 @@
 3. 语法参考lua，实现参考luna和unilua
 
 ## BNF
-
+```
 chunk ::= block
 
 block ::= {stat [";"]}
@@ -70,3 +70,4 @@ binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." |
      "and" | "or"
 
 unop ::= "-" | "not" | "#"
+```
