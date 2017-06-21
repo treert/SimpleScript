@@ -12,8 +12,7 @@ namespace SimpleScript
     /// 1. 指令数组
     /// 2. 常量(字符串，数字)
     /// 3. 局部变量
-    /// 4. 闭包变量
-    /// 5. 子函数
+    /// 4. 子函数
     /// </summary>
     class Function
     {
@@ -89,44 +88,6 @@ namespace SimpleScript
         {
             // todo ...
         }
-        public int AddUpValue(string name,int register, bool parent_local)
-        {
-            _upvalues.Add(new UpValueInfo(name, register, parent_local));
-            return _upvalues.Count - 1;
-        }
-        public int GetUpValueCount()
-        {
-            return _upvalues.Count;
-        }
-        public UpValueInfo GetUpValueInfo(int idx)
-        {
-            return _upvalues[idx];
-        }
-        public int SearchUpValue(string name)
-        {
-            for(int i = 0; i < _upvalues.Count; ++i)
-            {
-                if (_upvalues[i].name == name)
-                    return i;
-            }
-            return -1;
-        }
-
-
-        public class UpValueInfo
-        {
-            public string name;
-            public int register;
-            public bool is_parent_local;
-            public UpValueInfo(string name_, int register_, bool is_parent_local_)
-            {
-                name = name_;
-                register = register_;
-                is_parent_local = is_parent_local_;
-            }
-        }
-
-        List<UpValueInfo> _upvalues = new List<UpValueInfo>();
 
         List<Function> _child_functions = new List<Function>();
         List<object> _const_objs = new List<object>();

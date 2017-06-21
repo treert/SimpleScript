@@ -49,7 +49,6 @@
     <Compile Include="src\Function.cs" />
     <Compile Include="src\Lex.cs" />
     <Compile Include="src\LibBase.cs" />
-    <Compile Include="src\LibCoroutine.cs" />
     <Compile Include="src\OpCode.cs" />
     <Compile Include="src\Parser.cs" />
     <Compile Include="src\SyntaxTree.cs" />

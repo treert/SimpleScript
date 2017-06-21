@@ -42,7 +42,6 @@ namespace SimpleScript
 
             VM vm = new VM();
             LibBase.Register(vm);
-            LibCoroutine.Register(vm);
 
             if (args.Length > 0)
             {

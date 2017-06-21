@@ -63,21 +63,6 @@ namespace SimpleScript
         int _top = 0;
         // save register base for cfunction call
         int _register = 0;
-        LinkedList<UpValue> _upvalues = new LinkedList<UpValue>();
-        void CloseUpvalueTo(int a)
-        {
-            while(_upvalues.Count > 0)
-            {
-                UpValue upvalue = _upvalues.Last<UpValue>();
-                if (upvalue.idx >= a)
-                {
-                    upvalue.Close(_stack[upvalue.idx]);
-                    _upvalues.RemoveLast();
-                }
-                else
-                    break;
-            }
-        }
         
         class CallInfo
         {
@@ -103,9 +88,7 @@ namespace SimpleScript
 
         public void Reset(Function func)
         {
-            var closure = new Closure();
-            closure.func = func;
-            _stack[0] = closure;
+            _stack[0] = func;
             _top = 1;
 
             var call = new CallInfo();
@@ -115,19 +98,6 @@ namespace SimpleScript
             _calls.Clear();
             _calls.AddLast(call);
             
-        }
-
-        public void Reset(Closure closure)
-        {
-            _stack[0] = closure;
-            _top = 1;
-
-            var call = new CallInfo();
-            call.register_idx = 1;
-            call.pc = 0;
-            call.func_idx = 0;
-            _calls.Clear();
-            _calls.AddLast(call);
         }
 
         public void Resume()
@@ -154,39 +124,38 @@ namespace SimpleScript
                 b = _top - a - 1;
             }
 
-            if(_stack[a] is Closure)
+            if(_stack[a] is Function)
             {
-                CallClosure(_stack[a] as Closure, a, b);
+                CallFunction(_stack[a] as Function, a, b);
                 return true;
             }
             else
             {
+                Debug.Assert(_stack[a] is CFunction);
                 CallCFunction(_stack[a] as CFunction, a, b);
                 return false;
             }
         }
 
-        void CallClosure(Closure closure,int base_idx, int arg_count)
+        void CallFunction(Function func, int base_idx, int arg_count)
         {
             CallInfo call = new CallInfo();
-            Function func = closure.func;
-
             call.func_idx = base_idx;
             call.pc = 0;
 
             int fixed_args = func.GetFixedArgCount();
             int arg_idx = base_idx + 1;
-            if(func.HasVararg())
+            if (func.HasVararg())
             {
                 // move args for var_arg
                 int old_arg = arg_idx;
                 arg_idx += arg_count;
                 for (int i = 0; i < arg_count && i < fixed_args; ++i)
-                    _stack[arg_idx + i] = _stack[old_arg++];
+                    _stack[arg_idx + i] = _stack[old_arg + i];
             }
             call.register_idx = arg_idx;
             // fill nil for rest fixed_arg
-            for(int i = arg_count; i < fixed_args; ++i)
+            for (int i = arg_count; i < fixed_args; ++i)
             {
                 _stack[arg_idx + i] = null;
             }
@@ -214,72 +183,14 @@ namespace SimpleScript
             _register = base_idx;
         }
 
-        void GenerateClosure(int a,Function func)
-        {
-            var call = _calls.Last.Value;
-            Closure closure = _stack[call.func_idx] as Closure;
-
-
-            Closure new_closure = new Closure();
-            new_closure.func = func;
-            _stack[a] = new_closure;
-
-            // prepare upvalues
-            int count = func.GetUpValueCount();
-            for(int i = 0; i < count; ++i)
-            {
-                var upvalue_info = func.GetUpValueInfo(i);
-                if(upvalue_info.is_parent_local)
-                {
-                    UpValue upvalue = null;
-                    int reg = call.register_idx + upvalue_info.register;
-                    // find upvalue
-                    var iter = _upvalues.Last;
-                    while(iter != null)
-                    {
-                        if(iter.Value.idx <= reg)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            iter = iter.Previous;
-                        }
-                    }
-                    if(iter == null)
-                    {
-                        upvalue = new UpValue();
-                        upvalue.idx = reg;
-                        _upvalues.AddFirst(upvalue);
-                    }
-                    else if(iter.Value.idx < reg)
-                    {
-                        upvalue = new UpValue();
-                        upvalue.idx = reg;
-                        _upvalues.AddAfter(iter, upvalue);
-                    }
-                    else
-                    {
-                        upvalue = iter.Value;
-                    }
-                    new_closure.AddUpvalue(upvalue);
-                }
-                else
-                {
-                    var upvalue = closure.GetUpvalue(upvalue_info.register);
-                    new_closure.AddUpvalue(upvalue);
-                }
-            }
-        }
-
         void Return(int a, int ret_count, bool ret_any)
         {
             var call = _calls.Last.Value;
             int src = a;
             int dst = call.func_idx;
 
-            // ret will copy result over regiter, need close upvalue now
-            CloseUpvalueTo(dst);
+            // ret will copy result over regiter, need shrink stack now
+            // todo
             if(ret_any)
             {
                 ret_count = _top - src;
@@ -311,12 +222,10 @@ namespace SimpleScript
         void ExecuteFrame()
         {
             CallInfo call = _calls.Last<CallInfo>();
-            Closure closure = _stack[call.func_idx] as Closure;
-            Function func = closure.func;
+            Function func = _stack[call.func_idx] as Function;
             int code_size = func.OpCodeSize();
 
             int a, b, c, bx;
-            UpValue upvalue;
 
 
             while (call.pc < code_size)
@@ -343,6 +252,9 @@ namespace SimpleScript
                     case OpType.OpType_LoadConst:
                         _stack[a] = func.GetConstValue(bx);
                         break;
+                    case OpType.OpType_LoadFunc:
+                        _stack[a] = func.GetChildFunction(bx);
+                        break;
                     case OpType.OpType_Move:
                         _stack[a] = _stack[b];
                         break;
@@ -357,28 +269,11 @@ namespace SimpleScript
                             return;
                         }
                         break;
-                    case OpType.OpType_GetUpvalue:
-                        upvalue = closure.GetUpvalue(bx);
-                        if(upvalue.IsClosed())
-                            _stack[a] = upvalue.obj;
-                        else
-                            _stack[a] = _stack[upvalue.idx];
-                        break;
-                    case OpType.OpType_SetUpvalue:
-                        upvalue = closure.GetUpvalue(bx);
-                        if(upvalue.IsClosed())
-                            upvalue.obj = _stack[a];
-                        else
-                            _stack[upvalue.idx] = _stack[a];
-                        break;
                     case OpType.OpType_GetGlobal:
                         _stack[a] = _vm.m_global.GetValue(func.GetConstValue(bx));
                         break;
                     case OpType.OpType_SetGlobal:
                         _vm.m_global.SetValue(func.GetConstValue(bx), _stack[a]);
-                        break;
-                    case OpType.OpType_Closure:
-                        GenerateClosure(a, func.GetChildFunction(bx));
                         break;
                     case OpType.OpType_VarArg:
                         // todo
@@ -462,8 +357,8 @@ namespace SimpleScript
                     case OpType.OpType_ForStep:
                         // todo
                         break;
-                    case OpType.OpType_CloseUpvalue:
-                        CloseUpvalueTo(a);
+                    case OpType.OpType_StackShrink:
+                        // todo shrink
                         break;
                     case OpType.OpType_SetTop:
                         while(_top < a)

@@ -52,22 +52,6 @@ namespace SimpleScript
             idx = -1;
         }
     }
-    class Closure
-    {
-        public Function func = null;
-        public Closure parent = null;
-        public void AddUpvalue(UpValue upvalue_)
-        {
-            _upvalues.Add(upvalue_);
-        }
-
-        public UpValue GetUpvalue(int idx)
-        {
-            return _upvalues[idx];
-        }
-
-        List<UpValue> _upvalues = new List<UpValue>();
-    }
 
     class Table
     {

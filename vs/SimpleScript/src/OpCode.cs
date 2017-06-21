@@ -20,12 +20,10 @@ namespace SimpleScript
         OpType_LoadBool,                // AB   R(A) := (B == 1)
         OpType_LoadInt,                 // ABx  R(A) := Bx
         OpType_LoadConst,               // ABx  R(A) := Const(Bx)
+        OpType_LoadFunc,                // ABx  R(A) := ChildFunc(Bx)
         OpType_Move,                    // AB   R(A) := R(B)
-        OpType_GetUpvalue,              // ABx  R(A) := Upvalue(Bx)
-        OpType_SetUpvalue,              // ABx  Upvalue(Bx) := R(A)
         OpType_GetGlobal,               // ABx  R(A) := Global(Bx)
         OpType_SetGlobal,               // ABx  Global(Bx) := R(A)
-        OpType_Closure,                 // ABx  R(A) := Closure(ChildFunc(Bx))
         OpType_Call,                    // ABC  R(A)..R(top-1) := Call(R(A),B:fix arg count,C==1:any arg to top)
         OpType_VarArg,                  // A    R(A)..R(top-1) := ...
         OpType_Ret,                     // ABC  return C!=1 ? R(A)..R(B) : R(A)..R(top-1)
@@ -55,7 +53,7 @@ namespace SimpleScript
         OpType_GetTable,                // ABC  R(C) = R(A)[R(B)]
         OpType_TableNext,               // A    todo
         OpType_ForStep,                 // ABC  if CheckStep(R(A),R(B),R(C)) { ++pc } next code is jmp tail
-        OpType_CloseUpvalue,            // A    close upvalue to R(A)
+        OpType_StackShrink,             // A    shrink stack to R(A)
         OpType_SetTop,                  // A    R(top)..R(A) := nil; top = A
     }
     struct Instruction

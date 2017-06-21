@@ -11,7 +11,6 @@ namespace SimpleScript
     {
         UnKown,
         Global,
-        Upvalue,
         Local,
     }
     /// <summary>
@@ -98,11 +97,10 @@ namespace SimpleScript
         }
         int SearchNameAndScope(string name, out LexicalScope scope)
         {
-            bool is_local = false;
-            int index = PrepareUpvalue(_current_func, name, out is_local);
+            int index = SearchFunctionLocalName(_current_func, name);
             if (index >= 0)
             {
-                scope = is_local ? LexicalScope.Local : LexicalScope.Upvalue;
+                scope = LexicalScope.Local;
                 return index;
             }
             else
@@ -127,31 +125,7 @@ namespace SimpleScript
             }
             return -1;
         }
-        int PrepareUpvalue(GenerateFunction func,string name, out bool is_local)
-        {
-            int index;
-            index = SearchFunctionLocalName(func, name);
-            if (index >= 0)
-            {
-                is_local = true;
-                return index;
-            }
 
-            index = func.function.SearchUpValue(name);
-
-            if(index < 0 && func.parent != null)
-            {
-                bool is_from_parent = false;
-                index = PrepareUpvalue(func.parent, name, out is_from_parent);
-                if (index >= 0)
-                {
-                    index = func.function.AddUpValue(name, index, is_from_parent);
-                }
-            }
-
-            is_local = false;
-            return index;
-        }
         void EnterFunction()
         {
             var func = new GenerateFunction();
@@ -167,6 +141,7 @@ namespace SimpleScript
                 func.function.SetParent(parent.function);
             }
         }
+
         void LeaveFunction()
         {
             // auto gc, just forget about it
@@ -199,8 +174,8 @@ namespace SimpleScript
                 f.AddLocalVar(item.Key, item.Value.register,
                     item.Value.begin_pc, end_pc);
             }
-            //close upvalues, collect register
-            var code = Instruction.A(OpType.OpType_CloseUpvalue, block.start_register);
+            // shrink stack
+            var code = Instruction.A(OpType.OpType_StackShrink, block.start_register);
             f.AddInstruction(code, -1);
             ResetRegisterId(block.start_register);
 
@@ -533,7 +508,7 @@ namespace SimpleScript
             LeaveFunction();
 
             var f = GetCurrentFunction();
-            var code = Instruction.ABx(OpType.OpType_Closure, GetNextRegisterId(), func_index);
+            var code = Instruction.ABx(OpType.OpType_LoadFunc, GetNextRegisterId(), func_index);
             f.AddInstruction(code, -1);
         }
         void HandleFunctionName(FunctionName tree)
@@ -549,8 +524,6 @@ namespace SimpleScript
             {
                 if (scope == LexicalScope.Global)
                     code = Instruction.ABx(OpType.OpType_SetGlobal, func_register, index);
-                else if(scope == LexicalScope.Upvalue)
-                    code = Instruction.ABx(OpType.OpType_SetUpvalue, func_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, func_register);
                 f.AddInstruction(code, -1);
@@ -562,8 +535,6 @@ namespace SimpleScript
 
                 if (scope == LexicalScope.Global)
                     code = Instruction.ABx(OpType.OpType_GetGlobal, table_register, index);
-                else if (scope == LexicalScope.Upvalue)
-                    code = Instruction.AB(OpType.OpType_GetUpvalue, table_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, table_register, index);
                 f.AddInstruction(code, -1);
@@ -738,8 +709,6 @@ namespace SimpleScript
                     int index = SearchNameAndScope(term.token.m_string, out scope);
                     if (scope == LexicalScope.Global)
                         code = Instruction.ABx(OpType.OpType_GetGlobal, value_register, index);
-                    else if (scope == LexicalScope.Upvalue)
-                        code = Instruction.ABx(OpType.OpType_GetUpvalue, value_register, index);
                     else if (scope == LexicalScope.Local)
                         code = Instruction.AB(OpType.OpType_Move, value_register, index);
 
@@ -819,8 +788,6 @@ namespace SimpleScript
                 Instruction code = new Instruction();
                 if (scope == LexicalScope.Global)
                     code = Instruction.ABx(OpType.OpType_SetGlobal, value_register, index);
-                else if (scope == LexicalScope.Upvalue)
-                    code = Instruction.ABx(OpType.OpType_SetUpvalue, value_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, value_register);
                 f.AddInstruction(code, -1);
