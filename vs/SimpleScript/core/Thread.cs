@@ -7,20 +7,12 @@ using System.Threading.Tasks;
 
 namespace SimpleScript
 {
-    enum ThreadStatus
-    {
-        InValid,
-        Stop,
-        Runing,
-        Finished,
-        Error,
-    }
     /// <summary>
-    /// 执行线程
-    /// 1. 维护运行栈：局部变量栈，函数调用栈
-    /// 2. 状态机：stop, runing, finished, error。
+    /// 执行线程【不支持协程，一个VM只维护一个执行线程，简化实现】
+    ///     1. 执行指令
+    ///     2. 维护堆栈
     /// </summary>
-    class Thread
+    public class Thread
     {
         public VM VM
         {
@@ -33,11 +25,6 @@ namespace SimpleScript
         public int GetStatckSize()
         {
             return _top - _register;
-        }
-
-        public void ConsumeAllResult()
-        {
-            _top = _register;
         }
 
         public object GetValue(int idx)
@@ -59,6 +46,11 @@ namespace SimpleScript
             _stack[_top++] = obj;
         }
 
+        public int GetTopIdx()
+        {
+            return _top;
+        }
+
         object[] _stack = new object[OmsConf.MAX_STACK_SIZE];
         int _top = 0;
         // save register base for cfunction call
@@ -69,16 +61,12 @@ namespace SimpleScript
             public int register_idx;
             public int pc;
             public int func_idx;
+            public bool is_cfuntion = false;
         }
 
         LinkedList<CallInfo> _calls = new LinkedList<CallInfo>();
 
         string _error_msg = null;
-        ThreadStatus _status = ThreadStatus.Stop;
-        public ThreadStatus GetStatus()
-        {
-            return _status;
-        }
 
         VM _vm;
         public Thread(VM vm_)
@@ -86,65 +74,49 @@ namespace SimpleScript
             _vm = vm_;
         }
 
-        public void Reset(Function func)
-        {
-            _stack[0] = func;
-            _top = 1;
-
-            var call = new CallInfo();
-            call.register_idx = 1;
-            call.pc = 0;
-            call.func_idx = 0;
-            _calls.Clear();
-            _calls.AddLast(call);
-            
-        }
-
-        public void Resume()
-        {
-            _status = ThreadStatus.Runing;
-            Execute();
-        }
-
-        public void StopToWait()
-        {
-            _status = ThreadStatus.Stop;
-        }
-
-        public void Error(string msg)
+        void Error(string msg)
         {
             _error_msg = msg;
-            _status = ThreadStatus.Error;
+            // todo 
+            // throw exception or ...
         }
 
-        bool Call(int a,int b,bool any_value)
+        public void Run(int func_idx)
+        {
+            if(Call(func_idx, -1, true))
+            {
+                Execute();
+            }
+        }
+
+        bool Call(int func_idx,int arg_count,bool any_value)
         {
             if(any_value)
             {
-                b = _top - a - 1;
+                arg_count = _top - func_idx - 1;
             }
 
-            if(_stack[a] is Function)
+            if(_stack[func_idx] is Function)
             {
-                CallFunction(_stack[a] as Function, a, b);
+                CallFunction(_stack[func_idx] as Function, func_idx, arg_count);
                 return true;
             }
             else
             {
-                Debug.Assert(_stack[a] is CFunction);
-                CallCFunction(_stack[a] as CFunction, a, b);
+                Debug.Assert(_stack[func_idx] is CFunction);
+                CallCFunction(_stack[func_idx] as CFunction, func_idx, arg_count);
                 return false;
             }
         }
 
-        void CallFunction(Function func, int base_idx, int arg_count)
+        void CallFunction(Function func, int func_idx, int arg_count)
         {
             CallInfo call = new CallInfo();
-            call.func_idx = base_idx;
+            call.func_idx = func_idx;
             call.pc = 0;
 
             int fixed_args = func.GetFixedArgCount();
-            int arg_idx = base_idx + 1;
+            int arg_idx = func_idx + 1;
             if (func.HasVararg())
             {
                 // move args for var_arg
@@ -208,14 +180,13 @@ namespace SimpleScript
 
         void Execute()
         {
-            while(_status == ThreadStatus.Runing && _calls.Count > 0)
+            while(_calls.Count > 0)
             {
+                if(_calls.Last<CallInfo>().is_cfuntion)
+                {
+                    return;// call from outside, just return, CallCFuntion will remove it at last 
+                }
                 ExecuteFrame();
-            }
-            if(_status == ThreadStatus.Runing)
-            {
-                _status = ThreadStatus.Finished;
-                _register = 0;
             }
         }
 
@@ -226,7 +197,6 @@ namespace SimpleScript
             int code_size = func.OpCodeSize();
 
             int a, b, c, bx;
-
 
             while (call.pc < code_size)
             {
@@ -262,10 +232,6 @@ namespace SimpleScript
                         if (Call(a, i.GetB(), i.GetC() == 1))
                         {
                             // will enter next frame
-                            return;
-                        }
-                        if (_status == ThreadStatus.Stop)
-                        {
                             return;
                         }
                         break;
@@ -346,7 +312,7 @@ namespace SimpleScript
                         // todo
                         break;
                     case OpType.OpType_NewTable:
-                        // todo
+                        _stack[a] = _vm.NewTable();
                         break;
                     case OpType.OpType_SetTable:
                         (_stack[a] as Table).SetValue(_stack[b], _stack[c]);

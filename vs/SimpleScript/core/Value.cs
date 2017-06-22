@@ -13,9 +13,9 @@ namespace SimpleScript
     /// number      : double
     /// string      : string
     /// bool        : bool
-    /// closure     : Closure
-    /// coroutine   : Thread
-    /// userdata    : other
+    /// table       : Table
+    /// table.iter  : Table.Iterator
+    /// userdata    : other get & set
     /// </summary>
     class ValueUtils
     {
@@ -37,23 +37,13 @@ namespace SimpleScript
         }
     }
 
-    class UpValue
+    public interface IUserData
     {
-        public object obj = null;
-        public int idx = -1;
-        public bool IsClosed()
-        {
-            return idx == -1;
-        }
-
-        public void Close(object obj_)
-        {
-            obj = obj_;
-            idx = -1;
-        }
+        object Get(object name);
+        void Set(object name, object value);
     }
 
-    class Table
+    public class Table
     {
         public void SetValue(object key, object value)
         {
@@ -67,8 +57,40 @@ namespace SimpleScript
             return null;
         }
 
+        internal Iterator GetIter()
+        {
+            return new Iterator(this);
+        }
+
+        internal class Iterator
+        {
+            Table _table;
+            Dictionary<object, object>.Enumerator _iter;
+            public Iterator(Table table)
+            {
+                _table = table;
+                _iter = table._dic.GetEnumerator();
+            }
+
+            public bool Next(out object key, out object value)
+            {
+                if(_iter.MoveNext())
+                {
+                    key = _iter.Current.Key;
+                    value = _iter.Current.Value;
+                    return true;
+                }
+                else
+                {
+                    key = null;
+                    value = null;
+                    return false;
+                }
+            }
+        }
+
         Dictionary<object, object> _dic = new Dictionary<object, object>();
     }
 
-    delegate int CFunction(Thread th);
+    public delegate int CFunction(Thread th);
 }

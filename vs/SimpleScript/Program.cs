@@ -51,7 +51,7 @@ namespace SimpleScript
             {
                 ExecuteFile("test/test.lua", vm);
             }
-            // test.TestManager.RunTest();
+            //test.TestManager.RunTest();
         }
     }
 }
