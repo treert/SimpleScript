@@ -51,7 +51,8 @@ namespace SimpleScript
         OpType_AppendTable,             // AB   R(A).append(R(B)..R(top-1))
         OpType_SetTable,                // ABC  R(A)[R(B)] = R(C)
         OpType_GetTable,                // ABC  R(C) = R(A)[R(B)]
-        OpType_TableNext,               // A    todo
+        OpType_TableIter,               // AB   R(A) = get_iter(R(B))
+        OpType_TableIterNext,           // ABC  R(B) = iter_key(R(A)), R(C) = iter_key(R(A)) 
         OpType_ForStep,                 // ABC  if CheckStep(R(A),R(B),R(C)) { ++pc } next code is jmp tail
         OpType_StackShrink,             // A    shrink stack to R(A)
         OpType_SetTop,                  // A    R(top)..R(A) := nil; top = A

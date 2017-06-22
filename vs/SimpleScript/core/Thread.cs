@@ -320,6 +320,12 @@ namespace SimpleScript
                     case OpType.OpType_GetTable:
                         _stack[c] = (_stack[a] as Table).GetValue(_stack[b]);
                         break;
+                    case OpType.OpType_TableIter:
+                        _stack[a] = (_stack[b] as Table).GetIter();
+                        break;
+                    case OpType.OpType_TableIterNext:
+                        (_stack[a] as Table.Iterator).Next(out _stack[b], out _stack[c]);
+                        break;
                     case OpType.OpType_ForStep:
                         // todo
                         break;

@@ -4,8 +4,10 @@ print(a,1+2,"hello world");
 
 a = {1,2,3}
 
-print(a[2])
+foreach k,v in a do
+	print("k = ", k, "v = ",v)
+end
 
 for i = 1,3 do
-	print("current ",i)
+	print("for i=",i)
 end

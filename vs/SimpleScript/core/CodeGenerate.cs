@@ -372,9 +372,53 @@ namespace SimpleScript
 
             LeaveBlock();
         }
+
         void HandleForEachStatement(ForEachStatement tree)
         {
-            // todo think about it... has relate with hash implement
+            EnterBlock();
+
+            var f = GetCurrentFunction();
+            Instruction code;
+
+            // get table iter
+            HandleExpRead(tree.exp);
+            var table_register = GenerateRegisterId();
+            var iter_register = table_register;
+            code = Instruction.AB(OpType.OpType_TableIter, iter_register, table_register);
+            f.AddInstruction(code, -1);
+
+            EnterLoop();
+            {
+                EnterBlock();
+
+                var k_register = GenerateRegisterId();
+                if(tree.k != null)
+                {
+                    InsertName(tree.k.m_string, k_register);
+                }
+                var v_register = GenerateRegisterId();
+                InsertName(tree.v.m_string, v_register);
+
+                code = Instruction.ABC(OpType.OpType_TableIterNext, iter_register, k_register, v_register);
+                f.AddInstruction(code, -1);
+
+                // jump to loop tail when the first name value is nil
+                code = Instruction.ABx(OpType.OpType_JmpNil, k_register, 0);
+                int index = f.AddInstruction(code, -1);
+                AddLoopJumpInfo(JumpType.JumpTail, index);
+
+                HandleBlock(tree.block);
+
+                LeaveBlock();
+                // jump to loop head
+                code = Instruction.Bx(OpType.OpType_Jmp, 0);
+                index = f.AddInstruction(code, -1);
+                AddLoopJumpInfo(JumpType.JumpHead, index);
+            }
+
+            LeaveLoop();
+
+            LeaveBlock();
         }
         void HandleForInStatement(ForInStatement tree)
         {
@@ -835,8 +879,8 @@ namespace SimpleScript
                 else
                 {
                     HandleExpRead(field.index);
-                    GenerateRegisterId();
                 }
+                GenerateRegisterId();// for key register
                 HandleExpRead(field.value);
 
                 code = Instruction.ABC(OpType.OpType_SetTable, table_register, key_register, value_register);
