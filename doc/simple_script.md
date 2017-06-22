@@ -37,7 +37,11 @@ stat ::=
      "break" |
      "continue" |
      varlist "=" explist |
-     Name {tableindex | funccall} funccall
+     Name {tableindex | funccall} funccall |
+     var += exp |
+     var ++ |
+     var -= exp |
+     var --
 
 namelist ::= Name {"," Name}
 

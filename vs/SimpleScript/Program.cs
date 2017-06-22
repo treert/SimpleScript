@@ -15,7 +15,14 @@ namespace SimpleScript
         static void ExecuteFile(string file_name, VM vm)
         {
             var content = System.IO.File.ReadAllText(file_name);
-            vm.DoString(content);
+            try
+            {
+                vm.DoString(content);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         static void ExecuteConsole(VM vm)

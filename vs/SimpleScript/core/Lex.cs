@@ -39,6 +39,10 @@ namespace SimpleScript
         GE,// >=
         LE,// <=
         NE,// !=
+        ADD_SELF,// +=
+        DEC_SELF,// -=
+        ADD_ONE,// ++
+        DEC_ONE,// --
         NUMBER,
         STRING,
         NAME,
@@ -376,9 +380,36 @@ namespace SimpleScript
                         break;
                     case '-':
                         _NextChar();
-                        if (_current != '-') return new Token('-');
-                        _SkipComment();
-                        break;
+                        if(_current == '-')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.DEC_ONE);
+                        }
+                        else if(_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.DEC_SELF);
+                        }
+                        else
+                        {
+                            return new Token('-');
+                        }
+                    case '+':
+                        _NextChar();
+                        if (_current == '+')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.ADD_ONE);
+                        }
+                        else if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.ADD_SELF);
+                        }
+                        else
+                        {
+                            return new Token('+');
+                        }
                     case '.':
                         _NextChar();
                         if (_current == '.')

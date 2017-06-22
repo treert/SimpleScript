@@ -311,22 +311,22 @@ namespace SimpleScript
                         // todo 
                         break;
                     case OpType.OpType_Less:
-                        // todo
+                        _stack[a] = ValueUtils.ToNumber(_stack[b]) < ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_Greater:
-                        // todo
+                        _stack[a] = ValueUtils.ToNumber(_stack[b]) > ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_Equal:
-                        // todo 
+                        _stack[a] = ValueUtils.ToNumber(_stack[b]) == ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_UnEqual:
-                        // todo
+                        _stack[a] = ValueUtils.ToNumber(_stack[b]) != ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_LessEqual:
-                        // todo
+                        _stack[a] = ValueUtils.ToNumber(_stack[b]) <= ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_GreaterEqual:
-                        // todo
+                        _stack[a] = ValueUtils.ToNumber(_stack[b]) >= ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_NewTable:
                         _stack[a] = _vm.NewTable();
