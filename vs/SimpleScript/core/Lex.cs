@@ -23,7 +23,7 @@ namespace SimpleScript
         FUNCTION,
         GOTO,// current not used
         IF,
-        IN,// current not used
+        IN,
         LOCAL,
         NIL,
         NOT,

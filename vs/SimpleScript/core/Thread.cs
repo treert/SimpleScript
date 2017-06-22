@@ -178,6 +178,23 @@ namespace SimpleScript
             _calls.RemoveLast();
         }
 
+        bool OpForCheck(int a, int b, int c)
+        {
+            double var = ValueUtils.ToNumber(_stack[a]);
+            double limit = ValueUtils.ToNumber(_stack[b]);
+            double step = ValueUtils.ToNumber(_stack[c]);
+
+            if (step > 0)
+            {
+                return var <= limit;
+            }
+            else if(step < 0)
+            {
+                return var >= limit;
+            }
+            return false;
+        }
+
         void Execute()
         {
             while(_calls.Count > 0)
@@ -326,8 +343,11 @@ namespace SimpleScript
                     case OpType.OpType_TableIterNext:
                         (_stack[a] as Table.Iterator).Next(out _stack[b], out _stack[c]);
                         break;
-                    case OpType.OpType_ForStep:
-                        // todo
+                    case OpType.OpType_ForCheck:
+                        if(OpForCheck(a,b,c))
+                        {
+                            ++call.pc;// jump over JumpTail instruction
+                        }
                         break;
                     case OpType.OpType_StackShrink:
                         // todo shrink

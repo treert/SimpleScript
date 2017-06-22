@@ -341,7 +341,7 @@ namespace SimpleScript
                 EnterBlock();
 
                 // check 'for', continue loop or not
-                code = Instruction.ABC(OpType.OpType_ForStep, var_register, limit_register, step_register);
+                code = Instruction.ABC(OpType.OpType_ForCheck, var_register, limit_register, step_register);
                 f.AddInstruction(code, -1);
 
                 // next code jump to loop tail
@@ -356,7 +356,7 @@ namespace SimpleScript
                 f.AddInstruction(code, -1);
 
                 // var += step
-                code = Instruction.A(OpType.OpType_Add, var_register);
+                code = Instruction.ABC(OpType.OpType_Add, var_register, var_register, step_register);
                 f.AddInstruction(code, -1);
 
                 HandleBlock(tree.block);
