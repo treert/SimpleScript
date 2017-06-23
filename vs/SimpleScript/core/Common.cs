@@ -8,7 +8,7 @@ namespace SimpleScript
 {
     public static class OmsConf 
     {
-        public const int MAX_FUNC_REGISTER = 255;
+        public const int MAX_FUNC_REGISTER = 256;
         public const int MAX_STACK_SIZE = 10000;
     }
 }

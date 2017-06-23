@@ -103,6 +103,13 @@ namespace SimpleScript
         public ExpressionList exp_list;
     }
 
+    class SpecialAssginStatement:SyntaxTree
+    {
+        public SyntaxTree var;
+        public SyntaxTree exp;// ++ or -- when exp is null
+        public bool is_add_op;
+    }
+
     class NameList:SyntaxTree
     {
         public List<Token> names = new List<Token>();

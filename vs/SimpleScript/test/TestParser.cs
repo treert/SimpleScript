@@ -30,6 +30,8 @@ namespace SimpleScript.test
     {
         protected void VisitAnySyntaxTree(SyntaxTree tree)
         {
+            if (PreVisit(tree)) return;
+
             if (tree is Chunk)
                 VisitChunk(tree as Chunk);
             else if (tree is Block)
@@ -62,6 +64,8 @@ namespace SimpleScript.test
                 VisitLocalNameListStatement(tree as LocalNameListStatement);
             else if (tree is AssignStatement)
                 VisitAssignStatement(tree as AssignStatement);
+            else if (tree is SpecialAssginStatement)
+                VisitSpecialAssginStatement(tree as SpecialAssginStatement);
             else if (tree is Terminator)
                 VisitTerminator(tree as Terminator);
             else if (tree is BinaryExpression)
@@ -104,6 +108,7 @@ namespace SimpleScript.test
         protected abstract void VisitLocalFunctionStatement(LocalFunctionStatement tree);
         protected abstract void VisitLocalNameListStatement(LocalNameListStatement tree);
         protected abstract void VisitAssignStatement(AssignStatement tree);
+        protected abstract void VisitSpecialAssginStatement(SpecialAssginStatement tree);
         protected abstract void VisitTerminator(Terminator tree);
         protected abstract void VisitBinaryExpression(BinaryExpression tree);
         protected abstract void VisitUnaryExpression(UnaryExpression tree);
@@ -115,6 +120,8 @@ namespace SimpleScript.test
         protected abstract void VisitFuncCall(FuncCall tree);
         protected abstract void VisitExpressionList(ExpressionList tree);
         protected abstract void VisitNameList(NameList tree);
+
+        protected abstract bool PreVisit(SyntaxTree tree);
     }
 
     class ASTFinder : SyntaxVisitor
@@ -161,6 +168,12 @@ namespace SimpleScript.test
             }
         }
 
+        protected override bool PreVisit(SyntaxTree tree)
+        {
+            // if has find, stop vist
+            _TrySetResult(tree);
+            return _result != null;
+        }
 
         protected override void VisitChunk(Chunk tree)
         {
@@ -289,6 +302,18 @@ namespace SimpleScript.test
             }
             VisitAnySyntaxTree(tree.exp_list);
         }
+        protected override void VisitSpecialAssginStatement(SpecialAssginStatement tree)
+        {
+            _TrySetResult(tree);
+            if (_result != null) return;
+
+            VisitAnySyntaxTree(tree.var);
+            if(tree.exp != null)
+            {
+                VisitAnySyntaxTree(tree.exp);
+            }
+        }
+
         protected override void VisitTerminator(Terminator tree)
         {
             _TrySetResult(tree);

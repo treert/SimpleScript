@@ -285,12 +285,52 @@ namespace SimpleScript
         {
             // lua做了限制，其他语句只有两种，assign statement and func call
             // oms放松了些，可以有'('开头的prefixexp
+            // SS还增加几个语法支持，+=，-=，++，--
             SyntaxTree exp;
             if (LookAhead().m_type == (int)TokenType.NAME)
             {
                 exp = ParsePrefixExp();
                 if(IsVar(exp))
                 {
+                    if (LookAhead().m_type == (int)TokenType.ADD_ONE)
+                    {
+                        // ++
+                        NextToken();
+                        var special_statement = new SpecialAssginStatement();
+                        special_statement.var = exp;
+                        special_statement.is_add_op = true;
+                        return special_statement;
+                    }
+                    else if (LookAhead().m_type == (int)TokenType.ADD_SELF)
+                    {
+                        // +=
+                        NextToken();
+                        var special_statement = new SpecialAssginStatement();
+                        special_statement.var = exp;
+                        special_statement.exp = ParseExp();
+                        special_statement.is_add_op = true;
+                        return special_statement;
+                    }
+                    else if (LookAhead().m_type == (int)TokenType.DEC_ONE)
+                    {
+                        // --
+                        NextToken();
+                        var special_statement = new SpecialAssginStatement();
+                        special_statement.var = exp;
+                        special_statement.is_add_op = false;
+                        return special_statement;
+                    }
+                    else if (LookAhead().m_type == (int)TokenType.DEC_SELF)
+                    {
+                        // -=
+                        NextToken();
+                        var special_statement = new SpecialAssginStatement();
+                        special_statement.var = exp;
+                        special_statement.exp = ParseExp();
+                        special_statement.is_add_op = false;
+                        return special_statement;
+                    }
+
                     // assign statement
                     var assign_statement = new AssignStatement();
                     assign_statement.var_list.Add(exp);

@@ -11,7 +11,7 @@ namespace SimpleScript
     /// 1. 资源管理
     ///     1. 全局表
     ///     2. gc管理，new管理【现在完全没管这个】
-    /// 2. 线程管理（一个VM只维护一个thread）
+    /// 2. 线程管理
     /// 3. 对外接口
     ///     1. dostring
     /// </summary>
@@ -23,9 +23,21 @@ namespace SimpleScript
             var tree = _parser.Parse(_lex);
             var func = _code_generator.Generate(tree);
 
-            int func_idx = _thread.GetTopIdx();
-            _thread.PushValue(func);
-            _thread.Run(func_idx);
+            if(_thread.IsRuning())
+            {
+                // 这样可以兼容宿主协程，因为不存在执行栈帧来回穿插的情况
+                var work_thread = GetOtherThread();
+                work_thread.PushValue(func);
+                work_thread.Run();
+                work_thread.Clear();
+                PutOtherThread(work_thread);
+            }
+            else
+            {
+                _thread.PushValue(func);
+                _thread.Run();
+                _thread.Clear();
+            }
         }
 
         public Table m_global;
@@ -47,6 +59,24 @@ namespace SimpleScript
         Parser _parser;
         CodeGenerate _code_generator;
         Thread _thread;
+        Stack<Thread> _other_threads;
+
+        Thread GetOtherThread()
+        {
+            if(_other_threads.Count == 0)
+            {
+                return new Thread(this);
+            }
+            else
+            {
+                return _other_threads.Pop();
+            }
+        }
+
+        void PutOtherThread(Thread th)
+        {
+            _other_threads.Push(th);
+        }
 
         public VM()
         {
@@ -54,6 +84,7 @@ namespace SimpleScript
             _parser = new Parser();
             _code_generator = new CodeGenerate();
             _thread = new Thread(this);
+            _other_threads = new Stack<Thread>();
 
             m_global = NewTable();
         }

@@ -89,6 +89,18 @@ namespace SimpleScript
             // todo ...
         }
 
+        public int GetMaxRegisterCount()
+        {
+            return _MaxRegisterCount;
+        }
+        public void SetMaxRegisterCount(int count)
+        {
+            // !!! 实现好像有错误，这个貌似可以设置设成256最大值。
+            _MaxRegisterCount = Math.Max(_MaxRegisterCount, count);
+        }
+
+        int _MaxRegisterCount = 0;// 需要的最大寄存器数量
+        Table _env = null;// todo 函数上下文环境，就是函数全局表
         List<Function> _child_functions = new List<Function>();
         List<object> _const_objs = new List<object>();
         Function _parent = null;

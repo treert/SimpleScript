@@ -16,6 +16,7 @@ namespace SimpleScript.test
         }
     }
 
+    // todo
     class TestLex2 : TestBase
     {
         public override void Run()
@@ -79,7 +80,7 @@ namespace SimpleScript.test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init("+ - * / % ^ # == ~= <= >= < > = ( ) { } [ ] ; : , . .. ...");
+            lex.Init("+ - * / % ^ # == ~= <= >= < > = ( ) { } [ ] ; : , . .. ... += ++ -= --");
             ExpectTrue(lex.GetNextToken().m_type == (int)'+');
             ExpectTrue(lex.GetNextToken().m_type == (int)'-');
             ExpectTrue(lex.GetNextToken().m_type == (int)'*');
@@ -106,6 +107,10 @@ namespace SimpleScript.test
             ExpectTrue(lex.GetNextToken().m_type == (int)'.');
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.CONCAT);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DOTS);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ADD_SELF);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ADD_ONE);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DEC_SELF);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DEC_ONE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.EOS);
         }
     }

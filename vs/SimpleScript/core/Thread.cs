@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace SimpleScript
 {
     /// <summary>
-    /// 执行线程【不支持协程，一个VM只维护一个执行线程，简化实现】
+    /// 执行线程【CFuntionCall里再次使用vm，新开执行线程，好处：避免函数调用栈来回穿插】
     ///     1. 执行指令
     ///     2. 维护堆栈
     /// </summary>
@@ -51,7 +51,35 @@ namespace SimpleScript
             return _active_top;
         }
 
+        public void Clear()
+        {
+            Debug.Assert(_max_used_top < OmsConf.MAX_STACK_SIZE);
+            for(int i = 0; i < _max_used_top; ++i)
+            {
+                _stack[i] = null;
+            }
+            _calls.Clear();
+            _active_top = 0;
+            _max_used_top = 0;
+        }
+
+        public bool IsRuning()
+        {
+            return _active_top > 0;
+        }
+
         object[] _stack = new object[OmsConf.MAX_STACK_SIZE];
+        int _max_used_top = 0;
+
+        void SetMaxUsedStackIdx(int idx)
+        {
+            _max_used_top = Math.Max(_max_used_top, idx);
+            if(_max_used_top > OmsConf.MAX_STACK_SIZE)
+            {
+                _max_used_top = OmsConf.MAX_STACK_SIZE;
+                Error("stack overflow");
+            }
+        }
         /// <summary>
         /// 特殊的top，不能简单当成栈顶，用途
         /// 1. 函数任意参数，arg_count = top - func_idx - 1
@@ -76,7 +104,7 @@ namespace SimpleScript
             public Function func;
         }
 
-        LinkedList<CallInfo> _calls = new LinkedList<CallInfo>();
+        Stack<CallInfo> _calls = new Stack<CallInfo>(200);
 
         string _error_msg = null;
 
@@ -91,13 +119,21 @@ namespace SimpleScript
             _error_msg = msg;
             // todo 
             // throw exception or ...
+            throw new RuntimeException(msg);
         }
 
-        public void Run(int func_idx)
+        public void Run()
         {
-            if(Call(func_idx, -1, true))
+            try
             {
-                Execute();
+                if (Call(0, -1, true))
+                {
+                    Execute();
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
             }
         }
 
@@ -106,6 +142,10 @@ namespace SimpleScript
             if(any_value)
             {
                 arg_count = _active_top - func_idx - 1;
+            }
+            else
+            {
+                _active_top = func_idx + 1 + arg_count;
             }
 
             if(_stack[func_idx] is Function)
@@ -123,6 +163,7 @@ namespace SimpleScript
 
         void CallFunction(Function func, int func_idx, int arg_count)
         {
+
             CallInfo call = new CallInfo();
             call.func_idx = func_idx;
             call.func = func;
@@ -145,19 +186,23 @@ namespace SimpleScript
                 _stack[arg_idx + i] = null;
             }
 
-            _calls.AddLast(call);
+            _calls.Push(call);
+
+            SetMaxUsedStackIdx(call.register_idx + func.GetMaxRegisterCount() +
+                Math.Max(0, arg_count - fixed_args));// ... will copy all var args
         }
 
-        void CallCFunction(CFunction cfunc,int cfunc_idx, int arg_count)
+        void CallCFunction(CFunction cfunc,int func_idx, int arg_count)
         {
-            _active_top = cfunc_idx + 1 + arg_count;
-            _cfunc_register_idx = cfunc_idx + 1;
+            SetMaxUsedStackIdx(func_idx + OmsConf.MAX_FUNC_REGISTER);
+
+            _cfunc_register_idx = func_idx + 1;
             // call c function
             int ret_count = cfunc(this);
 
             // copy result to stack
             int src = _active_top - ret_count;
-            int dst = cfunc_idx;
+            int dst = func_idx;
             for(int i = 0; i < ret_count; ++i)
             {
                 _stack[dst + i] = _stack[src + i];
@@ -181,7 +226,7 @@ namespace SimpleScript
             // set new top and pop current callinfo
             _active_top = dst + ret_count;
             _stack[_active_top] = null;
-            _calls.RemoveLast();
+            _calls.Pop();
         }
 
         void OpCopyVarArg(int dst, CallInfo call)
@@ -223,7 +268,7 @@ namespace SimpleScript
 
         void ExecuteFrame()
         {
-            CallInfo call = _calls.Last<CallInfo>();
+            CallInfo call = _calls.Peek();
             Function func = call.func;
             int code_size = func.OpCodeSize();
 

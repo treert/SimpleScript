@@ -220,6 +220,7 @@ namespace SimpleScript
             {
                 Throw("to many local variables");
             }
+            _current_func.function.SetMaxRegisterCount(register);
             return _current_func.register = register;
         }
         int GenerateRegisterId()
@@ -228,6 +229,7 @@ namespace SimpleScript
             {
                 Throw("to many local variables");
             }
+            _current_func.function.SetMaxRegisterCount(_current_func.register + 1);
             return _current_func.register++;
         }
 
@@ -272,6 +274,8 @@ namespace SimpleScript
                     HandleContinueStatement(stmt as ContinueStatement);
                 else if (stmt is AssignStatement)
                     HandleAssignStatement(stmt as AssignStatement);
+                else if (stmt is SpecialAssginStatement)
+                    HandleSpecialAssginStatement(stmt as SpecialAssginStatement);
                 else
                     HandleExpRead(stmt);
             }
@@ -945,6 +949,40 @@ namespace SimpleScript
             }
             ResetRegisterId(register);
         }
+
+        void HandleSpecialAssginStatement(SpecialAssginStatement tree)
+        {
+            var f = GetCurrentFunction();
+            Instruction code;
+
+            HandleExpRead(tree.var);
+            var self_register = GenerateRegisterId();
+            var add_register = self_register + 1;
+            if(tree.exp == null)
+            {
+                code = Instruction.ABx(OpType.OpType_LoadInt, add_register, 1);
+                f.AddInstruction(code, -1);
+            }
+            else
+            {
+                HandleExpRead(tree.exp);
+            }
+            GenerateRegisterId();// for add_register
+
+            OpType op = OpType.OpType_Sub;
+            if(tree.is_add_op)
+            {
+                op = OpType.OpType_Add;
+            }
+            code = Instruction.ABC(op, self_register, self_register, add_register);
+            f.AddInstruction(code, -1);
+
+            // assign
+            HandleVarWrite(tree.var, self_register);
+
+            ResetRegisterId(self_register);
+        }
+
         void HandleLocalNameListStatement(LocalNameListStatement tree)
         {
             if(tree.exp_list != null)

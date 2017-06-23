@@ -66,4 +66,12 @@ namespace SimpleScript
             SetInfo(msg);
         }
     }
+
+    class RuntimeException : BaseException
+    {
+        public RuntimeException(string msg)
+        {
+            SetInfo(msg);
+        }
+    }
 }
