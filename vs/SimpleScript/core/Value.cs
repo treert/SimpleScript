@@ -57,6 +57,11 @@ namespace SimpleScript
             return null;
         }
 
+        public int Count()
+        {
+            return _dic.Count;
+        }
+
         internal Iterator GetIter()
         {
             return new Iterator(this);

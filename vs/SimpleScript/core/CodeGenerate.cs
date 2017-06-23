@@ -174,9 +174,6 @@ namespace SimpleScript
                 f.AddLocalVar(item.Key, item.Value.register,
                     item.Value.begin_pc, end_pc);
             }
-            // shrink stack
-            var code = Instruction.A(OpType.OpType_StackShrink, block.start_register);
-            f.AddInstruction(code, -1);
             ResetRegisterId(block.start_register);
 
             // auto gc
@@ -460,7 +457,7 @@ namespace SimpleScript
                 code = Instruction.ABC(OpType.OpType_Call, temp_func, 2, 0);
                 f.AddInstruction(code, -1);
 
-                code = Instruction.A(OpType.OpType_SetTop, name_end);
+                code = Instruction.A(OpType.OpType_FillNilFromTopToA, name_end);
                 f.AddInstruction(code, -1);
 
                 // jump to loop tail when the first name value is nil
@@ -916,7 +913,7 @@ namespace SimpleScript
                     if(tree.return_any_value)
                     {
                         var f = GetCurrentFunction();
-                        var code = Instruction.A(OpType.OpType_SetTop, start_register + expect_value_count);
+                        var code = Instruction.A(OpType.OpType_FillNilFromTopToA, start_register + expect_value_count);
                         f.AddInstruction(code, -1);
                     }
                     else

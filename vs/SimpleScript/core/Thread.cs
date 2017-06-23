@@ -24,18 +24,18 @@ namespace SimpleScript
 
         public int GetStatckSize()
         {
-            return _top - _register;
+            return _active_top - _cfunc_register_idx;
         }
 
         public object GetValue(int idx)
         {
             int index;
             if (idx < 0)
-                index = _top + idx;
+                index = _active_top + idx;
             else
-                index = _register + idx;
+                index = _cfunc_register_idx + idx;
 
-            if (_register <= index && index < _top)
+            if (_cfunc_register_idx <= index && index < _active_top)
                 return _stack[index];
             else
                 return null;
@@ -43,25 +43,37 @@ namespace SimpleScript
 
         public void PushValue(object obj)
         {
-            _stack[_top++] = obj;
+            _stack[_active_top++] = obj;
         }
 
         public int GetTopIdx()
         {
-            return _top;
+            return _active_top;
         }
 
         object[] _stack = new object[OmsConf.MAX_STACK_SIZE];
-        int _top = 0;
-        // save register base for cfunction call
-        int _register = 0;
+        /// <summary>
+        /// 特殊的top，不能简单当成栈顶，用途
+        /// 1. 函数任意参数，arg_count = top - func_idx - 1
+        /// 2. 函数返回值个数，top = last_ret_idx + 1【实现中确保stack[top] == nil】
+        /// 3. ...语法会设置这个值，和函数返回值相同
+        /// 4. CFuntion操作堆栈时的栈顶
+        /// 【注意】是Thread的属性，不是CallInfo的，因为每次只有一个CallInfo处于激活状态，且这个信息对于内部Call来说也就使用一次。
+        /// </summary>
+        int _active_top = 0;
+        /// <summary>
+        /// CFuntion的寄存器起始index，stack[register-1] == CFuntion
+        /// 【注意】实现有些特殊，这个索引是Thread的属性，而不是CFunctionCall的属性。
+        ///         CFuntion里再次call vm会新开thread处理【用于兼容宿主可能有的协程功能】。
+        /// </summary>
+        int _cfunc_register_idx = 0;
         
         class CallInfo
         {
             public int register_idx;
             public int pc;
             public int func_idx;
-            public bool is_cfuntion = false;
+            public Function func;
         }
 
         LinkedList<CallInfo> _calls = new LinkedList<CallInfo>();
@@ -93,7 +105,7 @@ namespace SimpleScript
         {
             if(any_value)
             {
-                arg_count = _top - func_idx - 1;
+                arg_count = _active_top - func_idx - 1;
             }
 
             if(_stack[func_idx] is Function)
@@ -113,6 +125,7 @@ namespace SimpleScript
         {
             CallInfo call = new CallInfo();
             call.func_idx = func_idx;
+            call.func = func;
             call.pc = 0;
 
             int fixed_args = func.GetFixedArgCount();
@@ -135,47 +148,52 @@ namespace SimpleScript
             _calls.AddLast(call);
         }
 
-        void CallCFunction(CFunction cfunc,int base_idx, int arg_count)
+        void CallCFunction(CFunction cfunc,int cfunc_idx, int arg_count)
         {
-            _top = base_idx + 1 + arg_count;
-            _register = base_idx + 1;
+            _active_top = cfunc_idx + 1 + arg_count;
+            _cfunc_register_idx = cfunc_idx + 1;
             // call c function
             int ret_count = cfunc(this);
 
             // copy result to stack
-            int src = _top - ret_count;
-            int dst = base_idx;
+            int src = _active_top - ret_count;
+            int dst = cfunc_idx;
             for(int i = 0; i < ret_count; ++i)
             {
                 _stack[dst + i] = _stack[src + i];
             }
-            _top = dst + ret_count;
-            _stack[_top] = null;
-            // yield or chunck return can get all args
-            _register = base_idx;
+            _active_top = dst + ret_count;
+            _stack[_active_top] = null;
         }
 
-        void Return(int a, int ret_count, bool ret_any)
+        void Return(int dst, int src, int ret_count, bool ret_any)
         {
-            var call = _calls.Last.Value;
-            int src = a;
-            int dst = call.func_idx;
-
-            // ret will copy result over regiter, need shrink stack now
-            // todo
             if(ret_any)
             {
-                ret_count = _top - src;
+                ret_count = _active_top - src;
             }
+
             for(int i = 0; i < ret_count; ++i)
             {
                 _stack[dst + i] = _stack[src + i];
             }
 
             // set new top and pop current callinfo
-            _top = dst + ret_count;
-            _stack[_top] = null;
+            _active_top = dst + ret_count;
+            _stack[_active_top] = null;
             _calls.RemoveLast();
+        }
+
+        void OpCopyVarArg(int dst, CallInfo call)
+        {
+            Function func = call.func;
+            int src = call.func_idx + 1 + func.GetFixedArgCount();
+            while(src < call.register_idx)
+            {
+                _stack[dst++] = _stack[src++];
+            }
+            _active_top = dst;
+            _stack[_active_top] = null;
         }
 
         bool OpForCheck(int a, int b, int c)
@@ -199,10 +217,6 @@ namespace SimpleScript
         {
             while(_calls.Count > 0)
             {
-                if(_calls.Last<CallInfo>().is_cfuntion)
-                {
-                    return;// call from outside, just return, CallCFuntion will remove it at last 
-                }
                 ExecuteFrame();
             }
         }
@@ -210,7 +224,7 @@ namespace SimpleScript
         void ExecuteFrame()
         {
             CallInfo call = _calls.Last<CallInfo>();
-            Function func = _stack[call.func_idx] as Function;
+            Function func = call.func;
             int code_size = func.OpCodeSize();
 
             int a, b, c, bx;
@@ -259,11 +273,11 @@ namespace SimpleScript
                         _vm.m_global.SetValue(func.GetConstValue(bx), _stack[a]);
                         break;
                     case OpType.OpType_VarArg:
-                        // todo
+                        OpCopyVarArg(a, call);
                         break;
                     case OpType.OpType_Ret:
-                        Return(a, i.GetB(), i.GetC() == 1);
-                        return;
+                        Return(call.func_idx, a, i.GetB(), i.GetC() == 1);
+                        return;// finish
                         //break;
                     case OpType.OpType_Jmp:
                         call.pc += -1 + bx;
@@ -287,7 +301,14 @@ namespace SimpleScript
                         _stack[a] = ValueUtils.IsFalse(_stack[a]);
                         break;
                     case OpType.OpType_Len:
-                        // todo
+                        if(_stack[a] is Table)
+                        {
+                            _stack[a] = (_stack[a] as Table).Count();
+                        }
+                        else
+                        {
+                            _stack[a] = 0;
+                        }
                         break;
                     case OpType.OpType_Add:
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) + ValueUtils.ToNumber(_stack[c]);
@@ -349,13 +370,10 @@ namespace SimpleScript
                             ++call.pc;// jump over JumpTail instruction
                         }
                         break;
-                    case OpType.OpType_StackShrink:
-                        // todo shrink
-                        break;
-                    case OpType.OpType_SetTop:
-                        while(_top < a)
+                    case OpType.OpType_FillNilFromTopToA:
+                        while(_active_top < a)
                         {
-                            _stack[_top++] = null;
+                            _stack[_active_top++] = null;
                         }
                         break;
                     default:
@@ -364,9 +382,8 @@ namespace SimpleScript
                 }
             }
 
-            _top = call.func_idx;
-            _stack[_top] = null;
-            _calls.RemoveLast();
+            // return nil
+            Return(call.func_idx, -1, 0, false);
         }
     }
 }

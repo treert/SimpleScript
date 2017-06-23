@@ -26,3 +26,11 @@ end
 for k,v in ipairs(a) do
 	print("foreach k = ", k, "v = ",v)
 end
+
+do
+	print("test ...")
+	local test_var_arg = function(...)
+		return "... = ",...
+	end
+	print(test_var_arg(1,2,3))
+end
