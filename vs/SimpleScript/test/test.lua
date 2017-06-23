@@ -1,4 +1,7 @@
-﻿local a = 1+2;
+﻿[[
+test simple script
+]]
+local a = 1+2;
 
 print(a,1+2,"hello world");
 
@@ -48,3 +51,6 @@ do
 	a[0] -= 10.5
 	print("-=    a[0] = ", a[0]);
 end
+
+(function() print("hello") end)()
+

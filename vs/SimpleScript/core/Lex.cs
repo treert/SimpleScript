@@ -278,7 +278,7 @@ namespace SimpleScript
             _NextChar();
             _buf.Clear();
             if (_current == '\r' || _current == '\n')
-                _NewLine();
+                _NewLine();// ignore first \n
 
             while(_current != '\0')
             {
@@ -294,7 +294,7 @@ namespace SimpleScript
                     if(i == equal_cnt && _current == ']')
                     {
                         _NextChar();
-                        return new Token(_buf.ToString());
+                        break;// break while
                     }
                     else
                     {
@@ -313,8 +313,15 @@ namespace SimpleScript
                     _NextChar();
                 }
             }
-
-            throw new LexException(_source_name,_line,_column,"incomplete multi line string");
+            if (_current == '\0' && _buf.Length > 1)
+            {
+                if(_buf[_buf.Length-1] == '\n')
+                {
+                    _buf.Remove(_buf.Length - 1, 1);// ignore last '\n'
+                }
+            }
+            return new Token(_buf.ToString());
+            //throw new LexException(_source_name,_line,_column,"incomplete multi line string");
         }
 
         private void _SkipComment()
@@ -377,9 +384,28 @@ namespace SimpleScript
                 switch(_current){
                     case '\r': case '\n':
                         _NewLine();
+                        // todo@om comment
+                        if(_current == '-')
+                        {
+                            _NextChar();
+                            if (_current == '-')
+                            {
+                                _SkipComment();
+                            }
+                            else
+                            {
+                                return new Token('-');
+                            }
+                        }
                         break;
                     case '-':
                         _NextChar();
+                        // todo@om comment
+                        if (_pos == 2 && _current == '-')
+                        {
+                            _SkipComment();
+                            break;
+                        }
                         if(_current == '-')
                         {
                             _NextChar();

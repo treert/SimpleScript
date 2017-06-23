@@ -450,6 +450,11 @@ namespace SimpleScript
                 {
                     case (int)';':
                         NextToken(); continue;
+                    case (int)TokenType.STRING:
+                        {
+                            NextToken();// throw away string, can be comment
+                            continue;
+                        }
                     case (int)TokenType.DO:
                         statement = ParseDoStatement(); break;
                     case (int)TokenType.WHILE:
