@@ -384,32 +384,15 @@ namespace SimpleScript
                 switch(_current){
                     case '\r': case '\n':
                         _NewLine();
-                        // todo@om comment
-                        if(_current == '-')
-                        {
-                            _NextChar();
-                            if (_current == '-')
-                            {
-                                _SkipComment();
-                            }
-                            else
-                            {
-                                return new Token('-');
-                            }
-                        }
                         break;
                     case '-':
                         _NextChar();
-                        // todo@om comment
-                        if (_pos == 2 && _current == '-')
-                        {
-                            _SkipComment();
-                            break;
-                        }
                         if(_current == '-')
                         {
-                            _NextChar();
-                            return new Token(TokenType.DEC_ONE);
+                            //_NextChar();
+                            //return new Token(TokenType.DEC_ONE);
+                            _SkipComment();
+                            break;
                         }
                         else if(_current == '=')
                         {
