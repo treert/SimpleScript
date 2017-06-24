@@ -1,9 +1,8 @@
 ﻿[[
 test simple script
 ]]
-local a = 1+2;
 
-print(a,1+2,"hello world");
+(function() print("hello world") end)()
 
 a = {11,22,33}
 
@@ -52,5 +51,14 @@ do
 	print("-=    a[0] = ", a[0]);
 end
 
-(function() print("hello") end)()
+print("test module")
+a = "global a"
+print("a = ", a)
+local print = print
+module("name.space")
+print("enter name.space")
+print("a = ", a)
+a = "module a"
+print("a = ", a)
+
 

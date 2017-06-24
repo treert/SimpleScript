@@ -51,6 +51,14 @@ namespace SimpleScript
             return _active_top;
         }
 
+        internal void SetModuleEnv(string name, Table table)
+        {
+            if(_calls.Count > 0)
+            {
+                _calls.Peek().func.SetEnv(name, table);
+            }
+        }
+
         public void Clear()
         {
             Debug.Assert(_max_used_top < OmsConf.MAX_STACK_SIZE);
