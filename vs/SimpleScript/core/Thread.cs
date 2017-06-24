@@ -108,6 +108,17 @@ namespace SimpleScript
 
         string _error_msg = null;
 
+        void ThrowError(string msg)
+        {
+            //if(_calls.Count > 0)
+            //{
+            //    var call = _calls.Peek();
+            //    var func = call.func;
+
+            //    if(func.OpCodeSize)
+            //}
+        }
+
         VM _vm;
         public Thread(VM vm_)
         {
@@ -126,7 +137,7 @@ namespace SimpleScript
         {
             try
             {
-                if (Call(0, -1, true))
+                if (OpCall(0, -1, true))
                 {
                     Execute();
                 }
@@ -135,127 +146,6 @@ namespace SimpleScript
             {
                 Console.WriteLine(e);
             }
-        }
-
-        bool Call(int func_idx,int arg_count,bool any_value)
-        {
-            if(any_value)
-            {
-                arg_count = _active_top - func_idx - 1;
-            }
-            else
-            {
-                _active_top = func_idx + 1 + arg_count;
-            }
-
-            if(_stack[func_idx] is Function)
-            {
-                CallFunction(_stack[func_idx] as Function, func_idx, arg_count);
-                return true;
-            }
-            else
-            {
-                Debug.Assert(_stack[func_idx] is CFunction);
-                CallCFunction(_stack[func_idx] as CFunction, func_idx, arg_count);
-                return false;
-            }
-        }
-
-        void CallFunction(Function func, int func_idx, int arg_count)
-        {
-
-            CallInfo call = new CallInfo();
-            call.func_idx = func_idx;
-            call.func = func;
-            call.pc = 0;
-
-            int fixed_args = func.GetFixedArgCount();
-            int arg_idx = func_idx + 1;
-            if (func.HasVararg())
-            {
-                // move args for var_arg
-                int old_arg = arg_idx;
-                arg_idx += arg_count;
-                for (int i = 0; i < arg_count && i < fixed_args; ++i)
-                    _stack[arg_idx + i] = _stack[old_arg + i];
-            }
-            call.register_idx = arg_idx;
-            // fill nil for rest fixed_arg
-            for (int i = arg_count; i < fixed_args; ++i)
-            {
-                _stack[arg_idx + i] = null;
-            }
-
-            _calls.Push(call);
-
-            SetMaxUsedStackIdx(call.register_idx + func.GetMaxRegisterCount() +
-                Math.Max(0, arg_count - fixed_args));// ... will copy all var args
-        }
-
-        void CallCFunction(CFunction cfunc,int func_idx, int arg_count)
-        {
-            SetMaxUsedStackIdx(func_idx + OmsConf.MAX_FUNC_REGISTER);
-
-            _cfunc_register_idx = func_idx + 1;
-            // call c function
-            int ret_count = cfunc(this);
-
-            // copy result to stack
-            int src = _active_top - ret_count;
-            int dst = func_idx;
-            for(int i = 0; i < ret_count; ++i)
-            {
-                _stack[dst + i] = _stack[src + i];
-            }
-            _active_top = dst + ret_count;
-            _stack[_active_top] = null;
-        }
-
-        void Return(int dst, int src, int ret_count, bool ret_any)
-        {
-            if(ret_any)
-            {
-                ret_count = _active_top - src;
-            }
-
-            for(int i = 0; i < ret_count; ++i)
-            {
-                _stack[dst + i] = _stack[src + i];
-            }
-
-            // set new top and pop current callinfo
-            _active_top = dst + ret_count;
-            _stack[_active_top] = null;
-            _calls.Pop();
-        }
-
-        void OpCopyVarArg(int dst, CallInfo call)
-        {
-            Function func = call.func;
-            int src = call.func_idx + 1 + func.GetFixedArgCount();
-            while(src < call.register_idx)
-            {
-                _stack[dst++] = _stack[src++];
-            }
-            _active_top = dst;
-            _stack[_active_top] = null;
-        }
-
-        bool OpForCheck(int a, int b, int c)
-        {
-            double var = ValueUtils.ToNumber(_stack[a]);
-            double limit = ValueUtils.ToNumber(_stack[b]);
-            double step = ValueUtils.ToNumber(_stack[c]);
-
-            if (step > 0)
-            {
-                return var <= limit;
-            }
-            else if(step < 0)
-            {
-                return var >= limit;
-            }
-            return false;
         }
 
         void Execute()
@@ -300,28 +190,33 @@ namespace SimpleScript
                         break;
                     case OpType.OpType_LoadFunc:
                         _stack[a] = func.GetChildFunction(bx);
+                        // copy env table to child
+                        // be careful!!! do not like closure,
+                        // Function is static object share by all ptr,
+                        // so best use module("name.space") at file level.
+                        func.CopyEnvToChild(bx);
                         break;
                     case OpType.OpType_Move:
                         _stack[a] = _stack[b];
                         break;
                     case OpType.OpType_Call:
-                        if (Call(a, i.GetB(), i.GetC() == 1))
+                        if (OpCall(a, i.GetB(), i.GetC() == 1))
                         {
                             // will enter next frame
                             return;
                         }
                         break;
                     case OpType.OpType_GetGlobal:
-                        _stack[a] = _vm.m_global.GetValue(func.GetConstValue(bx));
+                        _stack[a] = func.GetEnvTable().GetValue(func.GetConstValue(bx));
                         break;
                     case OpType.OpType_SetGlobal:
-                        _vm.m_global.SetValue(func.GetConstValue(bx), _stack[a]);
+                        func.GetEnvTable().SetValue(func.GetConstValue(bx), _stack[a]);
                         break;
                     case OpType.OpType_VarArg:
                         OpCopyVarArg(a, call);
                         break;
                     case OpType.OpType_Ret:
-                        Return(call.func_idx, a, i.GetB(), i.GetC() == 1);
+                        OpReturn(call.func_idx, a, i.GetB(), i.GetC() == 1);
                         return;// finish
                         //break;
                     case OpType.OpType_Jmp:
@@ -374,7 +269,7 @@ namespace SimpleScript
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) % ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_Concat:
-                        // todo 
+                        OpConcat(a,b,c);
                         break;
                     case OpType.OpType_Less:
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) < ValueUtils.ToNumber(_stack[c]);
@@ -428,7 +323,139 @@ namespace SimpleScript
             }
 
             // return nil
-            Return(call.func_idx, -1, 0, false);
+            OpReturn(call.func_idx, -1, 0, false);
+        }
+
+        bool OpCall(int func_idx, int arg_count, bool any_value)
+        {
+            if (any_value)
+            {
+                arg_count = _active_top - func_idx - 1;
+            }
+            else
+            {
+                _active_top = func_idx + 1 + arg_count;
+            }
+
+            object func = _stack[func_idx];
+
+            if (func is Function)
+            {
+                OpCallFunction(func as Function, func_idx, arg_count);
+                return true;// ready to enter new frame
+            }
+            else if (func is CFunction)
+            {
+                OpCallCFunction(func as CFunction, func_idx, arg_count);
+                return false;// continue current frame
+            }
+            else
+            {
+                throw new RuntimeException("type error");
+            }
+        }
+
+        void OpCallFunction(Function func, int func_idx, int arg_count)
+        {
+
+            CallInfo call = new CallInfo();
+            call.func_idx = func_idx;
+            call.func = func;
+            call.pc = 0;
+
+            int fixed_args = func.GetFixedArgCount();
+            int arg_idx = func_idx + 1;
+            if (func.HasVararg())
+            {
+                // move args for var_arg
+                int old_arg = arg_idx;
+                arg_idx += arg_count;
+                for (int i = 0; i < arg_count && i < fixed_args; ++i)
+                    _stack[arg_idx + i] = _stack[old_arg + i];
+            }
+            call.register_idx = arg_idx;
+            // fill nil for rest fixed_arg
+            for (int i = arg_count; i < fixed_args; ++i)
+            {
+                _stack[arg_idx + i] = null;
+            }
+
+            _calls.Push(call);
+
+            SetMaxUsedStackIdx(call.register_idx + func.GetMaxRegisterCount() +
+                Math.Max(0, arg_count - fixed_args));// ... will copy all var args
+        }
+
+        void OpCallCFunction(CFunction cfunc, int func_idx, int arg_count)
+        {
+            SetMaxUsedStackIdx(func_idx + OmsConf.MAX_FUNC_REGISTER);
+
+            _cfunc_register_idx = func_idx + 1;
+            // call c function
+            int ret_count = cfunc(this);
+
+            // copy result to stack
+            int src = _active_top - ret_count;
+            int dst = func_idx;
+            for (int i = 0; i < ret_count; ++i)
+            {
+                _stack[dst + i] = _stack[src + i];
+            }
+            _active_top = dst + ret_count;
+            _stack[_active_top] = null;
+        }
+
+        void OpReturn(int dst, int src, int ret_count, bool ret_any)
+        {
+            if (ret_any)
+            {
+                ret_count = _active_top - src;
+            }
+
+            for (int i = 0; i < ret_count; ++i)
+            {
+                _stack[dst + i] = _stack[src + i];
+            }
+
+            // set new top and pop current callinfo
+            _active_top = dst + ret_count;
+            _stack[_active_top] = null;
+            _calls.Pop();
+        }
+
+        void OpCopyVarArg(int dst, CallInfo call)
+        {
+            Function func = call.func;
+            int src = call.func_idx + 1 + func.GetFixedArgCount();
+            while (src < call.register_idx)
+            {
+                _stack[dst++] = _stack[src++];
+            }
+            _active_top = dst;
+            _stack[_active_top] = null;
+        }
+
+
+        bool OpForCheck(int a, int b, int c)
+        {
+            double var = ValueUtils.ToNumber(_stack[a]);
+            double limit = ValueUtils.ToNumber(_stack[b]);
+            double step = ValueUtils.ToNumber(_stack[c]);
+
+            if (step > 0)
+            {
+                return var <= limit;
+            }
+            else if (step < 0)
+            {
+                return var >= limit;
+            }
+            return false;
+        }
+
+        private void OpConcat(int a, int b, int c)
+        {
+            _stack[a] = ValueUtils.ToString(_stack[b]) + ValueUtils.ToString(_stack[c]);
         }
     }
 }

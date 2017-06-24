@@ -34,6 +34,7 @@ namespace SimpleScript
         public int AddInstruction(Instruction i, int line)
         {
             _codes.Add(i);
+            _code_lines.Add(line);
             return _codes.Count - 1;
         }
         public Instruction GetInstruction(int idx)
@@ -60,6 +61,8 @@ namespace SimpleScript
         public void SetParent(Function parent)
         {
             _parent = parent;
+            _env_name = parent._env_name;
+            _env_table = parent._env_table;
         }
         public int AddConstNumber(double num)
         {
@@ -84,11 +87,31 @@ namespace SimpleScript
         {
             return _child_functions[idx];
         }
+        // special func for moudle("name.space")
+        public void CopyEnvToChild(int idx)
+        {
+            var child = _child_functions[idx];
+            child._env_name = _env_name;
+            child._env_table = _env_table;
+        }
         public void AddLocalVar(string name,int register, int begin_pc, int end_pc)
         {
-            // todo ...
+            Debug.Assert(begin_pc < end_pc);
+            _local_var_infos.Add(new LocalVarInfo(name, register, begin_pc, end_pc));
         }
-
+        public string GetLocalVarNameByPc(int register, int pc)
+        {
+            // a little trick
+            foreach(var info in _local_var_infos)
+            {
+                if(info.register_idx == register &&
+                    info.begin_pc <= pc && pc < info.end_pc)
+                {
+                    return info.name;
+                }
+            }
+            return null;
+        }
         public int GetMaxRegisterCount()
         {
             return _MaxRegisterCount;
@@ -98,14 +121,43 @@ namespace SimpleScript
             // !!! 实现好像有错误，这个貌似可以设置设成256最大值。
             _MaxRegisterCount = Math.Max(_MaxRegisterCount, count);
         }
+        public void SetEnv(string env_name, Table env_table)
+        {
+            _env_name = env_name;
+            _env_table = env_table;
+        }
+        public Table GetEnvTable()
+        {
+            Debug.Assert(_env_table != null);
+            return _env_table;
+        }
 
         int _MaxRegisterCount = 0;// 需要的最大寄存器数量
-        Table _env = null;// todo 函数上下文环境，就是函数全局表
+        string _env_name = null;// 函数上下文环境名字
+        Table _env_table = null;// 函数上下文环境，就是函数全局表
         List<Function> _child_functions = new List<Function>();
         List<object> _const_objs = new List<object>();
         Function _parent = null;
         bool _has_vararg = false;
         int _fixed_arg_count = 0;
         List<Instruction> _codes = new List<Instruction>();
+        List<int> _code_lines = new List<int>();
+
+        // For debug
+        struct LocalVarInfo
+        {
+            public string name;
+            public int register_idx;
+            public int begin_pc;
+            public int end_pc;
+            public LocalVarInfo(string name_, int register_idx_, int begin_pc_, int end_pc_)
+            {
+                name = name_;
+                register_idx = register_idx_;
+                begin_pc = begin_pc_;
+                end_pc = end_pc_;
+            }
+        }
+        List<LocalVarInfo> _local_var_infos = new List<LocalVarInfo>();
     }
 }

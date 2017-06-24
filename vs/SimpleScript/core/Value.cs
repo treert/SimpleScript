@@ -35,6 +35,13 @@ namespace SimpleScript
                 return (double)obj;
             return 0;
         }
+
+        public static string ToString(object obj)
+        {
+            if (obj is string)
+                return (string)obj;
+            return obj.ToString();
+        }
     }
 
     public interface IUserData

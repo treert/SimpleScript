@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -46,6 +46,7 @@ namespace SimpleScript
         NUMBER,
         STRING,
         NAME,
+        // End
         EOS,
     }
 
@@ -54,6 +55,9 @@ namespace SimpleScript
         public int m_type;
         public double m_number;
         public string m_string;
+        // for error report
+        public int m_line;
+        public int m_column;
 
         public Token()
         {
@@ -82,6 +86,16 @@ namespace SimpleScript
         public Token(char char_)
         {
             m_type = (int)char_;
+        }
+
+        public bool EqualTo(char char_)
+        {
+            return m_type == (int)char_;
+        }
+
+        public bool EqualTo(TokenType type_)
+        {
+            return m_type == (int)type_;
         }
 
         public override string ToString()
@@ -379,11 +393,22 @@ namespace SimpleScript
 
         public Token GetNextToken()
         {
+            int line = _line;
+            int column = _column;
+            Token ret = _GetNextToken(ref line, ref column);
+            ret.m_line = line;
+            ret.m_column = column;
+            return ret;
+        }
+
+        Token _GetNextToken(ref int line, ref int column)
+        {
             while(_current != '\0')
             {
                 switch(_current){
                     case '\r': case '\n':
                         _NewLine();
+                        line = _line; column = _column;
                         break;
                     case '-':
                         _NextChar();
@@ -392,6 +417,7 @@ namespace SimpleScript
                             //_NextChar();
                             //return new Token(TokenType.DEC_ONE);
                             _SkipComment();
+                            line = _line; column = _column;
                             break;
                         }
                         else if(_current == '=')
@@ -492,7 +518,8 @@ namespace SimpleScript
                         if(char.IsWhiteSpace(_current))
                         {
                             _NextChar();
-                            continue;
+                            line = _line; column = _column;
+                            break;
                         }
                         else if(char.IsDigit(_current))
                         {

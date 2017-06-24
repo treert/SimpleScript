@@ -745,7 +745,7 @@ namespace SimpleScript.test
         {
             try
             {
-                TestUtils.Parse("for a.b = 1, 2 do end");
+                TestUtils.Parse("for a.b = 1, 2 do break end");
                 Error("no exception");
             }
             catch (ParserException) { }
@@ -757,7 +757,7 @@ namespace SimpleScript.test
         {
             try
             {
-                TestUtils.Parse("for a = 1, 2, 3, 4 do end");
+                TestUtils.Parse("for a = 1, 2, 3, 4 do continue end");
                 Error("no exception");
             }
             catch (ParserException) { }

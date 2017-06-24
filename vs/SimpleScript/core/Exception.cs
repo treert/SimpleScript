@@ -9,14 +9,6 @@ namespace SimpleScript
     class BaseException:Exception
     {
         private string _info = string.Empty;
-        public string Info
-        {
-            get
-            {
-                return _info;
-            }
-        }
-
         public override string Message
         {
             get
@@ -72,6 +64,10 @@ namespace SimpleScript
         public RuntimeException(string msg)
         {
             SetInfo(msg);
+        }
+        public RuntimeException(string file, int line, string msg)
+        {
+            SetInfo(file, ":", line, " ", msg);
         }
     }
 }

@@ -162,7 +162,7 @@ namespace SimpleScript
                 case (int)'-':
                 case (int)'#':
                 case (int)TokenType.NOT:
-                    var unexp = new UnaryExpression();
+                    var unexp = new UnaryExpression(LookAhead().m_line);
                     unexp.op = NextToken();
                     unexp.exp = ParseExp(null, null, 90);
                     exp = unexp;
@@ -174,7 +174,7 @@ namespace SimpleScript
         }
         ExpressionList ParseExpList()
         {
-            var exp = new ExpressionList();
+            var exp = new ExpressionList(LookAhead().m_line);
             exp.exp_list.Add(ParseExp());
             while(LookAhead().m_type == (int)',')
             {
@@ -193,7 +193,7 @@ namespace SimpleScript
         {
             NextToken();// skip '[' or '.'
 
-            var index_access = new TableAccess();
+            var index_access = new TableAccess(_current.m_line);
             index_access.table = table;
             if(_current.m_type == (int)'[')
             {
@@ -211,7 +211,7 @@ namespace SimpleScript
         }
         FuncCall ParseFunctionCall(SyntaxTree caller)
         {
-            var func_call = new FuncCall();
+            var func_call = new FuncCall(LookAhead().m_line);
             func_call.caller = caller;
             if(LookAhead().m_type == (int)':')
             {
@@ -236,7 +236,7 @@ namespace SimpleScript
             }
             else if(LookAhead().m_type == (int)'{')
             {
-                exp_list = new ExpressionList();
+                exp_list = new ExpressionList(LookAhead().m_line);
                 exp_list.exp_list.Add(ParseTableConstructor());
             }
             else
@@ -296,7 +296,7 @@ namespace SimpleScript
                     {
                         // ++
                         NextToken();
-                        var special_statement = new SpecialAssginStatement();
+                        var special_statement = new SpecialAssginStatement(_current.m_line);
                         special_statement.var = exp;
                         special_statement.is_add_op = true;
                         return special_statement;
@@ -305,7 +305,7 @@ namespace SimpleScript
                     {
                         // +=
                         NextToken();
-                        var special_statement = new SpecialAssginStatement();
+                        var special_statement = new SpecialAssginStatement(_current.m_line);
                         special_statement.var = exp;
                         special_statement.exp = ParseExp();
                         special_statement.is_add_op = true;
@@ -315,7 +315,7 @@ namespace SimpleScript
                     {
                         // --
                         NextToken();
-                        var special_statement = new SpecialAssginStatement();
+                        var special_statement = new SpecialAssginStatement(_current.m_line);
                         special_statement.var = exp;
                         special_statement.is_add_op = false;
                         return special_statement;
@@ -324,7 +324,7 @@ namespace SimpleScript
                     {
                         // -=
                         NextToken();
-                        var special_statement = new SpecialAssginStatement();
+                        var special_statement = new SpecialAssginStatement(_current.m_line);
                         special_statement.var = exp;
                         special_statement.exp = ParseExp();
                         special_statement.is_add_op = false;
@@ -332,7 +332,7 @@ namespace SimpleScript
                     }
 
                     // assign statement
-                    var assign_statement = new AssignStatement();
+                    var assign_statement = new AssignStatement(LookAhead().m_line);
                     assign_statement.var_list.Add(exp);
                     while(LookAhead().m_type != (int)'=')
                     {
@@ -371,7 +371,7 @@ namespace SimpleScript
         TableField ParseTableIndexField()
         {
             NextToken();
-            var field = new TableField();
+            var field = new TableField(_current.m_line);
             field.index = ParseExp();
             if (NextToken().m_type != ']')
                 throw new ParserException("expect ']'");
@@ -382,7 +382,7 @@ namespace SimpleScript
         }
         TableField ParseTableNameField()
         {
-            var field = new TableField();
+            var field = new TableField(LookAhead().m_line);
             field.index = new Terminator(new Token(NextToken().m_string));
             NextToken();// skip '='
             field.value = ParseExp();
@@ -390,7 +390,7 @@ namespace SimpleScript
         }
         TableField ParseTableArrayField()
         {
-            var field = new TableField();
+            var field = new TableField(LookAhead().m_line);
             field.index = null;// default is null
             field.value = ParseExp();
             return field;
@@ -398,7 +398,7 @@ namespace SimpleScript
         TableDefine ParseTableConstructor()
         {
             NextToken();
-            var table = new TableDefine();
+            var table = new TableDefine(_current.m_line);
             TableField last_field = null;
             while(LookAhead().m_type != '}')
             {
@@ -441,7 +441,7 @@ namespace SimpleScript
         }
         Block ParseBlock()
         {
-            var block = new Block();
+            var block = new Block(LookAhead().m_line);
             for (; ; )
             {
                 SyntaxTree statement = null;
@@ -489,7 +489,7 @@ namespace SimpleScript
         ReturnStatement ParseReturnStatement()
         {
             NextToken();
-            var statement = new ReturnStatement();
+            var statement = new ReturnStatement(_current.m_line);
             if(IsMainExp())
             {
                 statement.exp_list = ParseExpList();
@@ -498,17 +498,19 @@ namespace SimpleScript
         }
         BreakStatement ParseBreakStatement()
         {
-            return new BreakStatement();
+            NextToken();
+            return new BreakStatement(_current.m_line);
         }
         ContinueStatement ParseContinueStatement()
         {
-            return new ContinueStatement();
+            NextToken();
+            return new ContinueStatement(_current.m_line);
         }
         DoStatement ParseDoStatement()
         {
             NextToken();// skip 'do'
 
-            var do_statement = new DoStatement();
+            var do_statement = new DoStatement(_current.m_line);
             do_statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
                 throw new ParserException("expect 'end' for do-statement");
@@ -517,6 +519,7 @@ namespace SimpleScript
         WhileStatement ParseWhileStatement()
         {
             NextToken();// skip 'while'
+            var statement = new WhileStatement(_current.m_line);
 
             var exp = ParseExp();
             if (NextToken().m_type != (int)TokenType.DO)
@@ -526,7 +529,6 @@ namespace SimpleScript
             if (NextToken().m_type != (int)TokenType.END)
                 throw new ParserException("expect 'end' for while-statement");
 
-            var statement = new WhileStatement();
             statement.exp = exp;
             statement.block = block;
             return statement;
@@ -534,6 +536,7 @@ namespace SimpleScript
         IfStatement ParseIfStatement()
         {
             NextToken();// skip 'if' or 'elseif'
+            var statement = new IfStatement(_current.m_line);
 
             var exp = ParseExp();
             if (NextToken().m_type != (int)TokenType.THEN)
@@ -542,7 +545,6 @@ namespace SimpleScript
             var true_branch = ParseBlock();
             var false_branch = ParseFalseBranchStatement();
 
-            var statement = new IfStatement();
             statement.exp = exp;
             statement.true_branch = true_branch;
             statement.false_branch = false_branch;
@@ -575,7 +577,7 @@ namespace SimpleScript
         {
             NextToken();// skip 'function'
 
-            var statement = new FunctionStatement();
+            var statement = new FunctionStatement(_current.m_line);
             bool add_self = false;
             statement.func_name = ParseFunctionName(out add_self);
             statement.func_body = ParseFunctionBody(add_self);
@@ -587,7 +589,7 @@ namespace SimpleScript
                 throw new ParserException("unexpect token after 'function'");
 
             add_self = false;
-            var func_name = new FunctionName();
+            var func_name = new FunctionName(_current.m_line);
             func_name.names.Add(_current);
             while(LookAhead().m_type == (int)'.')
             {
@@ -612,7 +614,7 @@ namespace SimpleScript
         {
             if (NextToken().m_type != (int)'(')
                 throw new ParserException("expect '(' to start function-body");
-            var statement = new FunctionBody();
+            var statement = new FunctionBody(_current.m_line);
             statement.param_list = ParseParamList(add_self);
             if (NextToken().m_type != (int)')')
                 throw new ParserException("expect ')' after param-list");
@@ -624,7 +626,7 @@ namespace SimpleScript
         }
         ParamList ParseParamList(bool add_self)
         {
-            var statement = new ParamList();
+            var statement = new ParamList(LookAhead().m_line);
             if (add_self)
             {
                 statement.name_list.Add(new Token("self"));
@@ -673,12 +675,12 @@ namespace SimpleScript
         }
         ForStatement ParseForNumStatement()
         {
+            var statement = new ForStatement(_current.m_line);
             var name = NextToken();
             Debug.Assert(_current.m_type == (int)TokenType.NAME);
             NextToken();// skip '='
             Debug.Assert(_current.m_type == (int)'=');
 
-            var statement = new ForStatement();
             statement.name = name;
             statement.exp1 = ParseExp();
             if (NextToken().m_type != (int)',')
@@ -700,7 +702,7 @@ namespace SimpleScript
         }
         ForInStatement ParseForInStatement()
         {
-            var statement = new ForInStatement();
+            var statement = new ForInStatement(_current.m_line);
             statement.name_list = ParseNameList();
             if (NextToken().m_type != (int)TokenType.IN)
                 throw new ParserException("expect 'in' in for-in-statement");
@@ -719,7 +721,7 @@ namespace SimpleScript
         {
             NextToken();// skip 'foreach'
 
-            var statement = new ForEachStatement();
+            var statement = new ForEachStatement(_current.m_line);
             if(NextToken().m_type != (int)TokenType.NAME)
                 throw new ParserException("expect 'id' in foreach-statement");
             if(LookAhead().m_type == (int)',')
@@ -761,18 +763,18 @@ namespace SimpleScript
         LocalFunctionStatement ParseLocalFunction()
         {
             NextToken();// skip 'function'
+            var statement = new LocalFunctionStatement(_current.m_line);
 
             if (NextToken().m_type != (int)TokenType.NAME)
                 throw new ParserException("expect 'id' after 'local function'");
 
-            var statement = new LocalFunctionStatement();
             statement.name = _current;
             statement.func_body = ParseFunctionBody();
             return statement;
         }
         LocalNameListStatement ParseLocalNameList()
         {
-            var statement = new LocalNameListStatement();
+            var statement = new LocalNameListStatement(_current.m_line);
             statement.name_list = ParseNameList();
             if(LookAhead().m_type == (int)'=')
             {
@@ -783,7 +785,7 @@ namespace SimpleScript
         }
         NameList ParseNameList()
         {
-            var statement = new NameList();
+            var statement = new NameList(LookAhead().m_line);
             statement.names.Add(NextToken());
             Debug.Assert(_current.m_type == (int)TokenType.NAME);
             while(LookAhead().m_type == ',')

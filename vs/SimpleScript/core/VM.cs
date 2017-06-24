@@ -22,6 +22,7 @@ namespace SimpleScript
             _lex.Init(s);
             var tree = _parser.Parse(_lex);
             var func = _code_generator.Generate(tree);
+            func.SetEnv("", m_global);// should set environment first 
 
             if(_thread.IsRuning())
             {
