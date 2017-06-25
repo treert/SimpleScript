@@ -133,8 +133,11 @@ namespace SimpleScript
         }
 
         int _MaxRegisterCount = 0;// 需要的最大寄存器数量
+
+        // For runtime
         string _env_name = null;// 函数上下文环境名字
         Table _env_table = null;// 函数上下文环境，就是函数全局表
+
         List<Function> _child_functions = new List<Function>();
         List<object> _const_objs = new List<object>();
         Function _parent = null;
