@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleScript
+
+using SimpleScript;
+namespace SimpleScriptConsole
 {
     class Program
     {
@@ -52,11 +54,11 @@ namespace SimpleScript
 
             if (args.Length > 0)
             {
-                ExecuteConsole(vm);
+                ExecuteFile("test.lua", vm);
             }
             else
             {
-                ExecuteFile("test/test.lua", vm);
+                ExecuteConsole(vm);
             }
             //test.TestManager.RunTest();
         }

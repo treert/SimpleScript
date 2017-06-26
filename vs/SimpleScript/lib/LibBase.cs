@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SimpleScript
 {
-    static class LibBase
+    public static class LibBase
     {
         public static int Print(Thread th)
         {
