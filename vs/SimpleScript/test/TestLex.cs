@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleScript.test
+namespace SimpleScript.Test
 {
     class TestLex1:TestBase
     {

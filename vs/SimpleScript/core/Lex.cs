@@ -574,9 +574,9 @@ namespace SimpleScript
             }
         }
 
-        public void Init(string input_)
+        public void Init(string input_, string name_ = "test")
         {
-            _source_name = "test";
+            _source_name = name_;
             _source = input_;
             _pos = 0;
             _line = 1;

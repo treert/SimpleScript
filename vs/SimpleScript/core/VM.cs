@@ -19,26 +19,49 @@ namespace SimpleScript
     {
         public void DoString(string s)
         {
-            _lex.Init(s);
+            var func = Parse(s);
+            CallFunction(func);
+        }
+
+        public Function Parse(string source, string module_name = "")
+        {
+            _lex.Init(source, module_name);
             var tree = _parser.Parse(_lex);
             var func = _code_generator.Generate(tree);
-            func.SetEnv("", m_global);// should set environment first 
+            return func;
+        }
 
-            if(_thread.IsRuning())
+        public object[] CallFunction(Function func, params object[] args)
+        {
+            var closure = NewClosure();
+            closure.func = func;
+            closure.env_table = m_global;
+
+            return CallClosure(closure, args);
+        }
+
+        public object[] CallClosure(Closure closure, params object[] args)
+        {
+            var work_thread = GetWorkThread();
+
+            work_thread.PushValue(closure);
+            for (int i = 0; i < args.Length; ++i )
             {
-                // 这样可以兼容宿主协程，因为不存在执行栈帧来回穿插的情况
-                var work_thread = GetOtherThread();
-                work_thread.PushValue(func);
-                work_thread.Run();
-                work_thread.Clear();
-                PutOtherThread(work_thread);
+                work_thread.PushValue(args[i]);
             }
-            else
+            work_thread.Run();
+
+            // get results
+            int count = work_thread.GetTopIdx();
+            object[] ret = new object[count];
+            for (int i = 0; i < count; ++i )
             {
-                _thread.PushValue(func);
-                _thread.Run();
-                _thread.Clear();
+                ret[i] = work_thread.GetValue(i);
             }
+            work_thread.Clear();
+
+            PutWorkThread(work_thread);
+            return ret;
         }
 
         public Table m_global;
@@ -53,7 +76,10 @@ namespace SimpleScript
         {
             return new Table();
         }
-
+        internal Closure NewClosure()
+        {
+            return new Closure();
+        }
         /*****************************************************************/
 
         Lex _lex;
@@ -62,8 +88,13 @@ namespace SimpleScript
         Thread _thread;
         Stack<Thread> _other_threads;
 
-        Thread GetOtherThread()
+        Thread GetWorkThread()
         {
+            if(!_thread.IsRuning())
+            {
+                return _thread;
+            }
+            // 这样可以兼容宿主协程，因为不存在执行栈帧来回穿插的情况
             if(_other_threads.Count == 0)
             {
                 return new Thread(this);
@@ -74,9 +105,12 @@ namespace SimpleScript
             }
         }
 
-        void PutOtherThread(Thread th)
+        void PutWorkThread(Thread th)
         {
-            _other_threads.Push(th);
+            if(th != _thread)
+            {
+                _other_threads.Push(th);
+            }
         }
 
         public VM()

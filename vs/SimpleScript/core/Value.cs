@@ -105,4 +105,58 @@ namespace SimpleScript
     }
 
     public delegate int CFunction(Thread th);
+
+    class UpValue
+    {
+        object _obj = null;
+        object[] _stack = null;// because memory ptr is unsafe in c#
+        public readonly int idx = 0;
+
+        public UpValue(object[] stack_, int idx_)
+        {
+            _stack = stack_;
+            idx = idx_;
+        }
+
+        public object Read()
+        {
+            if (_stack == null)
+                return _obj;
+            else
+                return _stack[idx];
+        }
+        public void Write(object obj_)
+        {
+            if (_stack == null)
+                _obj = obj_;
+            else
+                _stack[idx] = obj_;
+        }
+        public bool IsClosed()
+        {
+            return _stack == null;
+        }
+        public void Close()
+        {
+            _obj = _stack[idx];
+            _stack = null;
+        }
+    }
+
+    public class Closure
+    {
+        public Function func = null;
+        public Table env_table = null;
+        
+        internal void AddUpvalue(UpValue upvalue_)
+        {
+            _upvalues.Add(upvalue_);
+        }
+        internal UpValue GetUpvalue(int idx)
+        {
+            return _upvalues[idx];
+        }
+
+        List<UpValue> _upvalues = new List<UpValue>();
+    }
 }

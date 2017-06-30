@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleScript.test
+namespace SimpleScript.Test
 {
     abstract class TestBase
     {
@@ -35,7 +35,7 @@ namespace SimpleScript.test
         public abstract void Run();
     }
 
-    class TestManager
+    public class TestManager
     {
         public static void RunTest()
         {

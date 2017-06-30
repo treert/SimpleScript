@@ -22,12 +22,12 @@ namespace SimpleScript
             }
         }
 
-        public int GetStatckSize()
+        public int GetCFunctionArgCount()
         {
             return _active_top - _cfunc_register_idx;
         }
 
-        public object GetValue(int idx)
+        public object GetCFunctionArg(int idx)
         {
             int index;
             if (idx < 0)
@@ -41,9 +41,19 @@ namespace SimpleScript
                 return null;
         }
 
-        public void PushValue(object obj)
+        public void PushCFunctionValue(object obj)
+        {
+            PushValue(obj);
+        }
+
+        internal void PushValue(object obj)
         {
             _stack[_active_top++] = obj;
+        }
+
+        internal object GetValue(int idx)
+        {
+            return _stack[idx];
         }
 
         public int GetTopIdx()
@@ -51,11 +61,15 @@ namespace SimpleScript
             return _active_top;
         }
 
-        internal void SetModuleEnv(string name, Table table)
+        public void SetModuleEnv(Table table)
         {
             if(_calls.Count > 0)
             {
-                _calls.Peek().func.SetEnv(name, table);
+                _calls.Peek().closure.env_table = table;
+            }
+            else
+            {
+                Error("moudule(xxx) should use from script");
             }
         }
 
@@ -109,10 +123,92 @@ namespace SimpleScript
             public int register_idx;
             public int pc;
             public int func_idx;
-            public Function func;
+            public Closure closure;
         }
 
-        Stack<CallInfo> _calls = new Stack<CallInfo>(200);
+        Stack<CallInfo> _calls = new Stack<CallInfo>(256);
+
+        #region upvalue
+
+        LinkedList<UpValue> _upvalues = new LinkedList<UpValue>();
+
+        UpValue NewUpValue(int idx)
+        {
+            return new UpValue(_stack, idx);
+        }
+
+        void OpCloseUpvalueTo(int a)
+        {
+            while (_upvalues.Count > 0)
+            {
+                UpValue upvalue = _upvalues.Last<UpValue>();
+                if (upvalue.idx >= a)
+                {
+                    upvalue.Close();
+                    _upvalues.RemoveLast();
+                }
+                else
+                    break;
+            }
+        }
+
+        void OpGenerateClosure(int a, Function func)
+        {
+            CallInfo call = _calls.Peek();
+            Closure closure = call.closure;
+
+            Closure new_closure = _vm.NewClosure();
+            new_closure.func = func;
+            new_closure.env_table = closure.env_table;
+            _stack[a] = new_closure;
+
+            // prepare upvalues
+            int count = func.GetUpValueCount();
+            for (int i = 0; i < count; ++i)
+            {
+                var upvalue_info = func.GetUpValueInfo(i);
+                if (upvalue_info.is_parent_local)
+                {
+                    UpValue upvalue = null;
+                    int reg = call.register_idx + upvalue_info.register;
+                    // find upvalue
+                    var iter = _upvalues.Last;
+                    while (iter != null)
+                    {
+                        if (iter.Value.idx <= reg)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            iter = iter.Previous;
+                        }
+                    }
+                    if (iter == null)
+                    {
+                        upvalue = NewUpValue(reg);
+                        _upvalues.AddFirst(upvalue);
+                    }
+                    else if (iter.Value.idx < reg)
+                    {
+                        upvalue = NewUpValue(reg);
+                        _upvalues.AddAfter(iter, upvalue);
+                    }
+                    else
+                    {
+                        upvalue = iter.Value;
+                    }
+                    new_closure.AddUpvalue(upvalue);
+                }
+                else
+                {
+                    var upvalue = closure.GetUpvalue(upvalue_info.register);
+                    new_closure.AddUpvalue(upvalue);
+                }
+            }
+        }
+
+        #endregion
 
         string _error_msg = null;
 
@@ -141,7 +237,7 @@ namespace SimpleScript
             throw new RuntimeException(msg);
         }
 
-        public void Run()
+        internal void Run()
         {
             try
             {
@@ -167,10 +263,12 @@ namespace SimpleScript
         void ExecuteFrame()
         {
             CallInfo call = _calls.Peek();
-            Function func = call.func;
+            Closure closure = call.closure;
+            Function func = closure.func;
             int code_size = func.OpCodeSize();
 
             int a, b, c, bx;
+            UpValue upvalue;
 
             while (call.pc < code_size)
             {
@@ -196,16 +294,11 @@ namespace SimpleScript
                     case OpType.OpType_LoadConst:
                         _stack[a] = func.GetConstValue(bx);
                         break;
-                    case OpType.OpType_LoadFunc:
-                        _stack[a] = func.GetChildFunction(bx);
-                        // copy env table to child
-                        // be careful!!! do not like closure,
-                        // Function is static object share by all ptr,
-                        // so best use module("name.space") at file level.
-                        func.CopyEnvToChild(bx);
-                        break;
                     case OpType.OpType_Move:
                         _stack[a] = _stack[b];
+                        break;
+                    case OpType.OpType_Closure:
+                        OpGenerateClosure(a, func.GetChildFunction(bx));
                         break;
                     case OpType.OpType_Call:
                         if (OpCall(a, i.GetB(), i.GetC() == 1))
@@ -214,11 +307,19 @@ namespace SimpleScript
                             return;
                         }
                         break;
+                    case OpType.OpType_GetUpvalue:
+                        upvalue = closure.GetUpvalue(bx);
+                        _stack[a] = upvalue.Read();
+                        break;
+                    case OpType.OpType_SetUpvalue:
+                        upvalue = closure.GetUpvalue(bx);
+                        upvalue.Write(_stack[a]);
+                        break;
                     case OpType.OpType_GetGlobal:
-                        _stack[a] = func.GetEnvTable().GetValue(func.GetConstValue(bx));
+                        _stack[a] = closure.env_table.GetValue(func.GetConstValue(bx));
                         break;
                     case OpType.OpType_SetGlobal:
-                        func.GetEnvTable().SetValue(func.GetConstValue(bx), _stack[a]);
+                        closure.env_table.SetValue(func.GetConstValue(bx), _stack[a]);
                         break;
                     case OpType.OpType_VarArg:
                         OpCopyVarArg(a, call);
@@ -324,6 +425,9 @@ namespace SimpleScript
                             _stack[_active_top++] = null;
                         }
                         break;
+                    case OpType.OpType_CloseUpvalue:
+                        OpCloseUpvalueTo(a);
+                        break;
                     default:
                         Debug.Assert(false);
                         break;
@@ -347,9 +451,9 @@ namespace SimpleScript
 
             object func = _stack[func_idx];
 
-            if (func is Function)
+            if (func is Closure)
             {
-                OpCallFunction(func as Function, func_idx, arg_count);
+                CallClosure(func as Closure, func_idx, arg_count);
                 return true;// ready to enter new frame
             }
             else if (func is CFunction)
@@ -363,12 +467,13 @@ namespace SimpleScript
             }
         }
 
-        void OpCallFunction(Function func, int func_idx, int arg_count)
+        void CallClosure(Closure closure, int func_idx, int arg_count)
         {
-
             CallInfo call = new CallInfo();
+            Function func = closure.func;
+
+            call.closure = closure;
             call.func_idx = func_idx;
-            call.func = func;
             call.pc = 0;
 
             int fixed_args = func.GetFixedArgCount();
@@ -379,7 +484,7 @@ namespace SimpleScript
                 int old_arg = arg_idx;
                 arg_idx += arg_count;
                 for (int i = 0; i < arg_count && i < fixed_args; ++i)
-                    _stack[arg_idx + i] = _stack[old_arg + i];
+                    _stack[arg_idx + i] = _stack[old_arg++];
             }
             call.register_idx = arg_idx;
             // fill nil for rest fixed_arg
@@ -415,6 +520,9 @@ namespace SimpleScript
 
         void OpReturn(int dst, int src, int ret_count, bool ret_any)
         {
+            // ret will copy result over regiter, need close upvalue now
+            OpCloseUpvalueTo(dst);
+
             if (ret_any)
             {
                 ret_count = _active_top - src;
@@ -433,7 +541,7 @@ namespace SimpleScript
 
         void OpCopyVarArg(int dst, CallInfo call)
         {
-            Function func = call.func;
+            Function func = call.closure.func;
             int src = call.func_idx + 1 + func.GetFixedArgCount();
             while (src < call.register_idx)
             {

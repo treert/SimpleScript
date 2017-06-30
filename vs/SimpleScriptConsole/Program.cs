@@ -4,8 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 using SimpleScript;
+
 namespace SimpleScriptConsole
 {
     class Program
@@ -60,7 +60,7 @@ namespace SimpleScriptConsole
             {
                 ExecuteConsole(vm);
             }
-            //test.TestManager.RunTest();
+            //SimpleScript.Test.TestManager.RunTest();
         }
     }
 }

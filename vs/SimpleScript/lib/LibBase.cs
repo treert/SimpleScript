@@ -10,11 +10,11 @@ namespace SimpleScript
     {
         public static int Print(Thread th)
         {
-            int arg_count = th.GetStatckSize();
+            int arg_count = th.GetCFunctionArgCount();
 
             for (int i = 0; i < arg_count; ++i)
             {
-                object obj = th.GetValue(i);
+                object obj = th.GetCFunctionArg(i);
                 if (obj == null)
                     Console.Write("nil");
                 else if (obj is bool)
@@ -37,10 +37,10 @@ namespace SimpleScript
 
         public static int XModule(Thread th)
         {
-            string name = th.GetValue(0) as string;
+            string name = th.GetCFunctionArg(0) as string;
             if(name != null)
             {
-                // todo 没有出错兼容，要完善也不用一啊
+                // todo 没有容错
                 var segments = name.Split('.');
                 var table = th.VM.m_global;
                 var vm = th.VM;
@@ -54,7 +54,7 @@ namespace SimpleScript
                     }
                     table = tmp;
                 }
-                th.SetModuleEnv(name, table);
+                th.SetModuleEnv(table);
             }
             return 0;
         }

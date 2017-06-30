@@ -13,17 +13,19 @@ namespace SimpleScript
     C   : uint8_t
     Bx  : int16_t (B+C)
     */
-    enum OpType
+    public enum OpType
     {
         OpType_InValid = 0,
         OpType_LoadNil,                 // A    R(A) := nil
         OpType_LoadBool,                // AB   R(A) := (B == 1)
         OpType_LoadInt,                 // ABx  R(A) := Bx
         OpType_LoadConst,               // ABx  R(A) := Const(Bx)
-        OpType_LoadFunc,                // ABx  R(A) := ChildFunc(Bx)
         OpType_Move,                    // AB   R(A) := R(B)
+        OpType_GetUpvalue,              // ABx  R(A) := Upvalue(Bx)
+        OpType_SetUpvalue,              // ABx  Upvalue(Bx) := R(A)
         OpType_GetGlobal,               // ABx  R(A) := Global(Bx)
         OpType_SetGlobal,               // ABx  Global(Bx) := R(A)
+        OpType_Closure,                 // ABx  R(A) := Closure(ChildFunc(Bx))
         OpType_Call,                    // ABC  R(A)..R(top-1) := Call(R(A),B:fix arg count,C==1:any arg to top)
         OpType_VarArg,                  // A    R(A)..R(top-1) := ...
         OpType_Ret,                     // ABC  return C!=1 ? R(A)..R(B) : R(A)..R(top-1)
@@ -55,8 +57,9 @@ namespace SimpleScript
         OpType_TableIterNext,           // ABC  R(B) = iter_key(R(A)), R(C) = iter_key(R(A)) 
         OpType_ForCheck,                // ABC  if CheckStep(R(A),R(B),R(C)) { ++pc } next code is jmp tail
         OpType_FillNilFromTopToA,       // A    R(top)..R(A) := nil; top must be set before
+        OpType_CloseUpvalue,            // A    close upvalue to R(A)
     }
-    struct Instruction
+    public struct Instruction
     {
         System.Int32 _opcode;
         public Instruction(OpType op, int res)

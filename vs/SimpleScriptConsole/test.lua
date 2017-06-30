@@ -61,4 +61,23 @@ print("a = ", a)
 a = "module a"
 print("a = ", a)
 
+print("test closure")
+a,b = (function()
+	local a = 0
+	return function()
+		a++
+		print(a)
+	end,function()
+		a-=1
+		print(a)
+	end
+end)()
+
+a()
+a()
+a()
+b()
+b()
+
+
 
