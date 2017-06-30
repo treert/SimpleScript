@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,14 +22,6 @@ namespace SimpleScript
         {
             var func = Parse(s);
             CallFunction(func);
-        }
-
-        public Function Parse(string source, string module_name = "")
-        {
-            _lex.Init(source, module_name);
-            var tree = _parser.Parse(_lex);
-            var func = _code_generator.Generate(tree);
-            return func;
         }
 
         public object[] CallFunction(Function func, params object[] args)
@@ -63,6 +56,32 @@ namespace SimpleScript
             PutWorkThread(work_thread);
             return ret;
         }
+
+        //****************************************************************/
+        public Function Parse(string source, string module_name = "")
+        {
+            _lex.Init(source, module_name);
+            var tree = _parser.Parse(_lex);
+            var func = _code_generator.Generate(tree);
+            return func;
+        }
+
+        System.Runtime.Serialization.Formatters.Binary.BinaryFormatter _serializer
+            = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+
+        public Function Deserialize(Stream source)
+        {
+            var func = _serializer.Deserialize(source) as Function;
+            return func;
+        }
+
+        public void Serialize(string source, Stream stream)
+        {
+            var func = Parse(source);
+            _serializer.Serialize(stream, func);
+        }
+
+        //****************************************************************/
 
         public Table m_global;
 

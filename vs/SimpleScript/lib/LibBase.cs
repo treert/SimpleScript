@@ -55,6 +55,8 @@ namespace SimpleScript
                     table = tmp;
                 }
                 th.SetModuleEnv(table);
+                th.PushValue(table);
+                return 1;
             }
             return 0;
         }

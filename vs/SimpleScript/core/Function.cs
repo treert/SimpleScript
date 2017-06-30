@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace SimpleScript
 {
@@ -14,6 +15,7 @@ namespace SimpleScript
     /// 3. 局部变量
     /// 4. 子函数
     /// </summary>
+    [Serializable]
     public class Function
     {
         public Function()
@@ -118,6 +120,7 @@ namespace SimpleScript
         List<int> _code_lines = new List<int>();
 
         // For debug
+        [Serializable]
         struct LocalVarInfo
         {
             public string name;
@@ -159,7 +162,7 @@ namespace SimpleScript
             return -1;
         }
 
-
+        [Serializable]
         public class UpValueInfo
         {
             public string name;

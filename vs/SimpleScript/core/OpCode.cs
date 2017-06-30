@@ -59,6 +59,8 @@ namespace SimpleScript
         OpType_FillNilFromTopToA,       // A    R(top)..R(A) := nil; top must be set before
         OpType_CloseUpvalue,            // A    close upvalue to R(A)
     }
+
+    [Serializable]
     public struct Instruction
     {
         System.Int32 _opcode;
