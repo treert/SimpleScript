@@ -1,4 +1,4 @@
-﻿[[
+--[[
 test simple script
 ]]
 
@@ -41,13 +41,13 @@ do
 	print("test += -= ++ --")
 	a[0] = 4
 	print("start a[0] = ", a[0]);
-	a[0] ++
+	a[0] = 23
 	print("++    a[0] = ", a[0]);
 	-- a[0] --
 	-- print("--    a[0] = ", a[0]);
-	a[0] += 10.5
+	a[0] = 10.5
 	print("+=    a[0] = ", a[0]);
-	a[0] -= 10.5
+	a[0] = 10.5
 	print("-=    a[0] = ", a[0]);
 end
 
@@ -65,10 +65,10 @@ print("test closure")
 a,b = (function()
 	local a = 0
 	return function()
-		a++
+		a = a+1
 		print(a)
 	end,function()
-		a-=1
+		a= a-1
 		print(a)
 	end
 end)()

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using SimpleScript.Serialize;
 namespace SimpleScript
 {
     /// <summary>
@@ -68,17 +69,20 @@ namespace SimpleScript
 
         System.Runtime.Serialization.Formatters.Binary.BinaryFormatter _serializer
             = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+        XSerializer xx = new XSerializer(typeof(Function));
 
         public Function Deserialize(Stream source)
         {
-            var func = _serializer.Deserialize(source) as Function;
-            return func;
+            //var func = _serializer.Deserialize(source) as Function;
+            //return func;
+            return xx.Deserialize<Function>(source);
         }
 
         public void Serialize(string source, Stream stream)
         {
             var func = Parse(source);
-            _serializer.Serialize(stream, func);
+            //_serializer.Serialize(stream, func);
+            xx.Serialize(stream, func);
         }
 
         //****************************************************************/

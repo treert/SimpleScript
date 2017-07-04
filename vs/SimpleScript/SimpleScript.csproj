@@ -58,6 +58,8 @@
     <Compile Include="core\Thread.cs" />
     <Compile Include="core\Value.cs" />
     <Compile Include="core\VM.cs" />
+    <Compile Include="Serialize\XTypeSerializers.cs" />
+    <Compile Include="Serialize\XSerializer.cs" />
     <Compile Include="test\TestLex.cs" />
     <Compile Include="test\TestManager.cs" />
     <Compile Include="test\TestParser.cs" />

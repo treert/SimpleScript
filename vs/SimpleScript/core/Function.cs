@@ -174,6 +174,8 @@ namespace SimpleScript
                 register = register_;
                 is_parent_local = is_parent_local_;
             }
+            public UpValueInfo()
+            { }
         }
 
         List<UpValueInfo> _upvalues = new List<UpValueInfo>();
