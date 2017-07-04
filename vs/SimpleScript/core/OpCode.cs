@@ -60,10 +60,19 @@ namespace SimpleScript
         OpType_CloseUpvalue,            // A    close upvalue to R(A)
     }
 
-    [Serializable]
     public struct Instruction
     {
         System.Int32 _opcode;
+        public int GetCode()
+        {
+            return _opcode;
+        }
+        public static Instruction ConvertFrom(int val)
+        {
+            Instruction code;
+            code._opcode = val;
+            return code;
+        }
         public Instruction(OpType op, int res)
         {
             _opcode = (((int)op) << 24) | (res & 0xffffff);
