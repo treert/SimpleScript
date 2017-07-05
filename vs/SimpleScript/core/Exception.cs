@@ -70,4 +70,21 @@ namespace SimpleScript
             SetInfo(file, ":", line, " ", msg);
         }
     }
+
+    class OtherException : Exception
+    {
+        private string _info = string.Empty;
+        public override string Message
+        {
+            get
+            {
+                return _info;
+            }
+        }
+
+        public OtherException(string format, params object[] args)
+        {
+            _info = string.Format(format, args);
+        }
+    }
 }

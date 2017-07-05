@@ -15,8 +15,7 @@ namespace SimpleScriptConsole
         {
             try
             {
-                var content = System.IO.File.ReadAllText(file_name);
-                vm.DoString(content);
+                vm.DoFile(file_name);
             }
             catch (Exception e)
             {
@@ -28,12 +27,7 @@ namespace SimpleScriptConsole
         {
             try
             {
-                FileStream file = new FileStream(file_name, FileMode.Open, FileAccess.Read, FileShare.Read);
-
-                var func = vm.Deserialize(file);
-                vm.CallFunction(func);
-
-                file.Close();
+                vm.DoFile(file_name);
             }
             catch (Exception e)
             {
@@ -45,12 +39,7 @@ namespace SimpleScriptConsole
         {
             try
             {
-                var content = File.ReadAllText(src_file);
-                FileStream file = new FileStream(bin_file, FileMode.Create);
-
-                vm.Serialize(content, file);
-
-                file.Close();
+                vm.ComileFile(src_file, bin_file);
                 Console.WriteLine("out file: {0}", bin_file);
             }
             catch (Exception e)
@@ -80,10 +69,10 @@ namespace SimpleScriptConsole
 
         static void ShowHelpThenExit()
         {
-            string help_str = @"use way:
+            string help_str = @"Simple Script 1.0 Copyright (C) 2017
+use way:
 ss                          // run terminal
-ss xx.ss                    // run source file
-ss -b xx.ssc                // run bin file
+ss xx.ss or xx.ssc          // run source file or binary file
 ss -c xx.ss [-o xx.ssc]     // compile
 ";
             Console.WriteLine(help_str);
@@ -91,13 +80,13 @@ ss -c xx.ss [-o xx.ssc]     // compile
 
         static void Main(string[] args)
         {
-            //{
-            //    VM vm_1 = new VM();
-            //    LibBase.Register(vm_1);
-            //    Compile("test.lua", "test.luac", vm_1);
-            //    ExecuteBinFile("test.luac", vm_1);
-            //    return;
-            //}
+            {
+                VM vm_1 = new VM();
+                LibBase.Register(vm_1);
+                Compile("test.lua", "test.luac", vm_1);
+                ExecuteFile("test.luac", vm_1);
+                return;
+            }
 
             VM vm = new VM();
             LibBase.Register(vm);
@@ -126,18 +115,6 @@ ss -c xx.ss [-o xx.ssc]     // compile
                     Directory.Exists(Path.GetDirectoryName(bin_file)))
                 {
                     Compile(src_file, bin_file, vm);
-                }
-                else
-                {
-                    ShowHelpThenExit();
-                }
-            }
-            else if (args[0] == "-b" && args.Length == 2)
-            {
-                // 运行二进制
-                if (File.Exists(args[1]))
-                {
-                    ExecuteBinFile(args[1], vm);
                 }
                 else
                 {

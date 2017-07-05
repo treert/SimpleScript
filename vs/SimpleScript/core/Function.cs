@@ -24,9 +24,8 @@ namespace SimpleScript
         }
 
 #region Serialize
-        public static Function Deserialize(Stream stream)
+        public static Function Deserialize(BinaryReader reader)
         {
-            BinaryReader reader = new BinaryReader(stream);
             // all strings, will be reuse
             int count = reader.ReadInt32();
             List<string> str_list = new List<string>(count);
@@ -109,7 +108,7 @@ namespace SimpleScript
             return ret;
         }
 
-        public void Serialize(Stream stream)
+        public void Serialize(BinaryWriter writer)
         {
             // all strings, will be reuse
             Dictionary<string, int> str_id_map = new Dictionary<string, int>();
@@ -123,7 +122,6 @@ namespace SimpleScript
                 }
             }
             // serialize data begin
-            BinaryWriter writer = new BinaryWriter(stream);
             // strings
             {
                 writer.Write(str_list.Count);
