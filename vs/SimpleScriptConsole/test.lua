@@ -1,4 +1,4 @@
---[[
+﻿--[[
 test simple script
 ]]
 
