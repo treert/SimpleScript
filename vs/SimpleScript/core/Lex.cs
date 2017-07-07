@@ -172,14 +172,22 @@ namespace SimpleScript
                 _NextChar();
             }
 
-            double ret = 0;
-            if(double.TryParse(_buf.ToString(), out ret))
+            try
             {
-                return new Token(ret);
+                double num = 0;
+                if(_buf[0] == '0' && _buf.Length > 2 && _buf[1] != '.')
+                {
+                    num = (double)Convert.ToUInt32(_buf.ToString(), 16);
+                }
+                else
+                {
+                    num = Convert.ToDouble(_buf.ToString());
+                }
+                return new Token(num);
             }
-            else
+            catch
             {
-                throw new LexException(_source_name,_line,_column,String.Format("{0} is not valid double",_buf));
+                throw new LexException(_source_name, _line, _column, String.Format("{0} is not valid double", _buf));
             }
         }
 

@@ -81,6 +81,11 @@ ss -c xx.ss [-o xx.ssc]     // compile
         static void Main(string[] args)
         {
             {
+                SimpleScript.Test.TestManager.RunTest();
+                return;
+            }
+
+            {
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
                 Compile("test.lua", "test.luac", vm_1);
@@ -136,9 +141,6 @@ ss -c xx.ss [-o xx.ssc]     // compile
             {
                 ShowHelpThenExit();
             }
-            //SimpleScript.Test.TestManager.RunTest();
-
-
         }
     }
 }
