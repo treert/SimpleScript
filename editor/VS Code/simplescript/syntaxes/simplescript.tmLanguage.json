@@ -1,0 +1,274 @@
+{
+	"name": "SimpleScript",
+	"comment": "SimpleScript Syntax: version 1.0",
+	"scopeName": "source.simplescript",
+	"fileTypes": [
+		"ss"
+	],
+	"firstLineMatch": "\\A#!.*?\\bsimplescript\\b",
+	"keyEquivalent": "^~L",
+	"patterns": [
+		{
+			"begin": "\\b((local\\b)\\s+)?(function)\\s*(\\s+[a-zA-Z_][a-zA-Z0-9_]*(\\.[a-zA-Z_][a-zA-Z0-9_]*)*(:[a-zA-Z_][a-zA-Z0-9_]*)?\\s*)?(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "storage.modifier.local.simplescript"
+				},
+				"3": {
+					"name": "keyword.control.simplescript"
+				},
+				"4": {
+					"name": "entity.name.function.simplescript"
+				},
+				"5": {
+					"name": "punctuation.definition.parameters.begin.simplescript"
+				}
+			},
+			"end": "\\)",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.parameters.end.simplescript"
+				}
+			},
+			"name": "meta.function.simplescript",
+			"patterns": [
+				{
+					"match": "[a-zA-Z_][a-zA-Z0-9_]*",
+					"name": "variable.parameter.function.simplescript"
+				}
+			]
+		},
+		{
+			"match": "(?<![\\w\\d.])0[xX]\\h+(?![pPeE.0-9])",
+			"name": "constant.numeric.integer.hexadecimal.simplescript"
+		},
+		{
+			"match": "(?<![\\w\\d.])0[xX]\\h+(\\.\\h+)?([eE]-?\\d*)?([pP][-+]\\d+)?",
+			"name": "constant.numeric.float.hexadecimal.simplescript"
+		},
+		{
+			"match": "(?<![\\w\\d.])\\d+(?![pPeE.0-9])",
+			"name": "constant.numeric.integer.simplescript"
+		},
+		{
+			"match": "(?<![\\w\\d.])\\d+(\\.\\d+)?([eE]-?\\d*)?",
+			"name": "constant.numeric.float.simplescript"
+		},
+		{
+			"begin": "'",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.simplescript"
+				}
+			},
+			"end": "'",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.simplescript"
+				}
+			},
+			"name": "string.quoted.single.simplescript",
+			"patterns": [
+				{
+					"include": "#escaped_char"
+				}
+			]
+		},
+		{
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.simplescript"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.simplescript"
+				}
+			},
+			"name": "string.quoted.double.simplescript",
+			"patterns": [
+				{
+					"include": "#escaped_char"
+				}
+			]
+		},
+		{
+			"begin": "(?<=\\.cdef)\\s*(\\[(=*)\\[)",
+			"beginCaptures": {
+				"0": {
+					"name": "string.quoted.other.multiline.simplescript"
+				},
+				"1": {
+					"name": "punctuation.definition.string.begin.simplescript"
+				}
+			},
+			"contentName": "meta.embedded.simplescript",
+			"end": "(\\]\\2\\])",
+			"endCaptures": {
+				"0": {
+					"name": "string.quoted.other.multiline.simplescript"
+				},
+				"1": {
+					"name": "punctuation.definition.string.end.simplescript"
+				}
+			},
+			"patterns": [
+				{
+					"include": "source.c"
+				}
+			]
+		},
+		{
+			"begin": "(?<!//)\\[(=*)\\[",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.simplescript"
+				}
+			},
+			"end": "\\]\\1\\]",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.simplescript"
+				}
+			},
+			"name": "string.quoted.other.multiline.simplescript"
+		},
+		{
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.comment.simplescript"
+				}
+			},
+			"match": "\\A(#!).*$\\n?",
+			"name": "comment.line.shebang.simplescript"
+		},
+		{
+			"begin": "(^[ \\t]+)?(?=//)",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.whitespace.comment.leading.simplescript"
+				}
+			},
+			"end": "(?!\\G)((?!^)[ \\t]+\\n)?",
+			"endCaptures": {
+				"1": {
+					"name": "punctuation.whitespace.comment.trailing.simplescript"
+				}
+			},
+			"patterns": [
+				{
+					"begin": "//\\[(=*)\\[",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.comment.begin.simplescript"
+						}
+					},
+					"end": "\\]\\1\\]",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.comment.end.simplescript"
+						}
+					},
+					"name": "comment.block.simplescript"
+				},
+				{
+					"begin": "//",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.comment.simplescript"
+						}
+					},
+					"end": "\\n",
+					"name": "comment.line.double-dash.simplescript"
+				}
+			]
+		},
+		{
+			"captures": {
+				"1": {
+					"name": "keyword.control.goto.simplescript"
+				},
+				"2": {
+					"name": "constant.other.placeholder.simplescript"
+				}
+			},
+			"match": "\\b(goto)\\s+([a-zA-Z_][a-zA-Z0-9_]*)"
+		},
+		{
+			"captures": {
+				"1": {
+					"name": "punctuation.definition.label.begin.simplescript"
+				},
+				"2": {
+					"name": "punctuation.definition.label.end.simplescript"
+				}
+			},
+			"match": "(::)[a-zA-Z_][a-zA-Z0-9_]*(::)",
+			"name": "constant.other.placeholder.simplescript"
+		},
+		{
+			"match": "\\b(break|do|else|for|if|elseif|goto|return|then|repeat|while|until|end|function|local|in)\\b",
+			"name": "keyword.control.simplescript"
+		},
+		{
+			"match": "(?<![^.]\\.|:)\\b(false|nil|true|_G|_VERSION|math\\.(pi|huge))\\b|(?<![.])\\.{3}(?!\\.)",
+			"name": "constant.language.simplescript"
+		},
+		{
+			"match": "(?<![^.]\\.|:)\\b(self)\\b",
+			"name": "variable.language.self.simplescript"
+		},
+		{
+			"match": "(?<![^.]\\.|:)\\b(assert|collectgarbage|dofile|error|getfenv|getmetatable|ipairs|loadfile|loadstring|module|next|pairs|pcall|print|rawequal|rawget|rawset|require|select|setfenv|setmetatable|tonumber|tostring|type|unpack|xpcall)\\b(?=\\s*(?:[({\"']|\\[\\[))",
+			"name": "support.function.simplescript"
+		},
+		{
+			"match": "(?<![^.]\\.|:)\\b(coroutine\\.(create|resume|running|status|wrap|yield)|string\\.(byte|char|dump|find|format|gmatch|gsub|len|lower|match|rep|reverse|sub|upper)|table\\.(concat|insert|maxn|remove|sort)|math\\.(abs|acos|asin|atan2?|ceil|cosh?|deg|exp|floor|fmod|frexp|ldexp|log|log10|max|min|modf|pow|rad|random|randomseed|sinh?|sqrt|tanh?)|io\\.(close|flush|input|lines|open|output|popen|read|tmpfile|type|write)|os\\.(clock|date|difftime|execute|exit|getenv|remove|rename|setlocale|time|tmpname)|package\\.(cpath|loaded|loadlib|path|preload|seeall)|debug\\.(debug|[gs]etfenv|[gs]ethook|getinfo|[gs]etlocal|[gs]etmetatable|getregistry|[gs]etupvalue|traceback))\\b(?=\\s*(?:[({\"']|\\[\\[))",
+			"name": "support.function.library.simplescript"
+		},
+		{
+			"match": "\\b(and|or|not)\\b",
+			"name": "keyword.operator.simplescript"
+		},
+		{
+			"match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b(?=\\s*(?:[({\"']|\\[\\[))",
+			"name": "support.function.any-method.simplescript"
+		},
+		{
+			"match": "(?<=[^.]\\.|:)\\b([a-zA-Z_][a-zA-Z0-9_]*)",
+			"name": "variable.other.simplescript"
+		},
+		{
+			"match": "\\+|-|%|#|\\*|\\/|\\^|==?|~=|<=?|>=?|(?<!\\.)\\.{2}(?!\\.)",
+			"name": "keyword.operator.simplescript"
+		}
+	],
+	"repository": {
+		"escaped_char": {
+			"patterns": [
+				{
+					"match": "\\\\[abfnrtvz\\\\\"'\\n]",
+					"name": "constant.character.escape.simplescript"
+				},
+				{
+					"match": "\\\\\\d{1,3}",
+					"name": "constant.character.escape.byte.simplescript"
+				},
+				{
+					"match": "\\\\x\\h\\h",
+					"name": "constant.character.escape.byte.simplescript"
+				},
+				{
+					"match": "\\\\u\\{\\h+\\}",
+					"name": "constant.character.escape.unicode.simplescript"
+				},
+				{
+					"match": "\\\\.",
+					"name": "invalid.illegal.character.escape.simplescript"
+				}
+			]
+		}
+	}
+}

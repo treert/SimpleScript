@@ -1,0 +1,32 @@
+{
+    "name": "simplescript",
+    "displayName": "simplescript",
+    "description": "simplescript language support",
+    "version": "0.0.1",
+    "publisher": "onemore",
+    "engines": {
+        "vscode": "^1.13.0"
+    },
+    "categories": [
+        "Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "simplescript",
+            "aliases": ["SimpleScript", "simplescript"],
+            "extensions": [".ss"],
+            "configuration": "./language-configuration.json"
+        }],
+        "snippets": [
+			{
+				"language": "simplescript",
+				"path": "./snippets/simplescript.json"
+			}
+		],
+        "grammars": [{
+            "language": "simplescript",
+            "scopeName": "source.simplescript",
+            "path": "./syntaxes/simplescript.tmLanguage.json"
+        }]
+    }
+}
