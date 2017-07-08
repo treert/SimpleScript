@@ -22,10 +22,10 @@ namespace SimpleScript.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"-- this is comment
---[this is long comment]]
---[[this is long comment too--]]
---[incomplete comment]");
+            lex.Init(@"// this is comment
+//[[this is long comment]]
+//[[this is long comment too--]]
+//[incomplete comment]");
             try
             {
                 lex.GetNextToken();

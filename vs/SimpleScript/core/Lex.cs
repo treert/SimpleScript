@@ -348,7 +348,7 @@ namespace SimpleScript
 
         private void _SkipComment()
         {
-            Debug.Assert(_current == '-');
+            Debug.Assert(_current == '/');
             _NextChar();
             if(_current == '[')
             {
@@ -418,15 +418,24 @@ namespace SimpleScript
                         _NewLine();
                         line = _line; column = _column;
                         break;
+                    case '/':
+                        _NextChar();
+                        if(_current == '/')
+                        {
+                            _SkipComment();
+                            line = _line; column = _column;
+                            break;
+                        }
+                        else
+                        {
+                            return new Token('/');
+                        }
                     case '-':
                         _NextChar();
                         if(_current == '-')
                         {
-                            //_NextChar();
-                            //return new Token(TokenType.DEC_ONE);
-                            _SkipComment();
-                            line = _line; column = _column;
-                            break;
+                            _NextChar();
+                            return new Token(TokenType.DEC_ONE);
                         }
                         else if(_current == '=')
                         {

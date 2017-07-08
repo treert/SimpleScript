@@ -86,6 +86,7 @@ ss -c xx.ss [-o xx.ssc]     // compile
             }
 
             {
+
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
                 Compile("test.lua", "test.luac", vm_1);
