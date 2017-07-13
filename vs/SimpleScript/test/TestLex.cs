@@ -24,7 +24,7 @@ namespace SimpleScript.Test
             var lex = new Lex();
             lex.Init(@"// this is comment
 //[[this is long comment]]
-//[[this is long comment too--]]
+//[[this is long comment too//]]
 //[incomplete comment]");
             try
             {

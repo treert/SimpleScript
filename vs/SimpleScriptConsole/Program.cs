@@ -81,16 +81,16 @@ ss -c xx.ss [-o xx.ssc]     // compile
         static void Main(string[] args)
         {
             {
-                SimpleScript.Test.TestManager.RunTest();
-                return;
+                //SimpleScript.Test.TestManager.RunTest();
+                //return;
             }
 
             {
 
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
-                Compile("test.lua", "test.luac", vm_1);
-                ExecuteFile("test.luac", vm_1);
+                Compile("test.ss", "test.ssc", vm_1);
+                ExecuteFile("test.ssc", vm_1);
                 return;
             }
 

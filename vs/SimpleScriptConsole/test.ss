@@ -1,5 +1,7 @@
-﻿--[[
-test simple script
+﻿//[[header
+    > File Name: test.ss
+    > Create Time: 2017-07-13 星期四 11时05分43秒
+    > Athor: treertzhu
 ]]
 
 (function() print("hello world") end)()
@@ -43,8 +45,8 @@ do
 	print("start a[0] = ", a[0]);
 	a[0] = 23
 	print("++    a[0] = ", a[0]);
-	-- a[0] --
-	-- print("--    a[0] = ", a[0]);
+	a[0] --
+	print("--    a[0] = ", a[0]);
 	a[0] = 10.5
 	print("+=    a[0] = ", a[0]);
 	a[0] = 10.5
