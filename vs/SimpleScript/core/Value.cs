@@ -64,6 +64,12 @@ namespace SimpleScript
             return null;
         }
 
+        public void Add(object value)
+        {
+            int key = _dic.Count + 1;
+            _dic.Add((double)key, value);
+        }
+
         public int Count()
         {
             return _dic.Count;

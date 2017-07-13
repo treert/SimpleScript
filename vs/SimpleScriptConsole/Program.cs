@@ -81,7 +81,7 @@ ss -c xx.ss [-o xx.ssc]     // compile
         static void Main(string[] args)
         {
             {
-                //SimpleScript.Test.TestManager.RunTest();
+                SimpleScript.Test.TestManager.RunTest();
                 //return;
             }
 

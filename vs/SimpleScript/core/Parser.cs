@@ -172,13 +172,17 @@ namespace SimpleScript
             }
             return exp;
         }
-        ExpressionList ParseExpList()
+        ExpressionList ParseExpList(bool is_args = false)
         {
             var exp = new ExpressionList(LookAhead().m_line);
             exp.exp_list.Add(ParseExp());
             while(LookAhead().m_type == (int)',')
             {
                 NextToken();
+                if (is_args && LookAhead().m_type == (int)')')
+                {
+                    break;// func call args can have a extra ","
+                }
                 exp.exp_list.Add(ParseExp());
             }
             exp.return_any_value = IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count - 1]);
@@ -230,9 +234,10 @@ namespace SimpleScript
             {
                 NextToken();
                 if (LookAhead().m_type != (int)')')
-                    exp_list = ParseExpList();
+                    exp_list = ParseExpList(true);
+
                 if (NextToken().m_type != (int)')')
-                    throw new ParserException("expect '(' to end function-args");
+                    throw new ParserException("expect ')' to end function-args");
             }
             else if(LookAhead().m_type == (int)'{')
             {
@@ -450,11 +455,6 @@ namespace SimpleScript
                 {
                     case (int)';':
                         NextToken(); continue;
-                    case (int)TokenType.STRING:
-                        {
-                            NextToken();// throw away string, can be comment
-                            continue;
-                        }
                     case (int)TokenType.DO:
                         statement = ParseDoStatement(); break;
                     case (int)TokenType.WHILE:
@@ -631,26 +631,20 @@ namespace SimpleScript
             {
                 statement.name_list.Add(new Token("self"));
             }
-            if (LookAhead().m_type == (int)')')
-                return statement;
-            
-            if(LookAhead().m_type == (int)TokenType.NAME)
+
+            // special func(a,b,c,) is OK
+            while (LookAhead().m_type == (int)TokenType.NAME)
             {
                 statement.name_list.Add(NextToken());
-                while(LookAhead().m_type == (int)',')
+                if(LookAhead().m_type == (int)',')
                 {
                     NextToken();
-                    if (LookAhead().m_type == (int)TokenType.NAME)
-                        statement.name_list.Add(NextToken());
-                    else if (LookAhead().m_type == (int)TokenType.DOTS)
-                    {
-                        NextToken();
-                        statement.is_var_arg = true;
-                        break;
-                    }
-                    else
-                        throw new ParserException("unexpect token in param list");
                 }
+            }
+
+            if (LookAhead().m_type == (int)')')
+            {
+                return statement;
             }
             else if(LookAhead().m_type == (int)TokenType.DOTS)
             {

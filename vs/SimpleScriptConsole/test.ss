@@ -6,7 +6,11 @@
 
 (function() print("hello world") end)()
 
-a = {11,22,33}
+function generate_array()
+	return 22,33
+end
+
+a = {11,generate_array(),}
 
 foreach k,v in a do
 	print("foreach k = ", k, "v = ",v)

@@ -401,6 +401,9 @@ namespace SimpleScript
                     case OpType.OpType_NewTable:
                         _stack[a] = _vm.NewTable();
                         break;
+                    case OpType.OpType_AppendTable:
+                        OpTableAppend(_stack[a], b, _active_top - b);
+                        break;
                     case OpType.OpType_SetTable:
                         (_stack[a] as Table).SetValue(_stack[b], _stack[c]);
                         break;
@@ -436,6 +439,15 @@ namespace SimpleScript
 
             // return nil
             OpReturn(call.func_idx, -1, 0, false);
+        }
+
+        void OpTableAppend(object table_, int idx, int count)
+        {
+            Table table = table_ as Table;
+            for(int i = 0; i < count; ++i)
+            {
+                table.Add(_stack[idx + i]);
+            }
         }
 
         bool OpCall(int func_idx, int arg_count, bool any_value)
