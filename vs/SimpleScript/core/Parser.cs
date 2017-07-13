@@ -640,6 +640,10 @@ namespace SimpleScript
                 {
                     NextToken();
                 }
+                else
+                {
+                    break;
+                }
             }
 
             if (LookAhead().m_type == (int)')')
