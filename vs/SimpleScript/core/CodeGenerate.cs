@@ -333,7 +333,7 @@ namespace SimpleScript
             // jump to loop tail when expression return false
             var f = GetCurrentFunction();
             var code = Instruction.ABx(OpType.OpType_JmpFalse, register_id, 0);
-            int index = f.AddInstruction(code, -1);
+            int index = f.AddInstruction(code, tree.exp.line);
             AddLoopJumpInfo(JumpType.JumpTail, index);
 
             HandleBlock(tree.block);
@@ -363,7 +363,7 @@ namespace SimpleScript
             {
                 // default step is 1
                 code = Instruction.ABx(OpType.OpType_LoadInt, GetNextRegisterId(), 1);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.exp2.line);
             }
             else
             {
@@ -371,6 +371,9 @@ namespace SimpleScript
             }
             int step_register = GenerateRegisterId();
 
+            // for init, check type, make sure is number
+            code = Instruction.ABC(OpType.OpType_ForInit, var_register, limit_register, step_register);
+            f.AddInstruction(code, tree.name.m_line);
 
             EnterLoop();
             {
@@ -378,22 +381,22 @@ namespace SimpleScript
 
                 // check 'for', continue loop or not
                 code = Instruction.ABC(OpType.OpType_ForCheck, var_register, limit_register, step_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.line);
 
                 // next code jump to loop tail
                 code = Instruction.Bx(OpType.OpType_Jmp, 0);
-                int index = f.AddInstruction(code, -1);
+                int index = f.AddInstruction(code, tree.name.m_line);
                 AddLoopJumpInfo(JumpType.JumpTail, index);
 
                 var name_register = GenerateRegisterId();
                 InsertName(tree.name.m_string, name_register);
                 // name = var
                 code = Instruction.AB(OpType.OpType_Move, name_register, var_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.name.m_line);
 
                 // var += step
                 code = Instruction.ABC(OpType.OpType_Add, var_register, var_register, step_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.name.m_line);
 
                 HandleBlock(tree.block);
 
@@ -421,7 +424,7 @@ namespace SimpleScript
             var table_register = GenerateRegisterId();
             var iter_register = table_register;
             code = Instruction.AB(OpType.OpType_TableIter, iter_register, table_register);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.k.m_line);
 
             EnterLoop();
             {
@@ -436,11 +439,11 @@ namespace SimpleScript
                 InsertName(tree.v.m_string, v_register);
 
                 code = Instruction.ABC(OpType.OpType_TableIterNext, iter_register, k_register, v_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.k.m_line);
 
                 // jump to loop tail when the first name value is nil
                 code = Instruction.ABx(OpType.OpType_JmpNil, k_register, 0);
-                int index = f.AddInstruction(code, -1);
+                int index = f.AddInstruction(code, tree.k.m_line);
                 AddLoopJumpInfo(JumpType.JumpTail, index);
 
                 HandleBlock(tree.block);
@@ -487,21 +490,21 @@ namespace SimpleScript
                 Action<int, int> move = (int dst, int src) =>
                 {
                     var l_code = Instruction.AB(OpType.OpType_Move, dst, src);
-                    f.AddInstruction(l_code, -1);
+                    f.AddInstruction(l_code, tree.name_list.line);
                 };
                 move(temp_func, func_register);
                 move(temp_state, state_register);
                 move(temp_var, var_register);
 
                 code = Instruction.ABC(OpType.OpType_Call, temp_func, 2, 0);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.exp_list.line);
 
                 code = Instruction.A(OpType.OpType_FillNilFromTopToA, name_end);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.exp_list.line);
 
                 // jump to loop tail when the first name value is nil
                 code = Instruction.ABx(OpType.OpType_JmpNil, name_start, 0);
-                int index = f.AddInstruction(code, -1);
+                int index = f.AddInstruction(code, tree.exp_list.line);
                 AddLoopJumpInfo(JumpType.JumpTail, index);
 
                 // var = name1
@@ -529,7 +532,7 @@ namespace SimpleScript
                 HandleExpRead(tree.exp);
                 int register = GetNextRegisterId();
                 code = Instruction.ABx(OpType.OpType_JmpFalse, register, 0);
-                int jmp_false_index = f.AddInstruction(code, -1);
+                int jmp_false_index = f.AddInstruction(code, tree.exp.line);
 
                 EnterBlock();
                 HandleBlock(tree.true_branch);
@@ -537,7 +540,7 @@ namespace SimpleScript
 
                 // jump to if end
                 code = Instruction.Bx(OpType.OpType_Jmp, 0);
-                jmp_if_end_index = f.AddInstruction(code, -1);
+                jmp_if_end_index = f.AddInstruction(code, tree.line);
 
                 // jump to if false branch
                 f.FillInstructionBx(jmp_false_index, f.OpCodeSize() - jmp_false_index);
@@ -589,7 +592,7 @@ namespace SimpleScript
 
             var f = GetCurrentFunction();
             var code = Instruction.ABx(OpType.OpType_Closure, GetNextRegisterId(), func_index);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.line);
         }
         void HandleFunctionName(FunctionName tree)
         {
@@ -608,7 +611,7 @@ namespace SimpleScript
                     code = Instruction.ABx(OpType.OpType_SetUpvalue, func_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, func_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, first_name.m_line);
             }
             else
             {
@@ -621,12 +624,12 @@ namespace SimpleScript
                     code = Instruction.AB(OpType.OpType_GetUpvalue, table_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, table_register, index);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.line);
 
                 Action<Token> load_key = (Token name)=>{
                     int l_index = f.AddConstString(name.m_string);
                     var l_code = Instruction.ABx(OpType.OpType_LoadConst, key_register, l_index);
-                    f.AddInstruction(l_code, -1);
+                    f.AddInstruction(l_code, name.m_line);
                 };
 
                 for (int i = 1; i < tree.names.Count - 1; ++i)
@@ -634,12 +637,12 @@ namespace SimpleScript
                     load_key(tree.names[i]);
                     code = Instruction.ABC(OpType.OpType_GetTable,
                         table_register, key_register, table_register);
-                    f.AddInstruction(code, -1);
+                    f.AddInstruction(code, tree.line);
                 }
                 load_key(tree.names.Last<Token>());
                 code = Instruction.ABC(OpType.OpType_SetTable,
                     table_register,key_register,func_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.line);
             }
             // 回收寄存器
             ResetRegisterId(func_register);
@@ -657,7 +660,7 @@ namespace SimpleScript
             }
             var f = GetCurrentFunction();
             var code = Instruction.ABC(OpType.OpType_Ret, register_id, value_count, is_any_value);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.line);
         }
         void HandleBreakStatement(BreakStatement tree)
         {
@@ -667,7 +670,7 @@ namespace SimpleScript
             }
             // jump to loop tail
             var code = Instruction.Bx(OpType.OpType_Jmp, 0);
-            int index = GetCurrentFunction().AddInstruction(code, -1);
+            int index = GetCurrentFunction().AddInstruction(code, tree.line);
             AddLoopJumpInfo(JumpType.JumpTail, index);
         }
         void HandleContinueStatement(ContinueStatement tree)
@@ -678,7 +681,7 @@ namespace SimpleScript
             }
             // jump to loop head
             var code = Instruction.Bx(OpType.OpType_Jmp, 0);
-            int index = GetCurrentFunction().AddInstruction(code, -1);
+            int index = GetCurrentFunction().AddInstruction(code, tree.line);
             AddLoopJumpInfo(JumpType.JumpHead, index);
         }
         void HandleBinaryExp(BinaryExpression tree)
@@ -696,7 +699,7 @@ namespace SimpleScript
                 op_type = (token_type == (int)TokenType.AND) ?
                     OpType.OpType_JmpFalse : OpType.OpType_JmpTrue;
                 code = Instruction.ABx(op_type, GetNextRegisterId(), 0);
-                int index = f.AddInstruction(code, -1);
+                int index = f.AddInstruction(code, tree.op.m_line);
 
                 HandleExpRead(tree.right);
 
@@ -728,7 +731,7 @@ namespace SimpleScript
             }
 
             code = Instruction.ABC(op_type, left_register, left_register, right_register);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.op.m_line);
 
             ResetRegisterId(start_register);
         }
@@ -747,7 +750,7 @@ namespace SimpleScript
 
             var f = GetCurrentFunction();
             var code = Instruction.A(op_type, register);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.op.m_line);
         }
         void HandleFuncCall(FuncCall tree)
         {
@@ -762,15 +765,15 @@ namespace SimpleScript
                 // first_arg = caller_table
                 var arg_register = GenerateRegisterId();
                 code = Instruction.AB(OpType.OpType_Move, arg_register, caller_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.member_name.m_line);
 
                 // caller = caller_table[member_name]
                 int key_register = arg_register + 1;
                 int index = f.AddConstString(tree.member_name.m_string);
                 code = Instruction.ABx(OpType.OpType_LoadConst, key_register, index);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.member_name.m_line);
                 code = Instruction.ABC(OpType.OpType_GetTable, caller_register, key_register, caller_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.member_name.m_line);
             }
             int is_any_arg = 0;
             if(tree.args != null)
@@ -782,7 +785,7 @@ namespace SimpleScript
 
             // call function
             code = Instruction.ABC(OpType.OpType_Call, caller_register,arg_count,is_any_arg);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.line);
 
             ResetRegisterId(caller_register);
         }
@@ -829,7 +832,7 @@ namespace SimpleScript
                 {
                     Debug.Assert(false);
                 }
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, term.line);
             }
             else if (tree is TableAccess)
             {
@@ -841,7 +844,7 @@ namespace SimpleScript
                 var key_register = GenerateRegisterId();
                 var code = Instruction.ABC(OpType.OpType_GetTable,
                     table_register, key_register, table_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, table_access.line);
 
                 ResetRegisterId(table_register);
             }
@@ -886,7 +889,7 @@ namespace SimpleScript
                     code = Instruction.ABx(OpType.OpType_SetUpvalue, value_register, index);
                 else if (scope == LexicalScope.Local)
                     code = Instruction.AB(OpType.OpType_Move, index, value_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, term.line);
             }
             else if(tree is TableAccess)
             {
@@ -897,7 +900,7 @@ namespace SimpleScript
                 var key_register = GenerateRegisterId();
                 var code = Instruction.ABC(OpType.OpType_SetTable,
                     table_register, key_register, value_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, index_access.line);
 
                 ResetRegisterId(table_register);
             }
@@ -913,7 +916,7 @@ namespace SimpleScript
             // new table
             int table_register = GenerateRegisterId();
             code = Instruction.A(OpType.OpType_NewTable, table_register);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.line);
 
             // add field
             int count = tree.last_field_append_table ? tree.fields.Count - 1 : tree.fields.Count;
@@ -926,7 +929,7 @@ namespace SimpleScript
                 if(field.index == null)
                 {
                     code = Instruction.ABx(OpType.OpType_LoadInt, key_register, arr_index++);
-                    f.AddInstruction(code, -1);
+                    f.AddInstruction(code, field.line);
                 }
                 else
                 {
@@ -936,7 +939,7 @@ namespace SimpleScript
                 HandleExpRead(field.value);
 
                 code = Instruction.ABC(OpType.OpType_SetTable, table_register, key_register, value_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, field.line);
                 ResetRegisterId(key_register);
             }
             // last field
@@ -945,7 +948,7 @@ namespace SimpleScript
                 var last_field = tree.fields[count];
                 HandleExpRead(last_field.value);
                 code = Instruction.AB(OpType.OpType_AppendTable, table_register, key_register);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, last_field.line);
             }
 
             ResetRegisterId(table_register);
@@ -969,11 +972,11 @@ namespace SimpleScript
                     {
                         var f = GetCurrentFunction();
                         var code = Instruction.A(OpType.OpType_FillNilFromTopToA, start_register + expect_value_count);
-                        f.AddInstruction(code, -1);
+                        f.AddInstruction(code, tree.line);
                     }
                     else
                     {
-                        FillNil(start_register + fix_value_count, start_register + expect_value_count, -1);
+                        FillNil(start_register + fix_value_count, start_register + expect_value_count, tree.line);
                     }
                 }
             }
@@ -1012,7 +1015,7 @@ namespace SimpleScript
             if(tree.exp == null)
             {
                 code = Instruction.ABx(OpType.OpType_LoadInt, add_register, 1);
-                f.AddInstruction(code, -1);
+                f.AddInstruction(code, tree.var.line);
             }
             else
             {
@@ -1026,7 +1029,7 @@ namespace SimpleScript
                 op = OpType.OpType_Add;
             }
             code = Instruction.ABC(op, self_register, self_register, add_register);
-            f.AddInstruction(code, -1);
+            f.AddInstruction(code, tree.line);
 
             // assign
             HandleVarWrite(tree.var, self_register);
@@ -1042,7 +1045,7 @@ namespace SimpleScript
             }
             else
             {
-                FillNil(GetNextRegisterId(), GetNextRegisterId() + tree.name_list.names.Count, -1);
+                FillNil(GetNextRegisterId(), GetNextRegisterId() + tree.name_list.names.Count, tree.line);
             }
             HandleNameList(tree.name_list);
         }

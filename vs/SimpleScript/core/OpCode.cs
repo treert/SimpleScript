@@ -56,6 +56,7 @@ namespace SimpleScript
         OpType_GetTable,                // ABC  R(C) = R(A)[R(B)]
         OpType_TableIter,               // AB   R(A) = get_iter(R(B))
         OpType_TableIterNext,           // ABC  R(B) = iter_key(R(A)), R(C) = iter_key(R(A)) 
+        OpType_ForInit,                 // ABC  For init, make sure R(a),R(b),R(c) type is number
         OpType_ForCheck,                // ABC  if CheckStep(R(A),R(B),R(C)) { ++pc } next code is jmp tail
         OpType_FillNilFromTopToA,       // A    R(top)..R(A) := nil; top must be set before
         OpType_CloseUpvalue,            // A    close upvalue to R(A)

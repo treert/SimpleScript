@@ -45,6 +45,14 @@ do
 end
 
 do
+	print("test ...")
+	local test_var_arg = function(...)
+		return "... = ",...
+	end
+	print(test_var_arg(1,2,3))
+end
+
+do
 	print("test += -= ++ --")
 	a[0] = 4
 	print("start a[0] = ", a[0]);

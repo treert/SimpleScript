@@ -6,9 +6,14 @@ using System.Threading.Tasks;
 
 namespace SimpleScript
 {
-    class BaseException:Exception
+    public class ScriptException:Exception
     {
-        private string _info = string.Empty;
+
+    }
+
+    public class BaseException : ScriptException
+    {
+        protected string _info = string.Empty;
         public override string Message
         {
             get
@@ -27,7 +32,7 @@ namespace SimpleScript
             _info = string_build.ToString();
         }
     }
-    class LexException:BaseException
+    public class LexException : BaseException
     {
         public LexException(string source_, int line_, int column_,string msg)
         {
@@ -35,7 +40,7 @@ namespace SimpleScript
         }
     }
 
-    class ParserException:BaseException
+    public class ParserException : BaseException
     {
         public ParserException(string source_, int line_, int column_, string msg)
         {
@@ -43,7 +48,7 @@ namespace SimpleScript
         }
     }
 
-    class CodeGenerateException : BaseException
+    public class CodeGenerateException : BaseException
     {
         public CodeGenerateException(string source_, int line_, string msg)
         {
@@ -51,19 +56,22 @@ namespace SimpleScript
         }
     }
 
-    class RuntimeException : BaseException
+    public class RuntimeException : BaseException
     {
-        public RuntimeException(string msg)
+        public RuntimeException(string source_, int line_, string format, params object[] args)
         {
-            SetInfo(msg);
+            SetInfo(source_, ":", line_, " ", string.Format(format, args));
         }
-        public RuntimeException(string file, int line, string msg)
+
+        private string[] _trace_back;
+        public void SetTraceBackInfo(params string[] infos)
         {
-            SetInfo(file, ":", line, " ", msg);
+            // todo@om
+            _trace_back = infos;
         }
     }
 
-    class OtherException : Exception
+    class OtherException : ScriptException
     {
         private string _info = string.Empty;
         public override string Message

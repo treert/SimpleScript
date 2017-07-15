@@ -234,7 +234,7 @@ namespace SimpleScript
             _error_msg = msg;
             // todo 
             // throw exception or ...
-            throw new RuntimeException(msg);
+            // throw new RuntimeException(msg);
         }
 
         internal void Run()
@@ -246,9 +246,9 @@ namespace SimpleScript
                     Execute();
                 }
             }
-            catch (Exception e)
+            catch (ScriptException e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(e.Message);
             }
         }
 
@@ -344,7 +344,7 @@ namespace SimpleScript
                             call.pc += -1 + bx;
                         break;
                     case OpType.OpType_Neg:
-                        _stack[a] = -ValueUtils.ToNumber(_stack[a]);
+                        OpNeg(a);
                         break;
                     case OpType.OpType_Not:
                         _stack[a] = ValueUtils.IsFalse(_stack[a]);
@@ -356,65 +356,93 @@ namespace SimpleScript
                         }
                         else
                         {
-                            _stack[a] = 0;
+                            throw NewOpTypeError("get length of ", a);
                         }
                         break;
                     case OpType.OpType_Add:
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) + ValueUtils.ToNumber(_stack[c]);
+                        CheckArithType(b, c, "add");
+                        _stack[a] = (double)(_stack[b]) + (double)(_stack[c]);
                         break;
                     case OpType.OpType_Sub:
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) - ValueUtils.ToNumber(_stack[c]);
+                        CheckArithType(b, c, "sub");
+                        _stack[a] = (double)(_stack[b]) - (double)(_stack[c]);
                         break;
                     case OpType.OpType_Mul:
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) * ValueUtils.ToNumber(_stack[c]);
+                        CheckArithType(b, c, "multiply");
+                        _stack[a] = (double)(_stack[b]) * (double)(_stack[c]);
                         break;
                     case OpType.OpType_Div:
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) / ValueUtils.ToNumber(_stack[c]);
+                        CheckArithType(b, c, "div");
+                        _stack[a] = (double)(_stack[b]) / (double)(_stack[c]);
                         break;
                     case OpType.OpType_Pow:
-                        _stack[a] = Math.Pow(ValueUtils.ToNumber(_stack[b]), ValueUtils.ToNumber(_stack[c]));
+                        CheckArithType(b, c, "power");
+                        _stack[a] = Math.Pow((double)(_stack[b]), (double)(_stack[c]));
                         break;
                     case OpType.OpType_Mod:
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) % ValueUtils.ToNumber(_stack[c]);
+                        CheckArithType(b, c, "mod");
+                        _stack[a] = (double)(_stack[b]) % (double)(_stack[c]);
                         break;
                     case OpType.OpType_Concat:
                         OpConcat(a,b,c);
                         break;
                     case OpType.OpType_Less:
+                        CheckCompareType(b, c, "<");
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) < ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_Greater:
+                        CheckCompareType(b, c, ">");
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) > ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_Equal:
+                        // _stack[a] = _stack[b] == _stack[c]; // WTF:((object)2.0 == (object)2.0) = False
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) == ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_UnEqual:
+                        // _stack[a] = _stack[b] != _stack[c];
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) != ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_LessEqual:
+                        CheckCompareType(b, c, "<=");
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) <= ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_GreaterEqual:
+                        CheckCompareType(b, c, ">=");
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) >= ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_NewTable:
                         _stack[a] = _vm.NewTable();
                         break;
                     case OpType.OpType_AppendTable:
-                        OpTableAppend(_stack[a], b, _active_top - b);
+                        OpTableAppend(a, b, _active_top - b);
                         break;
                     case OpType.OpType_SetTable:
+                        CheckTableType(a, b, "set value to");
                         (_stack[a] as Table).SetValue(_stack[b], _stack[c]);
                         break;
                     case OpType.OpType_GetTable:
+                        CheckTableType(a, b, "get value from");
                         _stack[c] = (_stack[a] as Table).GetValue(_stack[b]);
                         break;
                     case OpType.OpType_TableIter:
-                        _stack[a] = (_stack[b] as Table).GetIter();
+                        if (_stack[a] is Table)
+                            _stack[a] = (_stack[b] as Table).GetIter();
+                        else
+                            throw NewOpTypeError("foreach ", a);
                         break;
                     case OpType.OpType_TableIterNext:
+                        Debug.Assert(_stack[a] is Table.Iterator);
                         (_stack[a] as Table.Iterator).Next(out _stack[b], out _stack[c]);
+                        break;
+                    case OpType.OpType_ForInit:
+                        if (!(_stack[a] is double))
+                            throw NewRuntimeError("'for' init need be number");
+                        if (!(_stack[b] is double))
+                            throw NewRuntimeError("'for' limit need be number");
+                        if (!(_stack[c] is double))
+                            throw NewRuntimeError("'for' step need be number");
+                        if (((double)_stack[c] == 0))
+                            throw NewRuntimeError("'for' step should be nozero");
                         break;
                     case OpType.OpType_ForCheck:
                         if(OpForCheck(a,b,c))
@@ -441,9 +469,152 @@ namespace SimpleScript
             OpReturn(call.func_idx, -1, 0, false);
         }
 
-        void OpTableAppend(object table_, int idx, int count)
+        Tuple<string, string> GetOperandNameAndScope(int idx)
         {
-            Table table = table_ as Table;
+            var call = _calls.Peek();
+            var reg = idx - call.register_idx;
+            var closure = call.closure;
+            var func = call.closure.func;
+            var pc = call.pc - 1;
+
+            // Search last instruction which dst register is reg,
+            // and get the name base on the instruction
+            while(pc > 0)
+            {
+                --pc;
+                Instruction instruction = func.GetInstruction(pc);
+                switch(instruction.GetOp())
+                {
+                    case OpType.OpType_GetGlobal:
+                        if(reg == instruction.GetA())
+                        {
+                            int bx = instruction.GetBx();
+                            var key = func.GetConstValue(bx);
+                            if (key is string)
+                                return new Tuple<string, string>("global", key as string);
+                            else
+                                return new Tuple<string, string>("global", "?");
+                        }
+                        break;
+                    case OpType.OpType_Move:
+                        if (reg == instruction.GetA())
+                        {
+                            int b = instruction.GetB();
+                            var name = func.GetLocalVarNameByPc(b, pc);// todo@om has bug ??
+                            if (name != null)
+                                return new Tuple<string, string>("local", name);
+                            else
+                                return new Tuple<string, string>("local", "?");
+                        }
+                        break;
+                    case OpType.OpType_GetUpvalue:
+                        if (reg == instruction.GetA())
+                        {
+                            int bx = instruction.GetBx();
+                            var upvalue_info = func.GetUpValueInfo(bx);
+                            return new Tuple<string, string>("upvalue", upvalue_info.name);
+                        }
+                        break;
+                    case OpType.OpType_GetTable:
+                        if(reg == instruction.GetC())
+                        {
+                            int b = instruction.GetB();
+                            var key_idx = call.register_idx + b;
+                            // todo@om has bug ??
+                            if (_stack[key_idx] is string)
+                                return new Tuple<string, string>("table member", _stack[key_idx] as string);
+                            else
+                                return new Tuple<string, string>("table member", "?");
+                        }
+                        break;
+                }
+            }
+
+            return new Tuple<string, string>("?", "?");
+        }
+
+        Tuple<string, int> GetCurrentInstructionPos()
+        {
+            var call = _calls.Peek();
+            var module_name = call.closure.func.GetModuleName();
+            var line = call.closure.func.GetInstructionLine(call.pc - 1);
+            return new Tuple<string, int>(module_name, line);
+        }
+
+        RuntimeException NewRuntimeError(string format, params object[] args)
+        {
+            var pos = GetCurrentInstructionPos();
+            return new RuntimeException(pos.Item1, pos.Item2, format, args);
+        }
+
+        RuntimeException NewOpTypeError(string op, int idx)
+        {
+            var info = GetOperandNameAndScope(idx);
+            return NewRuntimeError("attempt to {0} {1} '{2}' (a {3} value) ",
+                op, info.Item1, info.Item2, ValueUtils.GetTypeName(_stack[idx]));
+        }
+
+        void CheckArithType(int b, int c, string op)
+        {
+            if(_stack[b] is double && _stack[c] is double)
+            {
+               
+            }
+            else
+            {
+                throw NewRuntimeError("attemp to {0} {1} with {2}",
+                    op, ValueUtils.GetTypeName(_stack[b]), ValueUtils.GetTypeName(_stack[c]));
+            }
+        }
+
+        void CheckCompareType(int b, int c, string op)
+        {
+            if (_stack[b] is double && _stack[c] is double)
+            {
+
+            }
+            else
+            {
+                throw NewRuntimeError("attemp to compare({0}) {1} with {2}",
+                    op, ValueUtils.GetTypeName(_stack[b]), ValueUtils.GetTypeName(_stack[c]));
+            }
+        }
+
+        void CheckTableType(int a, int b, string op)
+        {
+            if (_stack[a] is Table && _stack[b] != null)
+                return;
+
+            if(_stack[b] == null)
+            {
+                throw NewRuntimeError("the key of Table can not be nil");
+            }
+            else
+            {
+                throw NewOpTypeError(op, a);
+            }
+        }
+
+        void OpNeg(int a)
+        {
+            var obj = _stack[a];
+            if(obj is double)
+            {
+                _stack[a] = -(double)(obj);
+            }
+            else
+            {
+                throw NewOpTypeError("neg", a);
+            }
+        }
+
+        void OpTableAppend(int a, int idx, int count)
+        {
+            Table table = _stack[a] as Table;
+            if(table == null)
+            {
+                throw NewOpTypeError("append value to", a);
+            }
             for(int i = 0; i < count; ++i)
             {
                 table.Add(_stack[idx + i]);
@@ -475,7 +646,7 @@ namespace SimpleScript
             }
             else
             {
-                throw new RuntimeException("type error");
+                throw NewOpTypeError("call", func_idx);
             }
         }
 
@@ -566,9 +737,10 @@ namespace SimpleScript
 
         bool OpForCheck(int a, int b, int c)
         {
-            double var = ValueUtils.ToNumber(_stack[a]);
-            double limit = ValueUtils.ToNumber(_stack[b]);
-            double step = ValueUtils.ToNumber(_stack[c]);
+            Debug.Assert(_stack[a] is double && _stack[b] is double && _stack[c] is double);
+            double var = (double)(_stack[a]);
+            double limit = (double)(_stack[b]);
+            double step = (double)(_stack[c]);
 
             if (step > 0)
             {

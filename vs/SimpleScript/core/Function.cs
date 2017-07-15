@@ -243,6 +243,10 @@ namespace SimpleScript
         {
             return _codes[idx];
         }
+        public int GetInstructionLine(int idx)
+        {
+            return _code_lines[idx];
+        }
         public void SetFixedArgCount(int fixed_arg_count_)
         {
             _fixed_arg_count = fixed_arg_count_;
@@ -361,6 +365,7 @@ namespace SimpleScript
         {
             return _upvalues[idx];
         }
+        // For CodeGenerate
         public int SearchUpValue(string name)
         {
             for (int i = 0; i < _upvalues.Count; ++i)

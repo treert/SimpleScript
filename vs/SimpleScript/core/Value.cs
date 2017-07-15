@@ -40,7 +40,17 @@ namespace SimpleScript
         {
             if (obj is string)
                 return (string)obj;
+            else if (obj == null)
+                return "nil";
             return obj.ToString();
+        }
+
+        public static string GetTypeName(object obj)
+        {
+            if (obj == null)
+                return "nil";
+            else
+                return obj.GetType().Name;
         }
     }
 

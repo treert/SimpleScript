@@ -17,7 +17,7 @@ namespace SimpleScriptConsole
             {
                 vm.DoFile(file_name);
             }
-            catch (Exception e)
+            catch (ScriptException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -29,7 +29,7 @@ namespace SimpleScriptConsole
             {
                 vm.DoFile(file_name);
             }
-            catch (Exception e)
+            catch (ScriptException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -42,7 +42,7 @@ namespace SimpleScriptConsole
                 vm.ComileFile(src_file, bin_file);
                 Console.WriteLine("out file: {0}", bin_file);
             }
-            catch (Exception e)
+            catch (ScriptException e)
             {
                 Console.WriteLine(e.Message);
             }
@@ -60,7 +60,7 @@ namespace SimpleScriptConsole
                     var line = Console.ReadLine();
                     vm.DoString(line, "stdin");
                 }
-                catch (Exception e)
+                catch (ScriptException e)
                 {
                     Console.WriteLine(e.Message);
                 }
@@ -86,6 +86,7 @@ ss -c xx.ss [-o xx.ssc]     // compile
             }
 
             {
+                Console.WriteLine((object)2.0 == (object)2.0);
 
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
