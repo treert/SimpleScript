@@ -14,6 +14,7 @@ namespace SimpleScript
         BREAK,
         CONTINUE,
         DO,
+        ECHO,// current not used
         ELSE,
         ELSEIF,
         END,
@@ -28,9 +29,11 @@ namespace SimpleScript
         NIL,
         NOT,
         OR,
+        REPEAT,// current not used
         RETURN,
         THEN,
         TRUE,
+        UNTIL,// current not used
         WHILE,
         // other terminal symbols
         CONCAT,// .. string concat
@@ -110,28 +113,34 @@ namespace SimpleScript
         static Dictionary<string, TokenType> s_reserve_keys;
         static Lex()
         {
-            s_reserve_keys = new Dictionary<string, TokenType>();
-            s_reserve_keys.Add("and", TokenType.AND);
-            s_reserve_keys.Add("break", TokenType.BREAK);
-            s_reserve_keys.Add("continue", TokenType.CONTINUE);
-            s_reserve_keys.Add("do", TokenType.DO);
-            s_reserve_keys.Add("else", TokenType.ELSE);
-            s_reserve_keys.Add("elseif", TokenType.ELSEIF);
-            s_reserve_keys.Add("end", TokenType.END);
-            s_reserve_keys.Add("false", TokenType.FALSE);
-            s_reserve_keys.Add("for", TokenType.FOR);
-            s_reserve_keys.Add("foreach", TokenType.FOREACH);
-            s_reserve_keys.Add("function", TokenType.FUNCTION);
-            s_reserve_keys.Add("if", TokenType.IF);
-            s_reserve_keys.Add("in", TokenType.IN);
-            s_reserve_keys.Add("local", TokenType.LOCAL);
-            s_reserve_keys.Add("nil", TokenType.NIL);
-            s_reserve_keys.Add("not", TokenType.NOT);
-            s_reserve_keys.Add("or", TokenType.OR);
-            s_reserve_keys.Add("return", TokenType.RETURN);
-            s_reserve_keys.Add("then", TokenType.THEN);
-            s_reserve_keys.Add("true", TokenType.TRUE);
-            s_reserve_keys.Add("while", TokenType.WHILE);
+            s_reserve_keys = new Dictionary<string, TokenType>()
+            {
+                {"and", TokenType.AND},
+                {"break", TokenType.BREAK},
+                {"continue", TokenType.CONTINUE},
+                {"do", TokenType.DO},
+                {"echo", TokenType.ECHO},
+                {"else", TokenType.ELSE},
+                {"elseif", TokenType.ELSEIF},
+                {"end", TokenType.END},
+                {"false", TokenType.FALSE},
+                {"for", TokenType.FOR},
+                {"foreach", TokenType.FOREACH},
+                {"function", TokenType.FUNCTION},
+                {"goto", TokenType.GOTO},
+                {"if", TokenType.IF},
+                {"in", TokenType.IN},
+                {"local", TokenType.LOCAL},
+                {"nil", TokenType.NIL},
+                {"not", TokenType.NOT},
+                {"or", TokenType.OR},
+                {"repeat", TokenType.REPEAT},
+                {"return", TokenType.RETURN},
+                {"then", TokenType.THEN},
+                {"true", TokenType.TRUE},
+                {"while", TokenType.WHILE},
+                {"until", TokenType.UNTIL},
+            };
         }
 
         private StringBuilder _buf;
@@ -187,7 +196,7 @@ namespace SimpleScript
             }
             catch
             {
-                throw new LexException(_source_name, _line, _column, String.Format("{0} is not valid double", _buf));
+                throw NewLexException( String.Format("{0} is not valid double", _buf));
             }
         }
 
@@ -198,10 +207,8 @@ namespace SimpleScript
             _buf.Clear();
             while(_current != quote)
             {
-                if (_current == '\0')
-                    throw new LexException(_source_name,_line,_column,"incomplete string at file end");
-                if (_current == '\r' || _current == '\n')
-                    throw new LexException(_source_name, _line, _column, "incomplete string at line end");
+                if (_current == '\r' || _current == '\n' || _current == '\0')
+                    throw NewLexException( "incomplete string at line end");
                 _PutCharInBuf();
             }
             _NextChar();
@@ -253,7 +260,7 @@ namespace SimpleScript
                         }
                         _NextChar();
                     }
-                    if(i == 0) throw new LexException(_source_name,_line,_column,"unexpect char after '\\x'");
+                    if(i == 0) throw NewLexException("unexpect char after '\\x'");
                     _buf.Append(char.ConvertFromUtf32(code));
                     return;
                 }
@@ -273,12 +280,12 @@ namespace SimpleScript
                         }
                         _NextChar();
                     }
-                    if (code > byte.MaxValue) throw new LexException(_source_name,_line,_column,"char code too big");
+                    if (code > byte.MaxValue) throw NewLexException("char code too big");
                     _buf.Append(char.ConvertFromUtf32(code));
                     return;
                 }
                 else
-                    throw new LexException(_source_name,_line,_column,"unexpect character after '\\'");
+                    throw NewLexException("unexpect character after '\\'");
             }
             else
             {
@@ -296,7 +303,7 @@ namespace SimpleScript
                 _NextChar();
             }
             if (_current != '[')
-                throw new LexException(_source_name,_line,_column,"incomplete multi line string");
+                throw NewLexException("incomplete multi line string");
             _NextChar();
             _buf.Clear();
             if (_current == '\r' || _current == '\n')
@@ -343,7 +350,7 @@ namespace SimpleScript
                 }
             }
             return new Token(_buf.ToString());
-            //throw new LexException(_source_name,_line,_column,"incomplete multi line string");
+            //throw NewLexException("incomplete multi line string");
         }
 
         private void _SkipComment()
@@ -360,7 +367,7 @@ namespace SimpleScript
                     _NextChar();
                 }
                 if (_current != '[')
-                    throw new LexException(_source_name,_line,_column,"incomplete multi line comment");
+                    throw NewLexException("incomplete multi line comment");
                 _NextChar();
 
                 while (_current != '\0')
@@ -497,7 +504,7 @@ namespace SimpleScript
                         }
                         else
                         {
-                            throw new LexException(_source_name,_line,_column,"expect '=' after '~'");
+                            throw NewLexException("expect '=' after '~'");
                         }
                         //break;
                     case '=':
@@ -571,6 +578,16 @@ namespace SimpleScript
             return new Token();
         }
 
+        private LexException NewLexException(string msg)
+        {
+            return new LexException(_source_name, _line, _column, msg);
+        }
+
+        public string GetSourceName()
+        {
+            return _source_name;
+        }
+
         private string _source_name;
         private string _source;
         private char _current;
@@ -591,7 +608,7 @@ namespace SimpleScript
             }
         }
 
-        public void Init(string input_, string name_ = "test")
+        public void Init(string input_, string name_ = "")
         {
             _source_name = name_;
             _source = input_;

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace SimpleScript
 {
@@ -79,6 +80,7 @@ namespace SimpleScript
         }
         public void SetBx(int bx)
         {
+            Debug.Assert(Int16.MinValue <= bx && bx <= Int16.MaxValue);
             _opcode = _opcode | (bx & 0xffff);
         }
         public int GetBx()
@@ -103,22 +105,31 @@ namespace SimpleScript
         }
         public static Instruction A(OpType op, int a)
         {
+            Debug.Assert(0 <= a && a <= Byte.MaxValue);
             return new Instruction(op, a << 16);
         }
         public static Instruction AB(OpType op, int a, int b)
         {
+            Debug.Assert(0 <= a && a <= Byte.MaxValue);
+            Debug.Assert(0 <= b && b <= Byte.MaxValue);
             return new Instruction(op, (a<<16) | (b<<8));
         }
         public static Instruction ABC(OpType op, int a, int b,int c)
         {
+            Debug.Assert(0 <= a && a <= Byte.MaxValue);
+            Debug.Assert(0 <= b && b <= Byte.MaxValue);
+            Debug.Assert(0 <= c && c <= Byte.MaxValue);
             return new Instruction(op, (a << 16) | (b << 8) | (c));
         }
         public static Instruction ABx(OpType op, int a, int bx)
         {
+            Debug.Assert(0 <= a && a <= Byte.MaxValue);
+            Debug.Assert(Int16.MinValue <= bx && bx <= Int16.MaxValue);
             return new Instruction(op, (a<<16) | bx);
         }
         public static Instruction Bx(OpType op, int bx)
         {
+            Debug.Assert(Int16.MinValue <= bx && bx <= Int16.MaxValue);
             return new Instruction(op, bx);
         }
     }

@@ -574,7 +574,7 @@ namespace SimpleScript.Test
         {
             try
             {
-                // lua支持这种语法，oms暂时不支持
+                // lua支持这种语法，ss暂时不支持
                 TestUtils.Parse("f:m'str'");
                 Error("no exception");
             }

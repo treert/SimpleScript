@@ -37,25 +37,17 @@ namespace SimpleScript
 
     class ParserException:BaseException
     {
-        public ParserException(string msg)
+        public ParserException(string source_, int line_, int column_, string msg)
         {
-            SetInfo(msg);
-        }
-    }
-
-    class SematicException : BaseException
-    {
-        public SematicException(string msg)
-        {
-            SetInfo(msg);
+            SetInfo(source_, ":", line_, ":", column_, " ", msg);
         }
     }
 
     class CodeGenerateException : BaseException
     {
-        public CodeGenerateException(string msg)
+        public CodeGenerateException(string source_, int line_, string msg)
         {
-            SetInfo(msg);
+            SetInfo(source_, ":", line_, " ", msg);
         }
     }
 

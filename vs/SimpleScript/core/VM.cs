@@ -144,7 +144,7 @@ namespace SimpleScript
             }
             else
             {
-                throw new Exception("Only support compile binary source or utf-8 bom source");
+                throw new OtherException("Only support compile binary source or utf-8 bom source");
             }
         }
         //**************** parse *******************************/
@@ -152,7 +152,7 @@ namespace SimpleScript
         {
             _lex.Init(source, module_name);
             var tree = _parser.Parse(_lex);
-            var func = _code_generator.Generate(tree);
+            var func = _code_generator.Generate(tree, module_name);
             return func;
         }
 

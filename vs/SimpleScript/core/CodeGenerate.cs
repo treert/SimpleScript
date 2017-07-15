@@ -19,9 +19,11 @@ namespace SimpleScript
     /// </summary>
     class CodeGenerate
     {
-        public Function Generate(SyntaxTree tree)
+        private string _module_name = string.Empty;// source name
+        public Function Generate(SyntaxTree tree, string module_name)
         {
             Debug.Assert(tree is Chunk);
+            _module_name = module_name;
             return HandleChunk(tree as Chunk);
         }
 
@@ -72,6 +74,7 @@ namespace SimpleScript
             public GenerateBlock current_block;
             public GenerateLoop current_loop;
             public Function function;
+            public int define_line = 0;// define line in source 
             public int func_index = 0;// index in parent
             public int register = 0;// next free register index
         }
@@ -152,19 +155,21 @@ namespace SimpleScript
             is_local = false;
             return index;
         }
-        void EnterFunction()
+        void EnterFunction(int define_line)
         {
             var func = new GenerateFunction();
             var parent = _current_func;
             func.parent = parent;
             func.function = new Function();
-            _current_func = func;
-
+            func.function.SetModuleName(_module_name);
+            func.define_line = define_line;
             if(parent != null)
             {
                 var index = parent.function.AddChildFunction(func.function);
                 func.func_index = index;
             }
+
+            _current_func = func;
         }
 
         void LeaveFunction()
@@ -247,7 +252,7 @@ namespace SimpleScript
         {
             if (register >= OmsConf.MAX_FUNC_REGISTER)
             {
-                Throw("to many local variables");
+                throw new CodeGenerateException(_module_name, _current_func.define_line, "to many local variables");
             }
             _current_func.function.SetMaxRegisterCount(register);
             return _current_func.register = register;
@@ -256,7 +261,7 @@ namespace SimpleScript
         {
             if (_current_func.register + 1 >= OmsConf.MAX_FUNC_REGISTER)
             {
-                Throw("to many local variables");
+                throw new CodeGenerateException(_module_name, _current_func.define_line, "to many local variables");
             }
             _current_func.function.SetMaxRegisterCount(_current_func.register + 1);
             return _current_func.register++;
@@ -264,7 +269,7 @@ namespace SimpleScript
 
         Function HandleChunk(Chunk tree)
         {
-            EnterFunction();
+            EnterFunction(tree.line);
             var f = GetCurrentFunction();
             f.SetHasVarArg();// file has default ...
             EnterBlock();
@@ -572,7 +577,7 @@ namespace SimpleScript
         }
         void HandleFunctionBody(FunctionBody tree)
         {
-            EnterFunction();
+            EnterFunction(tree.line);
             var func_index = GetFunctionIndex();
             {
                 EnterBlock();
@@ -656,6 +661,10 @@ namespace SimpleScript
         }
         void HandleBreakStatement(BreakStatement tree)
         {
+            if (_current_func.current_loop == null)
+            {
+                throw new CodeGenerateException(_module_name, tree.line, "'break' is not in any loop block");
+            }
             // jump to loop tail
             var code = Instruction.Bx(OpType.OpType_Jmp, 0);
             int index = GetCurrentFunction().AddInstruction(code, -1);
@@ -663,6 +672,10 @@ namespace SimpleScript
         }
         void HandleContinueStatement(ContinueStatement tree)
         {
+            if(_current_func.current_loop == null)
+            {
+                throw new CodeGenerateException(_module_name, tree.line, "'contine' is not in any loop block");
+            }
             // jump to loop head
             var code = Instruction.Bx(OpType.OpType_Jmp, 0);
             int index = GetCurrentFunction().AddInstruction(code, -1);
@@ -1048,10 +1061,6 @@ namespace SimpleScript
                 var code = Instruction.A(OpType.OpType_LoadNil, start_register++);
                 f.AddInstruction(code, line);
             }
-        }
-        void Throw(string msg)
-        {
-            throw new CodeGenerateException(msg);
         }
     }
 }

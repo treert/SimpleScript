@@ -19,7 +19,7 @@ namespace SimpleScriptConsole
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(e.Message);
             }
         }
 
@@ -31,7 +31,7 @@ namespace SimpleScriptConsole
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(e.Message);
             }
         }
 
@@ -44,7 +44,7 @@ namespace SimpleScriptConsole
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(e.Message);
             }
         }
 
@@ -58,11 +58,11 @@ namespace SimpleScriptConsole
                 {
                     Console.Write("> ");
                     var line = Console.ReadLine();
-                    vm.DoString(line);
+                    vm.DoString(line, "stdin");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine(e.Message);
                 }
             }
         }
@@ -81,7 +81,7 @@ ss -c xx.ss [-o xx.ssc]     // compile
         static void Main(string[] args)
         {
             {
-                SimpleScript.Test.TestManager.RunTest();
+                //SimpleScript.Test.TestManager.RunTest();
                 //return;
             }
 

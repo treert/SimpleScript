@@ -17,6 +17,7 @@ foreach k,v in a do
 end
 
 for i = 1,3 do
+	if i == 2 then continue end
 	print("for i= ",i, " a[i] = ", a[i])
 end
 
@@ -32,7 +33,7 @@ local function ipairs(table)
 end
 
 for k,v in ipairs(a) do
-	print("foreach k = ", k, "v = ",v)
+	print("for in k = ", k, "v = ",v)
 end
 
 do
@@ -47,13 +48,13 @@ do
 	print("test += -= ++ --")
 	a[0] = 4
 	print("start a[0] = ", a[0]);
-	a[0] = 23
+	a[0] ++
 	print("++    a[0] = ", a[0]);
 	a[0] --
 	print("--    a[0] = ", a[0]);
-	a[0] = 10.5
+	a[0] += 10.5
 	print("+=    a[0] = ", a[0]);
-	a[0] = 10.5
+	a[0] -= 10.5
 	print("-=    a[0] = ", a[0]);
 end
 

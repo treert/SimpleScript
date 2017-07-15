@@ -168,7 +168,7 @@ namespace SimpleScript
                     exp = unexp;
                     break;
                 default:
-                    throw new ParserException("unexpect token for main exp");
+                    throw NewParserException("unexpect token for main exp", _look_ahead);
             }
             return exp;
         }
@@ -203,12 +203,12 @@ namespace SimpleScript
             {
                 index_access.index = ParseExp();
                 if (NextToken().m_type != (int)']')
-                    throw new ParserException("expect ']'");
+                    throw NewParserException("expect ']'", _current);
             }
             else
             {
                 if (NextToken().m_type != (int)TokenType.NAME)
-                    throw new ParserException("expect 'id' after '.'");
+                    throw NewParserException("expect 'id' after '.'", _current);
                 index_access.index = new Terminator(new Token(_current.m_string));
             }
             return index_access;
@@ -221,7 +221,7 @@ namespace SimpleScript
             {
                 NextToken();
                 if (NextToken().m_type != (int)TokenType.NAME)
-                    throw new ParserException("expect 'id' after ':'");
+                    throw NewParserException("expect 'id' after ':'", _current);
                 func_call.member_name = _current;
             }
             func_call.args = ParseArgs();
@@ -237,7 +237,7 @@ namespace SimpleScript
                     exp_list = ParseExpList(true);
 
                 if (NextToken().m_type != (int)')')
-                    throw new ParserException("expect ')' to end function-args");
+                    throw NewParserException("expect ')' to end function-args", _current);
             }
             else if(LookAhead().m_type == (int)'{')
             {
@@ -245,7 +245,7 @@ namespace SimpleScript
                 exp_list.exp_list.Add(ParseTableConstructor());
             }
             else
-                throw new ParserException("expect '(' or '{' to start function-args");
+                throw NewParserException("expect '(' or '{' to start function-args", _look_ahead);
             return exp_list;
         }
         SyntaxTree ParsePrefixExp()
@@ -258,7 +258,7 @@ namespace SimpleScript
             {
                 exp = ParseExp();
                 if (NextToken().m_type != (int)')')
-                    throw new ParserException("expect ')'");
+                    throw NewParserException("expect ')'", _current);
             }
             else
             {
@@ -342,12 +342,12 @@ namespace SimpleScript
                     while(LookAhead().m_type != (int)'=')
                     {
                         if (NextToken().m_type != (int)',')
-                            throw new ParserException("expect ',' to split var-list");
+                            throw NewParserException("expect ',' to split var-list", _current);
                         if (LookAhead().m_type != (int)TokenType.NAME)
-                            throw new ParserException("expect 'id' to start var");
+                            throw NewParserException("expect 'id' to start var", _look_ahead);
                         exp = ParsePrefixExp();
                         if (!IsVar(exp))
-                            throw new ParserException("expect var here");
+                            throw NewParserException("expect var here", _current);
                         assign_statement.var_list.Add(exp);
                     }
                     NextToken();// skip '='
@@ -369,7 +369,7 @@ namespace SimpleScript
             else
             {
                 if (IsMainExp())
-                    throw new ParserException("incomplete statement");
+                    throw NewParserException("unsupport statement", _look_ahead);
                 return null;
             }
         }
@@ -379,9 +379,9 @@ namespace SimpleScript
             var field = new TableField(_current.m_line);
             field.index = ParseExp();
             if (NextToken().m_type != ']')
-                throw new ParserException("expect ']'");
+                throw NewParserException("expect ']'", _current);
             if (NextToken().m_type != '=')
-                throw new ParserException("expect '='");
+                throw NewParserException("expect '='", _current);
             field.value = ParseExp();
             return field;
         }
@@ -422,11 +422,11 @@ namespace SimpleScript
                     NextToken();
                     if(_current.m_type != (int)','
                         && _current.m_type != (int)';')
-                        throw new ParserException("expect ',' or ';' to split table fields");
+                        throw NewParserException("expect ',' or ';' to split table fields", _current);
                 }
             }
             if (NextToken().m_type != '}')
-                throw new ParserException("expect '}' for table");
+                throw NewParserException("expect '}' for table", _current);
 
             if(last_field != null && last_field.index == null)
             {
@@ -439,7 +439,7 @@ namespace SimpleScript
         {
             var block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.EOS)
-                throw new ParserException("expect <eof>");
+                throw NewParserException("expect <eof>", _current);
             var tree = new Chunk();
             tree.block = block;
             return tree;
@@ -475,6 +475,14 @@ namespace SimpleScript
                         statement = ParseBreakStatement(); break;
                     case (int)TokenType.CONTINUE:
                         statement = ParseContinueStatement(); break;
+                    case (int)TokenType.GOTO:
+                        throw NewParserException("'goto' is reserve key word", _look_ahead);
+                    case (int)TokenType.ECHO:
+                        throw NewParserException("'echo' is reserve key word", _look_ahead);
+                    case (int)TokenType.REPEAT:
+                        throw NewParserException("'repeat' is reserve key word", _look_ahead);
+                    case (int)TokenType.UNTIL:
+                        throw NewParserException("'until' is reserve key word", _look_ahead);
                     default:
                         statement = ParseOtherStatement();
                         break;
@@ -513,7 +521,7 @@ namespace SimpleScript
             var do_statement = new DoStatement(_current.m_line);
             do_statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
-                throw new ParserException("expect 'end' for do-statement");
+                throw NewParserException("expect 'end' for do-statement", _current);
             return do_statement;
         }
         WhileStatement ParseWhileStatement()
@@ -523,11 +531,11 @@ namespace SimpleScript
 
             var exp = ParseExp();
             if (NextToken().m_type != (int)TokenType.DO)
-                throw new ParserException("expect 'do' for while-statement");
+                throw NewParserException("expect 'do' for while-statement", _current);
 
             var block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
-                throw new ParserException("expect 'end' for while-statement");
+                throw NewParserException("expect 'end' for while-statement", _current);
 
             statement.exp = exp;
             statement.block = block;
@@ -540,7 +548,7 @@ namespace SimpleScript
 
             var exp = ParseExp();
             if (NextToken().m_type != (int)TokenType.THEN)
-                throw new ParserException("expect 'then' for if-statement");
+                throw NewParserException("expect 'then' for if-statement", _current);
 
             var true_branch = ParseBlock();
             var false_branch = ParseFalseBranchStatement();
@@ -562,7 +570,7 @@ namespace SimpleScript
                 NextToken();
                 var block = ParseBlock();
                 if (NextToken().m_type != (int)TokenType.END)
-                    throw new ParserException("expect 'end' for else-statement");
+                    throw NewParserException("expect 'end' for else-statement", _current);
                 return block;
             }
             else if (LookAhead().m_type == (int)TokenType.END)
@@ -571,7 +579,7 @@ namespace SimpleScript
                 return null;
             }
             else
-                throw new ParserException("expect 'end' for if-statement");
+                throw NewParserException("expect 'end' for if-statement", _look_ahead);
         }
         FunctionStatement ParseFunctionStatement()
         {
@@ -586,7 +594,7 @@ namespace SimpleScript
         FunctionName ParseFunctionName(out bool add_self)
         {
             if (NextToken().m_type != (int)TokenType.NAME)
-                throw new ParserException("unexpect token after 'function'");
+                throw NewParserException("expect 'id' after 'function'", _current);
 
             add_self = false;
             var func_name = new FunctionName(_current.m_line);
@@ -595,7 +603,7 @@ namespace SimpleScript
             {
                 NextToken();
                 if (NextToken().m_type != (int)TokenType.NAME)
-                    throw new ParserException("unexpect token in function name after '.'");
+                    throw NewParserException("unexpect token in function name after '.'", _current);
                 func_name.names.Add(_current);
             }
 
@@ -603,7 +611,7 @@ namespace SimpleScript
             {
                 NextToken();
                 if (NextToken().m_type != (int)TokenType.NAME)
-                    throw new ParserException("unexpect token in function name after ':'");
+                    throw NewParserException("unexpect token in function name after ':'", _current);
                 add_self = true;
                 func_name.names.Add(_current);
             }
@@ -613,14 +621,14 @@ namespace SimpleScript
         FunctionBody ParseFunctionBody(bool add_self = false)
         {
             if (NextToken().m_type != (int)'(')
-                throw new ParserException("expect '(' to start function-body");
+                throw NewParserException("expect '(' to start function-body", _current);
             var statement = new FunctionBody(_current.m_line);
             statement.param_list = ParseParamList(add_self);
             if (NextToken().m_type != (int)')')
-                throw new ParserException("expect ')' after param-list");
+                throw NewParserException("expect ')' after param-list", _current);
             statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
-                throw new ParserException("expect 'end' after function-body");
+                throw NewParserException("expect 'end' after function-body", _current);
             
             return statement;
         }
@@ -656,7 +664,7 @@ namespace SimpleScript
                 statement.is_var_arg = true;
             }
             else
-                throw new ParserException("unexpect token in param list");
+                throw NewParserException("unexpect token at param-list end", _look_ahead);
 
             return statement;
         }
@@ -665,7 +673,7 @@ namespace SimpleScript
             NextToken();// skip 'for'
 
             if (LookAhead().m_type != (int)TokenType.NAME)
-                throw new ParserException("expect 'id' after 'for'");
+                throw NewParserException("expect 'id' after 'for'", _look_ahead);
             if (LookAhead2().m_type == (int)'=')
                 return ParseForNumStatement();
             else
@@ -682,7 +690,7 @@ namespace SimpleScript
             statement.name = name;
             statement.exp1 = ParseExp();
             if (NextToken().m_type != (int)',')
-                throw new ParserException("expect ',' in for-statement");
+                throw NewParserException("expect ',' in for-statement", _current);
             statement.exp2 = ParseExp();
             if (LookAhead().m_type == ',')
             {
@@ -691,10 +699,10 @@ namespace SimpleScript
             }
 
             if (NextToken().m_type != (int)TokenType.DO)
-                throw new ParserException("expect 'do' to start for-body");
+                throw NewParserException("expect 'do' to start for-body", _current);
             statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
-                throw new ParserException("expect 'do' to complete for-body");
+                throw NewParserException("expect 'end' to complete for-body", _current);
 
             return statement;
         }
@@ -703,15 +711,15 @@ namespace SimpleScript
             var statement = new ForInStatement(_current.m_line);
             statement.name_list = ParseNameList();
             if (NextToken().m_type != (int)TokenType.IN)
-                throw new ParserException("expect 'in' in for-in-statement");
+                throw NewParserException("expect 'in' in for-in-statement", _current);
             // 这个结构特殊，返回的是迭代器，
             statement.exp_list = ParseExpList();
 
             if (NextToken().m_type != (int)TokenType.DO)
-                throw new ParserException("expect 'do' to start for-in-body");
+                throw NewParserException("expect 'do' to start for-in-body", _current);
             statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
-                throw new ParserException("expect 'do' to complete for-in-body");
+                throw NewParserException("expect 'end' to complete for-in-body", _current);
 
             return statement;
         }
@@ -721,13 +729,13 @@ namespace SimpleScript
 
             var statement = new ForEachStatement(_current.m_line);
             if(NextToken().m_type != (int)TokenType.NAME)
-                throw new ParserException("expect 'id' in foreach-statement");
+                throw NewParserException("expect 'id' in foreach-statement", _current);
             if(LookAhead().m_type == (int)',')
             {
                 statement.k = _current;
                 NextToken();
                 if(NextToken().m_type != (int)TokenType.NAME)
-                    throw new ParserException("expect 'id' in foreach-statement after ','");
+                    throw NewParserException("expect 'id' in foreach-statement after ','", _current);
                 statement.v = _current;
             }
             else
@@ -736,14 +744,14 @@ namespace SimpleScript
             }
 
             if (NextToken().m_type != (int)TokenType.IN)
-                throw new ParserException("expect 'in' in foreach-statement");
+                throw NewParserException("expect 'in' in foreach-statement", _current);
             statement.exp = ParseExp();
 
             if (NextToken().m_type != (int)TokenType.DO)
-                throw new ParserException("expect 'do' to start foreach-body");
+                throw NewParserException("expect 'do' to start foreach-body", _current);
             statement.block = ParseBlock();
             if (NextToken().m_type != (int)TokenType.END)
-                throw new ParserException("expect 'do' to complete foreach-body");
+                throw NewParserException("expect 'end' to complete foreach-body", _current);
 
             return statement;
         }
@@ -756,7 +764,7 @@ namespace SimpleScript
             else if (LookAhead().m_type == (int)TokenType.NAME)
                 return ParseLocalNameList();
             else
-                throw new ParserException("unexpect token after 'local'");
+                throw NewParserException("unexpect token after 'local'", _look_ahead);
         }
         LocalFunctionStatement ParseLocalFunction()
         {
@@ -764,7 +772,7 @@ namespace SimpleScript
             var statement = new LocalFunctionStatement(_current.m_line);
 
             if (NextToken().m_type != (int)TokenType.NAME)
-                throw new ParserException("expect 'id' after 'local function'");
+                throw NewParserException("expect 'id' after 'local function'", _current);
 
             statement.name = _current;
             statement.func_body = ParseFunctionBody();
@@ -790,11 +798,17 @@ namespace SimpleScript
             {
                 NextToken();
                 if (NextToken().m_type != (int)TokenType.NAME)
-                    throw new ParserException("expect 'id' after ','");
+                    throw NewParserException("expect 'id' after ','", _current);
                 statement.names.Add(_current);
             }
             return statement;
         }
+        private ParserException NewParserException(string msg, Token token)
+        {
+            Debug.Assert(token != null);
+            return new ParserException(_lex.GetSourceName(), token.m_line, token.m_column, msg);
+        }
+
         public SyntaxTree Parse(Lex lex_)
         {
             _lex = lex_;
