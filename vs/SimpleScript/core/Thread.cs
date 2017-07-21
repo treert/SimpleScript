@@ -504,7 +504,7 @@ namespace SimpleScript
                             if (name != null)
                                 return new Tuple<string, string>("local", name);
                             else
-                                return new Tuple<string, string>("local", "?");
+                                return new Tuple<string, string>("?", "?");
                         }
                         break;
                     case OpType.OpType_GetUpvalue:
