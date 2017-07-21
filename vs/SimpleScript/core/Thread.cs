@@ -395,12 +395,10 @@ namespace SimpleScript
                         _stack[a] = ValueUtils.ToNumber(_stack[b]) > ValueUtils.ToNumber(_stack[c]);
                         break;
                     case OpType.OpType_Equal:
-                        // _stack[a] = _stack[b] == _stack[c]; // WTF:((object)2.0 == (object)2.0) = False
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) == ValueUtils.ToNumber(_stack[c]);
+                        _stack[a] = Object.Equals(_stack[b], _stack[c]);
                         break;
                     case OpType.OpType_UnEqual:
-                        // _stack[a] = _stack[b] != _stack[c];
-                        _stack[a] = ValueUtils.ToNumber(_stack[b]) != ValueUtils.ToNumber(_stack[c]);
+                        _stack[a] = !Object.Equals(_stack[b], _stack[c]);
                         break;
                     case OpType.OpType_LessEqual:
                         CheckCompareType(b, c, "<=");
