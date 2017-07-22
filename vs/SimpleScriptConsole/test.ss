@@ -14,9 +14,12 @@ local a = int32.new()
 local b = int64.new()
 
 print(DateTime)
-print(DateTime.new())
+local date = DateTime.Now;
+local date2 = DateTime.new();
+date2 = date2:AddDays(12);
+print(date, date2)
 
-print(a,b.MinValue);
+print(a,int64.MinValue);
 //[[]-]
 
 (function() print("hello world") end)()

@@ -305,10 +305,18 @@ namespace SimpleScript
     public class ImportTypeHandler : IUserData
     {
         Type _type = null;
+
         Dictionary<string, FieldInfo> _fields = new Dictionary<string, FieldInfo>();
         Dictionary<string, PropertyInfo> _propertys = new Dictionary<string, PropertyInfo>();
         Dictionary<string, CFunction> _methods = new Dictionary<string, CFunction>();
+        Dictionary<string, MethodInfo> _debug_methods = new Dictionary<string, MethodInfo>();
+
+        Dictionary<string, FieldInfo> _static_fields = new Dictionary<string, FieldInfo>();
+        Dictionary<string, PropertyInfo> _static_propertys = new Dictionary<string, PropertyInfo>();
         Dictionary<string, CFunction> _static_methods = new Dictionary<string, CFunction>();
+        Dictionary<string, MethodInfo> _debug_static_methods = new Dictionary<string, MethodInfo>();
+
+        CFunction _new_func = null;
 
         public static ImportTypeHandler Create(Type t)
         {
@@ -319,24 +327,34 @@ namespace SimpleScript
                 return obj;
             }
 
-            foreach(var field in t.GetFields())
+            foreach (var field in t.GetFields(BindingFlags.Instance | BindingFlags.Public))
             {
                 obj._fields[field.Name] = field;
             }
-            foreach(var property in t.GetProperties())
+            foreach (var field in t.GetFields(BindingFlags.Static | BindingFlags.Public))
+            {
+                obj._static_fields[field.Name] = field;
+            }
+            foreach (var property in t.GetProperties(BindingFlags.Instance | BindingFlags.Public))
             {
                 obj._propertys[property.Name] = property;
             }
-            foreach(var method in t.GetMethods())
+            foreach (var property in t.GetProperties(BindingFlags.Static | BindingFlags.Public))
+            {
+                obj._static_propertys[property.Name] = property;
+            }
+            foreach(var method in t.GetMethods(BindingFlags.Instance | BindingFlags.Public))
             {
                 obj._methods[method.Name] = ImportHelper.GenerateCFunctionFromMethodInfo(method);
+                obj._debug_methods[method.Name] = method;
             }
-            foreach(var method in t.GetMethods(BindingFlags.Static))
+            foreach(var method in t.GetMethods(BindingFlags.Static | BindingFlags.Public))
             {
                 obj._static_methods[method.Name] = ImportHelper.GenerateCFunctionFromMethodInfo(method);
+                obj._debug_static_methods[method.Name] = method;
             }
             // new
-            obj._static_methods["new"] = ImportHelper.GenerateCFunctionForNew(t);
+            obj._new_func = ImportHelper.GenerateCFunctionForNew(t);
             return obj;
         }
 
@@ -359,10 +377,10 @@ namespace SimpleScript
                 {
                     return _methods[name];
                 }
-                return null;
+                throw new CFunctionException("attempt to get {0} from {1}",name,_type);
             }
 
-            throw new NotImplementedException();
+            throw new CFunctionException("attempt to get from {0} with key type {1}",_type, key.GetType());
         }
 
         public void SetValue(object obj, object key, object value)
@@ -381,22 +399,37 @@ namespace SimpleScript
                     var property = _propertys[name];
                     property.SetValue(obj, ImportHelper.CheckAndConvertFromSSToCS(value, property.PropertyType), null);
                 }
-                throw new NotImplementedException();
+                throw new CFunctionException("attempt to set {0} for {1}", name, _type);
             }
-            throw new NotImplementedException();
+            throw new CFunctionException("attempt to get {0} with key type {1}", _type, obj.GetType());
         }
 
         public object Get(object name)
         {
             if(name is string)
             {
-                string str = (string)name;
-                if(_static_methods.ContainsKey(str))
+                string key = (string)name;
+                if(key == "new")
                 {
-                    return _static_methods[str];
+                    return _new_func;
                 }
+                else if (_static_fields.ContainsKey(key))
+                {
+                    var field = _static_fields[key];
+                    return ImportHelper.ConvertFromCSToSS(field.GetValue(null));
+                }
+                else if (_static_propertys.ContainsKey(key))
+                {
+                    return ImportHelper.ConvertFromCSToSS(_static_propertys[key].GetValue(null, null));
+                }
+                else if (_static_methods.ContainsKey(key))
+                {
+                    return _static_methods[key];
+                }
+                throw new CFunctionException("attempt to get {0} from {1}", name, _type);
             }
-            throw new NotImplementedException();
+
+            throw new CFunctionException("attempt to get from {0} with key type {1}", _type, name.GetType());
         }
 
         public override string ToString()
@@ -406,22 +439,42 @@ namespace SimpleScript
             buffer.AppendLine("fields:");
             foreach(var item in _fields)
             {
-                buffer.AppendFormat("    {0} : {1}\n", item.Key, item.Value.FieldType);
+                buffer.AppendFormat("    {0} \t: {1}\n", item.Key, item.Value.FieldType);
+            }
+            buffer.AppendLine("static fields:");
+            foreach (var item in _static_fields)
+            {
+                buffer.AppendFormat("    {0} \t: {1}\n", item.Key, item.Value.FieldType);
             }
             buffer.AppendLine("propertys:");
             foreach(var item in _propertys)
             {
-                buffer.AppendFormat("    {0} : {1}\n", item.Key, item.Value.PropertyType);
+                buffer.AppendFormat("    {0} \t: {1}\n", item.Key, item.Value.PropertyType);
+            }
+            buffer.AppendLine("static propertys:");
+            foreach (var item in _static_propertys)
+            {
+                buffer.AppendFormat("    {0} \t: {1}\n", item.Key, item.Value.PropertyType);
             }
             buffer.AppendLine("method:");
             foreach(var item in _methods)
             {
-                buffer.AppendFormat("    {0}\n", item.Key);
+                buffer.AppendFormat("    {0} \t{1}(",_debug_methods[item.Key].ReturnType.Name, item.Key);
+                foreach(var param in _debug_methods[item.Key].GetParameters())
+                {
+                    buffer.AppendFormat("{0} {1}, ", param.ParameterType.Name, param.Name);
+                }
+                buffer.AppendLine(")");
             }
             buffer.AppendLine("static method:");
             foreach(var item in _static_methods)
             {
-                buffer.AppendFormat("    {0}\n", item.Key);
+                buffer.AppendFormat("    {0} \t{1}(", _debug_static_methods[item.Key].ReturnType.Name, item.Key);
+                foreach (var param in _debug_static_methods[item.Key].GetParameters())
+                {
+                    buffer.AppendFormat("{0} {1}, ", param.ParameterType.Name, param.Name);
+                }
+                buffer.AppendLine(")");
             }
             buffer.AppendFormat("=== {0} === end\n", _type);
             return buffer.ToString();
@@ -429,7 +482,7 @@ namespace SimpleScript
 
         public void Set(object name, object value)
         {
-            throw new NotImplementedException();
+            throw new CFunctionException("attempt to set {0}", _type);
         }
     }
 }

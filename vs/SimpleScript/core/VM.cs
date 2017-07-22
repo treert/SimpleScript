@@ -59,25 +59,34 @@ namespace SimpleScript
         public object[] CallClosure(Closure closure, params object[] args)
         {
             var work_thread = GetWorkThread();
-
-            work_thread.PushValue(closure);
-            for (int i = 0; i < args.Length; ++i )
+            try
             {
-                work_thread.PushValue(args[i]);
-            }
-            work_thread.Run();
+                work_thread.PushValue(closure);
+                for (int i = 0; i < args.Length; ++i)
+                {
+                    work_thread.PushValue(args[i]);
+                }
+                work_thread.Run();
 
-            // get results
-            int count = work_thread.GetTopIdx();
-            object[] ret = new object[count];
-            for (int i = 0; i < count; ++i )
+                // get results
+                int count = work_thread.GetTopIdx();
+                object[] ret = new object[count];
+                for (int i = 0; i < count; ++i)
+                {
+                    ret[i] = work_thread.GetValue(i);
+                }
+                return ret;
+            }
+            catch (ScriptException e)
             {
-                ret[i] = work_thread.GetValue(i);
+                Console.WriteLine(e.Message);
+                return null;
             }
-            work_thread.Clear();
-
-            PutWorkThread(work_thread);
-            return ret;
+            finally
+            {
+                work_thread.Clear();
+                PutWorkThread(work_thread);
+            }
         }
 
         private object[] CallFunction(Function func, params object[] args)

@@ -78,8 +78,9 @@ namespace SimpleScript
             Debug.Assert(_max_used_top < OmsConf.MAX_STACK_SIZE);
             for(int i = 0; i < _max_used_top; ++i)
             {
-                _stack[i] = null;
+                _stack[i] = null;// so c# can gc
             }
+            OpCloseUpvalueTo(0);
             _calls.Clear();
             _active_top = 0;
             _max_used_top = 0;
@@ -239,17 +240,14 @@ namespace SimpleScript
 
         internal void Run()
         {
-            try
+            //try
             {
                 if (OpCall(0, -1, true))
                 {
                     Execute();
                 }
             }
-            catch (ScriptException e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            
         }
 
         void Execute()
