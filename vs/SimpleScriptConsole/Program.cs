@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Reflection;
 
 using SimpleScript;
 
@@ -78,8 +79,32 @@ ss -c xx.ss [-o xx.ssc]     // compile
             Console.WriteLine(help_str);
         }
 
+        struct A { 
+        }
+
         static void Main(string[] args)
         {
+            {
+                //Type[] types = new Type[] {
+                //    typeof(bool),
+                //    typeof(char),
+                //    typeof(byte), typeof(sbyte),
+                //    typeof(ushort), typeof(short),
+                //    typeof(uint), typeof(int),
+                //    typeof(ulong), typeof(long),
+                //    typeof(float), typeof(double),
+                //};
+
+                //foreach(var t in types)
+                //{
+                //    Console.WriteLine("{0}, {1}", t.IsPrimitive, t.IsValueType);
+                //    var obj = Activator.CreateInstance(t, true);
+                //    Console.WriteLine("{0}", obj);
+                //}
+
+                //return;
+            }
+
             {
                 //SimpleScript.Test.TestManager.RunTest();
                 //return;
@@ -90,6 +115,8 @@ ss -c xx.ss [-o xx.ssc]     // compile
 
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
+                CSToSS.Register(vm_1);
+
                 Compile("test.ss", "test.ssc", vm_1);
                 ExecuteFile("test.ssc", vm_1);
                 return;

@@ -4,6 +4,21 @@
     > Athor: treertzhu
 ]]
 
+
+local int64 = import("System.Int64")
+local int32 = import("System.Int32")
+local DateTime = import("System.DateTime")
+
+
+local a = int32.new()
+local b = int64.new()
+
+print(DateTime)
+print(DateTime.new())
+
+print(a,b.MinValue);
+//[[]-]
+
 (function() print("hello world") end)()
 
 function generate_array()

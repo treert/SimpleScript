@@ -179,6 +179,7 @@ namespace SimpleScript
 
         //**************** global table *****************************/
         public Table m_global;
+        public ImportManager m_import_manager;
 
         public void RegisterGlobalFunc(string name, CFunction cfunc)
         {
@@ -237,6 +238,7 @@ namespace SimpleScript
             _other_threads = new Stack<Thread>();
 
             m_global = NewTable();
+            m_import_manager = new ImportManager();
         }
     }
 }

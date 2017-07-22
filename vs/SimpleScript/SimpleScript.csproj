@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="cstoss\CSToSS.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="core\CodeGenerate.cs" />
     <Compile Include="core\Common.cs" />

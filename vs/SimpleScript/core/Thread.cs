@@ -415,12 +415,10 @@ namespace SimpleScript
                         OpTableAppend(a, b, _active_top - b);
                         break;
                     case OpType.OpType_SetTable:
-                        CheckTableType(a, b, "set value to");
-                        (_stack[a] as Table).SetValue(_stack[b], _stack[c]);
+                        OpSetTable(a, b, c);
                         break;
                     case OpType.OpType_GetTable:
-                        CheckTableType(a, b, "get value from");
-                        _stack[c] = (_stack[a] as Table).GetValue(_stack[b]);
+                        OpGetTable(a, b, c);
                         break;
                     case OpType.OpType_TableIter:
                         if (_stack[a] is Table)
@@ -590,6 +588,52 @@ namespace SimpleScript
             else
             {
                 throw NewOpTypeError(op, a);
+            }
+        }
+
+        void OpSetTable(int a, int b, int c)
+        {
+            if (_stack[b] == null || _stack[a] == null)
+            {
+                throw NewRuntimeError("the key of Table can not be nil");
+            }
+
+            var obj = _stack[a];
+            if(obj is Table)
+            {
+                (obj as Table).SetValue(_stack[b], _stack[c]);
+            }
+            else if(obj is IUserData)
+            {
+                (obj as IUserData).Set(_stack[b], _stack[c]);
+            }
+            else
+            {
+                var handler = VM.m_import_manager.GetOrCreateHandler(obj.GetType());
+                handler.SetValue(obj, _stack[b], _stack[c]);
+            }
+        }
+
+        void OpGetTable(int a, int b, int c)
+        {
+            if (_stack[b] == null || _stack[a] == null)
+            {
+                throw NewRuntimeError("the key of Table can not be nil");
+            }
+
+            var obj = _stack[a];
+            if (obj is Table)
+            {
+                _stack[c] = (obj as Table).GetValue(_stack[b]);
+            }
+            else if (obj is IUserData)
+            {
+                _stack[c] = (obj as IUserData).Get(_stack[b]);
+            }
+            else
+            {
+                var handler = VM.m_import_manager.GetOrCreateHandler(obj.GetType());
+                _stack[c] = handler.GetValue(obj, _stack[b]);
             }
         }
 

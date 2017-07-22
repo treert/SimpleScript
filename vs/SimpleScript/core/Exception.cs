@@ -71,6 +71,14 @@ namespace SimpleScript
         }
     }
 
+    public class CFunctionException : BaseException
+    {
+        public CFunctionException(string format, params object[] args)
+        {
+            _info = string.Format(format, args);
+        }
+    }
+
     class OtherException : ScriptException
     {
         private string _info = string.Empty;
