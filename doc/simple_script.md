@@ -14,6 +14,7 @@
 2. 扩展
     1. 注册cfunction回调函数
     2. 实现IUserData接口
+    3. 利用反射自动注入C#的功能，具体实现类ImportTypeHandler
 3. 后续修改
     1. 看情况加些语法糖，如python的数组切片。
     2. vm层面不做大的改动了

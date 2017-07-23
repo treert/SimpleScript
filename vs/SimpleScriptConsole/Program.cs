@@ -111,8 +111,6 @@ ss -c xx.ss [-o xx.ssc]     // compile
             }
 
             {
-                Console.WriteLine((object)2.0 == (object)2.0);
-
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
                 CSToSS.Register(vm_1);

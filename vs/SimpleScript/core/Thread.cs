@@ -591,9 +591,13 @@ namespace SimpleScript
 
         void OpSetTable(int a, int b, int c)
         {
-            if (_stack[b] == null || _stack[a] == null)
+            if (_stack[a] == null)
             {
-                throw NewRuntimeError("the key of Table can not be nil");
+                throw NewRuntimeError("attempt to SetTable, but the Table is nil");
+            }
+            if (_stack[b] == null)
+            {
+                throw NewRuntimeError("attempt to SetTable, but the key is nil");
             }
 
             var obj = _stack[a];
@@ -614,9 +618,13 @@ namespace SimpleScript
 
         void OpGetTable(int a, int b, int c)
         {
-            if (_stack[b] == null || _stack[a] == null)
+            if (_stack[a] == null)
             {
-                throw NewRuntimeError("the key of Table can not be nil");
+                throw NewRuntimeError("attempt to GetTable, but the Table is nil");
+            }
+            if (_stack[b] == null)
+            {
+                throw NewRuntimeError("attempt to GetTable, but the key is nil");
             }
 
             var obj = _stack[a];

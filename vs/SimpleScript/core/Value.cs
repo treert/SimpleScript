@@ -161,8 +161,8 @@ namespace SimpleScript
 
     public class Closure
     {
-        public Function func = null;
-        public Table env_table = null;
+        internal Function func = null;
+        internal Table env_table = null;
         
         internal void AddUpvalue(UpValue upvalue_)
         {

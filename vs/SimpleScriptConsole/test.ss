@@ -1,25 +1,33 @@
 ﻿//[[header
     > File Name: test.ss
-    > Create Time: 2017-07-13 星期四 11时05分43秒
+    > Create Time: 2017-07-23 星期日 15时48分51秒
     > Athor: treertzhu
+    > -----
+    > Last Modified: 2017-07-23 星期日 17时56分45秒
+    > Modified By: treertzhu
+    > -----
 ]]
-
 
 local int64 = import("System.Int64")
 local int32 = import("System.Int32")
 local DateTime = import("System.DateTime")
+import("SimpleScript.Instruction","Instruction")
+print(Instruction)
 
+a = Instruction.new(10,12)
+a:SetBx(123);
+print(a:GetOp(),a:GetBx())
 
-local a = int32.new()
-local b = int64.new()
+// local a = int32.new()
+// local b = int64.new()
 
-print(DateTime)
-local date = DateTime.Now;
-local date2 = DateTime.new();
-date2 = date2:AddDays(12);
-print(date, date2)
+// print(DateTime)
+// local date = DateTime.Now;
+// local date2 = DateTime.new();
+// date2 = date2:AddDays(12);
+// print(date, date2)
 
-print(a,int64.MinValue);
+// print(a,int64.MinValue);
 //[[]-]
 
 (function() print("hello world") end)()

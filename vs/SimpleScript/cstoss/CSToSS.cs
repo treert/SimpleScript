@@ -17,12 +17,7 @@ namespace SimpleScript
                 Type t = Type.GetType(name);
                 if(t != null)
                 {
-                    var handler = ImportHelper.Import(th.VM, t);
-                    string extra = th.GetCFunctionArg(1) as string;
-                    if(string.IsNullOrWhiteSpace(extra) == false)
-                    {
-                        SetValue(extra, th.VM, handler);
-                    }
+                    var handler = ImportHelper.Import(th.VM, t, th.GetCFunctionArg(1) as string);
                     th.PushValue(handler);
                     return 1;
                 }
@@ -53,13 +48,33 @@ namespace SimpleScript
         }
     }
 
-    class ImportHelper
+    public class ImportHelper
     {
-        public static ImportTypeHandler Import(VM vm, Type t)
+        public static ImportTypeHandler Import(VM vm, Type t, string name=null)
         {
-            return vm.m_import_manager.GetOrCreateHandler(t);
+            var handler = vm.m_import_manager.GetOrCreateHandler(t);
+            if(string.IsNullOrWhiteSpace(name) == false)
+            {
+                var segments = name.Split('.');
+                var table = vm.m_global;
+                for (int i = 0; i < segments.Length - 1; ++i)
+                {
+                    Table tmp = table.GetValue(segments[i]) as Table;
+                    if (tmp == null)
+                    {
+                        tmp = vm.NewTable();
+                        table.SetValue(segments[i], tmp);
+                    }
+                    table = tmp;
+                }
+                table.SetValue(segments.Last(), handler);
+            }
+            return handler;
         }
 
+        // this type convert to double, has no accuracy miss
+        // add enum
+        // !!! convert from double to them, may have accuracy overflow 
         private static HashSet<Type> _number_types = new HashSet<Type>()
         {
             typeof(sbyte),typeof(byte),
@@ -71,19 +86,26 @@ namespace SimpleScript
 
         public static object CheckAndConvertFromSSToCS(object obj, Type target_type)
         {
+            if (target_type.IsEnum && obj is double)
+            {
+                return Enum.ToObject(target_type, Convert.ToInt64(obj));
+            }
+            
             if(target_type.IsPrimitive && obj is double && _number_types.Contains(target_type))
             {
                 return Convert.ChangeType(obj, target_type);
             }
 
-            // todo change closure to delegate
+            // todo convert closure to delegate
+            // has not find a good way to do this, just do not deal it now
+            // in this situation, use ss function in callback, need a special C# function who's param type is Closure
+            // maybe can use a DelegateFactory later
 
-            // todo check type
             if(obj == null)
             {
                 if(target_type.IsValueType)
                 {
-                    throw new CFunctionException("{0} can not assign from null", target_type);
+                    throw new CFunctionException("{0} is ValueType, can not assign from null", target_type);
                 }
             }
             if(target_type.IsAssignableFrom(obj.GetType()) == false)
@@ -101,6 +123,12 @@ namespace SimpleScript
             }
 
             Type t = obj.GetType();
+
+            if(t.IsEnum)
+            {
+                return Convert.ToDouble(obj);
+            }
+
             if(t.IsPrimitive && _number_types.Contains(t))
             {
                 return Convert.ToDouble(obj);
@@ -196,7 +224,7 @@ namespace SimpleScript
 
             ParameterInfo[] param_arr = method.GetParameters();
             List<int> out_idx_arr = new List<int>();
-            int obj_extra = (method.IsStatic ? 0 : 1);
+            int obj_extra = ((method.IsStatic|method.IsConstructor) ? 0 : 1);
 
             int argc = th.GetCFunctionArgCount();
 
@@ -245,7 +273,7 @@ namespace SimpleScript
                     th.PushValue(obj);
                     return 1;
                 }
-                // todo@om has bug
+                // todo@om has bug, does not work
                 foreach(var constructor in t.GetConstructors())
                 {
                     object[] args = null;
@@ -411,7 +439,7 @@ namespace SimpleScript
                 string key = (string)name;
                 if(key == "new")
                 {
-                    return _new_func;
+                    return _new_func;// can use it to check whether the type is support
                 }
                 else if (_static_fields.ContainsKey(key))
                 {
