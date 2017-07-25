@@ -189,6 +189,17 @@ namespace SimpleScript
         //**************** global table *****************************/
         public Table m_global;
         public ImportManager m_import_manager;
+        public DelegateGenerateManager m_delegate_generate_mananger;
+
+        public void RegisterTypeHandler(Type t, IImportTypeHandler handler)
+        {
+            m_import_manager.RegisterHandler(t, handler);
+        }
+
+        public void RegisterDelegateGenerater(Type t, Func<Closure, Delegate> generater)
+        {
+            m_delegate_generate_mananger.RegisterGenerater(t, generater);
+        }
 
         public void RegisterGlobalFunc(string name, CFunction cfunc)
         {
@@ -202,9 +213,11 @@ namespace SimpleScript
         }
         internal Closure NewClosure()
         {
-            return new Closure();
+            var closure = new Closure();
+            closure.vm = this;
+            return closure;
         }
-        /*****************************************************************/
+        /******************************************************************/
 
         Lex _lex;
         Parser _parser;

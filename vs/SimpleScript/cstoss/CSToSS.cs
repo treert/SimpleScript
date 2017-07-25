@@ -50,7 +50,7 @@ namespace SimpleScript
 
     public class ImportHelper
     {
-        public static ImportTypeHandler Import(VM vm, Type t, string name=null)
+        public static IImportTypeHandler Import(VM vm, Type t, string name = null)
         {
             var handler = vm.m_import_manager.GetOrCreateHandler(t);
             if(string.IsNullOrWhiteSpace(name) == false)
@@ -100,6 +100,20 @@ namespace SimpleScript
             // has not find a good way to do this, just do not deal it now
             // in this situation, use ss function in callback, need a special C# function who's param type is Closure
             // maybe can use a DelegateFactory later
+            // keep old comment
+            if (obj is Closure && typeof(System.Delegate).IsAssignableFrom(target_type))
+            {
+                var closure = obj as Closure;
+                var callback = closure.ConvertToDelegate(target_type);
+                if(callback != null)
+                {
+                    return callback;
+                }
+                else
+                {
+                    throw new CFunctionException("can not convert Clourse to {0}", target_type);
+                }
+            }
 
             if(obj == null)
             {
@@ -293,44 +307,7 @@ namespace SimpleScript
         }
     }
 
-    public class ImportManager
-    {
-        Dictionary<Type, ImportTypeHandler> _handlers = new Dictionary<Type, ImportTypeHandler>();
-
-        public ImportTypeHandler GetHandler(Type t)
-        {
-            if(_handlers.ContainsKey(t))
-            {
-                return _handlers[t];
-            }
-            return null;
-        }
-
-        public ImportTypeHandler GetOrCreateHandler(Type t)
-        {
-            if (_handlers.ContainsKey(t))
-            {
-                return _handlers[t];
-            }
-            else
-            {
-                AddHandler(t);
-                return _handlers[t];
-            }
-        }
-
-        public void AddHandler(Type t)
-        {
-            if(_handlers.ContainsKey(t))
-            {
-                return;
-            }
-            var handler = ImportTypeHandler.Create(t);
-            _handlers.Add(t, handler);
-        }
-    }
-
-    public class ImportTypeHandler : IUserData
+    public class ImportTypeHandler : IUserData, IImportTypeHandler
     {
         Type _type = null;
 
@@ -386,7 +363,7 @@ namespace SimpleScript
             return obj;
         }
 
-        public object GetValue(object obj, object key)
+        public object GetValueFromCSToSS(object obj, object key)
         {
             if(key is string)
             {
@@ -411,7 +388,7 @@ namespace SimpleScript
             throw new CFunctionException("attempt to get from {0} with key type {1}",_type, key.GetType());
         }
 
-        public void SetValue(object obj, object key, object value)
+        public void SetValueFromSSToCS(object obj, object key, object value)
         {
             if (key is string)
             {

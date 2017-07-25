@@ -612,7 +612,7 @@ namespace SimpleScript
             else
             {
                 var handler = VM.m_import_manager.GetOrCreateHandler(obj.GetType());
-                handler.SetValue(obj, _stack[b], _stack[c]);
+                handler.SetValueFromSSToCS(obj, _stack[b], _stack[c]);
             }
         }
 
@@ -639,7 +639,7 @@ namespace SimpleScript
             else
             {
                 var handler = VM.m_import_manager.GetOrCreateHandler(obj.GetType());
-                _stack[c] = handler.GetValue(obj, _stack[b]);
+                _stack[c] = handler.GetValueFromCSToSS(obj, _stack[b]);
             }
         }
 

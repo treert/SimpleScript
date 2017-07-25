@@ -111,6 +111,12 @@ ss -c xx.ss [-o xx.ssc]     // compile
             }
 
             {
+                ImportCodeGenerate.GenDelegateFactorySource("generate/DelegateFactory.cs", new Type[]{
+                    typeof(Func<int,int>),
+                    typeof(Action),
+                });
+
+                Console.WriteLine(typeof(Int64).IsPrimitive);
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
                 CSToSS.Register(vm_1);

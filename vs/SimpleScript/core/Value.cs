@@ -163,6 +163,24 @@ namespace SimpleScript
     {
         internal Function func = null;
         internal Table env_table = null;
+        internal VM vm = null;
+
+        // for convenient, can call it very easy, and can convert to delegate
+        public object[] Call(params object[] args)
+        {
+            return vm.CallClosure(this, args);
+        }
+
+        // for convenient, add it hear
+        public Delegate ConvertToDelegate(Type t)
+        {
+            var generater = vm.m_delegate_generate_mananger.GetGenerater(t);
+            if(generater != null)
+            {
+                return generater(this);
+            }
+            return null;
+        }
         
         internal void AddUpvalue(UpValue upvalue_)
         {
