@@ -45,9 +45,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="cstoss\CSToSS.cs" />
+    <Compile Include="cstoss\ConvertHelper.cs" />
+    <Compile Include="cstoss\ImportUseReflection.cs" />
     <Compile Include="tools\ImportCodeGenerate.cs" />
-    <Compile Include="cstoss\ImportType.cs" />
+    <Compile Include="cstoss\ImportManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="core\CodeGenerate.cs" />
     <Compile Include="core\Common.cs" />
@@ -64,6 +65,7 @@
     <Compile Include="test\TestLex.cs" />
     <Compile Include="test\TestManager.cs" />
     <Compile Include="test\TestParser.cs" />
+    <Compile Include="tools\NameHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

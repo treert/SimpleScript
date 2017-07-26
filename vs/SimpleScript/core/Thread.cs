@@ -48,6 +48,7 @@ namespace SimpleScript
 
         internal void PushValue(object obj)
         {
+            obj = ConvertHelper.ConvertFromCSToSS(obj);// ...
             _stack[_active_top++] = obj;
         }
 

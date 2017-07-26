@@ -8,7 +8,7 @@ namespace SimpleScript
 {
     public static class LibBase
     {
-        public static int Print(Thread th)
+        static int Print(Thread th)
         {
             int arg_count = th.GetCFunctionArgCount();
 
@@ -35,7 +35,7 @@ namespace SimpleScript
             return 0;
         }
 
-        public static int XModule(Thread th)
+        static int Module(Thread th)
         {
             string name = th.GetCFunctionArg(0) as string;
             if(name != null)
@@ -61,10 +61,84 @@ namespace SimpleScript
             return 0;
         }
 
+        static int Import(Thread th)
+        {
+            string name = th.GetCFunctionArg(0) as string;
+            if (name != null)
+            {
+                var vm = th.VM;
+                string name2 = th.GetCFunctionArg(1) as string;
+                if(name2 == null)
+                {
+                    var handler = vm.GetGlobalThing(name) as IImportTypeHandler;
+                    if (handler == null)
+                    {
+                        // create it
+                        Type t = Type.GetType(name);
+                        if(t != null)
+                        {
+                            handler = vm.m_import_manager.GetOrCreateHandler(t);
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+                    th.PushValue(handler);
+                    return 1;
+                }
+                else
+                {
+                    var handler = vm.GetGlobalThing(name2) as IImportTypeHandler;
+                    if (handler == null)
+                    {
+                        // create it
+                        Type t = Type.GetType(name);
+                        if (t != null)
+                        {
+                            handler = vm.m_import_manager.GetOrCreateHandler(t);
+                            vm.SetGlobalThing(name2, handler);
+                        }
+                        else
+                        {
+                            return 0;
+                        }
+                    }
+
+                    th.PushValue(handler);
+                    return 1;
+                }
+            }
+            return 0;
+        }
+
+        static IImportTypeHandler _Import(VM vm, Type t, string name = null)
+        {
+            var handler = vm.m_import_manager.GetOrCreateHandler(t);
+            if (string.IsNullOrWhiteSpace(name) == false)
+            {
+                var segments = name.Split('.');
+                var table = vm.m_global;
+                for (int i = 0; i < segments.Length - 1; ++i)
+                {
+                    Table tmp = table.GetValue(segments[i]) as Table;
+                    if (tmp == null)
+                    {
+                        tmp = vm.NewTable();
+                        table.SetValue(segments[i], tmp);
+                    }
+                    table = tmp;
+                }
+                table.SetValue(segments.Last(), handler);
+            }
+            return handler;
+        }
+
         public static void Register(VM vm)
         {
             vm.RegisterGlobalFunc("print", Print);
-            vm.RegisterGlobalFunc("module", XModule);
+            vm.RegisterGlobalFunc("module", Module);
+            vm.RegisterGlobalFunc("import", Import);
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using SimpleScript;
 
 public static class DelegateFactory
 {
@@ -9,7 +8,7 @@ public static class DelegateFactory
         vm.RegisterDelegateGenerater(typeof(System.Func<int,int>), Gen_System_Func_2_System_Int32_System_Int32_);
         vm.RegisterDelegateGenerater(typeof(System.Action), Gen_System_Action);
     }
-    public static Delegate Gen_System_Func_2_System_Int32_System_Int32_(Closure closure)
+    public static Delegate Gen_System_Func_2_System_Int32_System_Int32_(SimpleScript.Closure closure)
     {
         System.Func<int,int> d = (param0) =>
         {
@@ -18,7 +17,7 @@ public static class DelegateFactory
         };
         return d;
     }
-    public static Delegate Gen_System_Action(Closure closure)
+    public static Delegate Gen_System_Action(SimpleScript.Closure closure)
     {
         System.Action d = () =>
         {

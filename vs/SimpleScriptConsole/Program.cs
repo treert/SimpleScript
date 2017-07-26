@@ -119,7 +119,6 @@ ss -c xx.ss [-o xx.ssc]     // compile
                 Console.WriteLine(typeof(Int64).IsPrimitive);
                 VM vm_1 = new VM();
                 LibBase.Register(vm_1);
-                CSToSS.Register(vm_1);
 
                 Compile("test.ss", "test.ssc", vm_1);
                 ExecuteFile("test.ssc", vm_1);

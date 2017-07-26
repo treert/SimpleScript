@@ -203,7 +203,47 @@ namespace SimpleScript
 
         public void RegisterGlobalFunc(string name, CFunction cfunc)
         {
-            m_global.SetValue(name,cfunc);
+            SetGlobalThing(name, cfunc);
+        }
+
+        public void SetGlobalThing(string name, object obj)
+        {
+            if (string.IsNullOrWhiteSpace(name) == false)
+            {
+                var segments = name.Split('.');
+                var table = m_global;
+                for (int i = 0; i < segments.Length - 1; ++i)
+                {
+                    Table tmp = table.GetValue(segments[i]) as Table;
+                    if (tmp == null)
+                    {
+                        tmp = NewTable();
+                        table.SetValue(segments[i], tmp);
+                    }
+                    table = tmp;
+                }
+                table.SetValue(segments.Last(), obj);
+            }
+        }
+
+        public object GetGlobalThing(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name) == false)
+            {
+                var segments = name.Split('.');
+                var table = m_global;
+                for (int i = 0; i < segments.Length - 1; ++i)
+                {
+                    Table tmp = table.GetValue(segments[i]) as Table;
+                    if (tmp == null)
+                    {
+                        return null;
+                    }
+                    table = tmp;
+                }
+                return table.GetValue(segments.Last());
+            }
+            return null;
         }
 
         /************** some new manager **********************************/
