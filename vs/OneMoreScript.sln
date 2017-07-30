@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+VisualStudioVersion = 12.0.30723.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleScript", "SimpleScript\SimpleScript.csproj", "{8AE08551-BC10-4A0D-A834-0334ED7C89EB}"
 EndProject
@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleScriptConsole", "Simp
 	ProjectSection(ProjectDependencies) = postProject
 		{8AE08551-BC10-4A0D-A834-0334ED7C89EB} = {8AE08551-BC10-4A0D-A834-0334ED7C89EB}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VSCodeDebugAdapter", "VSCodeDebugAdapter\VSCodeDebugAdapter.csproj", "{1F69C88A-4CBD-4839-8DFF-A20B5DBB4717}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,6 +26,10 @@ Global
 		{EE97CCFF-0C7F-48B4-AFA4-D411F551D96D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE97CCFF-0C7F-48B4-AFA4-D411F551D96D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE97CCFF-0C7F-48B4-AFA4-D411F551D96D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F69C88A-4CBD-4839-8DFF-A20B5DBB4717}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F69C88A-4CBD-4839-8DFF-A20B5DBB4717}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F69C88A-4CBD-4839-8DFF-A20B5DBB4717}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F69C88A-4CBD-4839-8DFF-A20B5DBB4717}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
