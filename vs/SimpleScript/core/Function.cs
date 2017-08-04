@@ -42,7 +42,7 @@ namespace SimpleScript
             {
                 var func = stack.Pop();
                 // module_name
-                func._module_name = reader.ReadString();
+                func._file_name = reader.ReadString();
                 // codes
                 count = reader.ReadInt32();
                 func._codes.Capacity = count;
@@ -139,7 +139,7 @@ namespace SimpleScript
             {
                 var func = stack.Pop();
                 // module_name
-                writer.Write(func._module_name);
+                writer.Write(func._file_name);
                 //  codes
                 writer.Write(func._codes.Count);
                 foreach (var code in func._codes)
@@ -316,15 +316,24 @@ namespace SimpleScript
 
         int _MaxRegisterCount = 0;// 需要的最大寄存器数量
 
-        public string GetModuleName()
+        public string GetFileName()
         {
-            return _module_name;
+            return _file_name;
         }
-        public void SetModuleName(string moudle_name_)
+        public void SetFileName(string moudle_name_)
         {
-            _module_name = moudle_name_;
+            _file_name = moudle_name_;
         }
-        string _module_name = string.Empty;
+        public string GetFuncName()
+        {
+            return _func_name;
+        }
+        public void SetFuncName(string func_name_)
+        {
+            _func_name = func_name_;
+        }
+        string _file_name = string.Empty;
+        string _func_name = string.Empty;
 
         List<Function> _child_functions = new List<Function>();
         List<object> _const_objs = new List<object>();

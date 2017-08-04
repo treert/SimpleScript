@@ -19,11 +19,11 @@ namespace SimpleScript
     /// </summary>
     class CodeGenerate
     {
-        private string _module_name = string.Empty;// source name
+        private string _file_name = string.Empty;// source name
         public Function Generate(SyntaxTree tree, string module_name)
         {
             Debug.Assert(tree is Chunk);
-            _module_name = module_name;
+            _file_name = module_name;
             return HandleChunk(tree as Chunk);
         }
 
@@ -75,6 +75,7 @@ namespace SimpleScript
             public GenerateLoop current_loop;
             public Function function;
             public int define_line = 0;// define line in source 
+            public string define_name = ""; // func name
             public int func_index = 0;// index in parent
             public int register = 0;// next free register index
         }
@@ -155,19 +156,25 @@ namespace SimpleScript
             is_local = false;
             return index;
         }
-        void EnterFunction(int define_line)
+        void EnterFunction(int define_line, string define_name)
         {
             var func = new GenerateFunction();
             var parent = _current_func;
             func.parent = parent;
             func.function = new Function();
-            func.function.SetModuleName(_module_name);
+            func.function.SetFileName(_file_name);
             func.define_line = define_line;
             if(parent != null)
             {
                 var index = parent.function.AddChildFunction(func.function);
                 func.func_index = index;
             }
+            if (define_name == null)
+            {
+                define_name = parent.define_name + "+" + func.func_index;
+            }
+            func.define_name = define_name;
+            func.function.SetFuncName(define_name);
 
             _current_func = func;
         }
@@ -252,7 +259,7 @@ namespace SimpleScript
         {
             if (register >= OmsConf.MAX_FUNC_REGISTER)
             {
-                throw new CodeGenerateException(_module_name, _current_func.define_line, "to many local variables");
+                throw new CodeGenerateException(_file_name, _current_func.define_line, "to many local variables");
             }
             _current_func.function.SetMaxRegisterCount(register);
             return _current_func.register = register;
@@ -261,7 +268,7 @@ namespace SimpleScript
         {
             if (_current_func.register + 1 >= OmsConf.MAX_FUNC_REGISTER)
             {
-                throw new CodeGenerateException(_module_name, _current_func.define_line, "to many local variables");
+                throw new CodeGenerateException(_file_name, _current_func.define_line, "to many local variables");
             }
             _current_func.function.SetMaxRegisterCount(_current_func.register + 1);
             return _current_func.register++;
@@ -269,7 +276,7 @@ namespace SimpleScript
 
         Function HandleChunk(Chunk tree)
         {
-            EnterFunction(tree.line);
+            EnterFunction(tree.line, "chunk");
             var f = GetCurrentFunction();
             f.SetHasVarArg();// file has default ...
             EnterBlock();
@@ -563,7 +570,7 @@ namespace SimpleScript
         }
         void HandleFunctionStatement(FunctionStatement tree)
         {
-            HandleFunctionBody(tree.func_body);
+            HandleFunctionBody(tree.func_body, tree.func_name.names.Last().m_string);
             HandleFunctionName(tree.func_name);
         }
         void HandleParamList(ParamList tree)
@@ -578,9 +585,9 @@ namespace SimpleScript
                 InsertName(tree.name_list[i].m_string, GenerateRegisterId());
             }
         }
-        void HandleFunctionBody(FunctionBody tree)
+        void HandleFunctionBody(FunctionBody tree, string define_name)
         {
-            EnterFunction(tree.line);
+            EnterFunction(tree.line, define_name);
             var func_index = GetFunctionIndex();
             {
                 EnterBlock();
@@ -666,7 +673,7 @@ namespace SimpleScript
         {
             if (_current_func.current_loop == null)
             {
-                throw new CodeGenerateException(_module_name, tree.line, "'break' is not in any loop block");
+                throw new CodeGenerateException(_file_name, tree.line, "'break' is not in any loop block");
             }
             // jump to loop tail
             var code = Instruction.Bx(OpType.OpType_Jmp, 0);
@@ -677,7 +684,7 @@ namespace SimpleScript
         {
             if(_current_func.current_loop == null)
             {
-                throw new CodeGenerateException(_module_name, tree.line, "'contine' is not in any loop block");
+                throw new CodeGenerateException(_file_name, tree.line, "'contine' is not in any loop block");
             }
             // jump to loop head
             var code = Instruction.Bx(OpType.OpType_Jmp, 0);
@@ -858,7 +865,7 @@ namespace SimpleScript
             }
             else if (tree is FunctionBody)
             {
-                HandleFunctionBody(tree as FunctionBody);
+                HandleFunctionBody(tree as FunctionBody, null);
             }
             else if(tree is BinaryExpression)
             {
@@ -1052,7 +1059,7 @@ namespace SimpleScript
         void HandleLocalFunctionStatement(LocalFunctionStatement tree)
         {
             InsertName(tree.name.m_string, GetNextRegisterId());
-            HandleFunctionBody(tree.func_body);
+            HandleFunctionBody(tree.func_body, tree.name.m_string);
             GenerateRegisterId();
         }
 

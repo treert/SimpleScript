@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using SimpleScript.DebugProtocol;
 namespace SimpleScript
 {
     /// <summary>
@@ -23,9 +24,9 @@ namespace SimpleScript
     public class VM
     {
         //**************** do ********************************/
-        public void DoString(string s, String module_name = "")
+        public void DoString(string s, String file_name = "")
         {
-            var func = Parse(s, module_name);
+            var func = Parse(s, file_name);
             CallFunction(func);
         }
 
@@ -125,9 +126,9 @@ namespace SimpleScript
             }
         }
 
-        public void CompileString(string source, Stream out_stream, string module_name = "")
+        public void CompileString(string source, Stream out_stream, string file_name = "")
         {
-            var func = Parse(source, module_name);
+            var func = Parse(source, file_name);
             out_stream.WriteByte(_header[0]);
             out_stream.WriteByte(_header[1]);
             out_stream.WriteByte(_header[2]);
@@ -157,15 +158,15 @@ namespace SimpleScript
             }
         }
         //**************** parse *******************************/
-        private Function Parse(string source, string module_name)
+        private Function Parse(string source, string file_name)
         {
-            _lex.Init(source, module_name);
+            _lex.Init(source, file_name);
             var tree = _parser.Parse(_lex);
-            var func = _code_generator.Generate(tree, module_name);
+            var func = _code_generator.Generate(tree, file_name);
             return func;
         }
 
-        private Function Parse(Stream stream, string module_name)
+        private Function Parse(Stream stream, string file_name)
         {
             if(ReadBom(stream))
             {
@@ -173,7 +174,7 @@ namespace SimpleScript
                 using (StreamReader reader = new StreamReader(stream))
                 {
                     var source = reader.ReadToEnd();
-                    return Parse(source, module_name);
+                    return Parse(source, file_name);
                 }
             }
             else
@@ -186,10 +187,18 @@ namespace SimpleScript
             }
         }
 
+        //**************** debug ************************************/
+        public readonly Hooker m_debug_protocol;
+
+        public void CallDebugHook(Thread th)
+        {
+            m_debug_protocol.Hook(th);
+        }
+        
         //**************** global table *****************************/
-        public Table m_global;
-        public ImportManager m_import_manager;
-        public DelegateGenerateManager m_delegate_generate_mananger;
+        public readonly Table m_global;
+        public readonly ImportManager m_import_manager;
+        public readonly DelegateGenerateManager m_delegate_generate_mananger;
 
         public void RegisterTypeHandler(Type t, IImportTypeHandler handler)
         {
@@ -301,6 +310,8 @@ namespace SimpleScript
 
             m_global = NewTable();
             m_import_manager = new ImportManager();
+            m_delegate_generate_mananger = new DelegateGenerateManager();
+            m_debug_protocol = new Hooker();
         }
     }
 }

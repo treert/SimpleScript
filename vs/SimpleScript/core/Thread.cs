@@ -271,6 +271,7 @@ namespace SimpleScript
 
             while (call.pc < code_size)
             {
+                VM.CallDebugHook(this);
                 Instruction i = func.GetInstruction(call.pc);
                 ++call.pc;
 
@@ -464,6 +465,16 @@ namespace SimpleScript
             OpReturn(call.func_idx, -1, 0, false);
         }
 
+        internal Tuple<string, int, int> GetCurrentCallFrameInfo()
+        {
+            var call = _calls.Peek();
+            var func = call.closure.func;
+            var file_name = func.GetFileName();
+            var line = func.GetInstructionLine(call.pc);// do not need minus 1
+            var call_count = _calls.Count;
+            return new Tuple<string, int, int>(file_name, line, call_count);
+        }
+
         Tuple<string, string> GetOperandNameAndScope(int idx)
         {
             var call = _calls.Peek();
@@ -531,9 +542,9 @@ namespace SimpleScript
         Tuple<string, int> GetCurrentInstructionPos()
         {
             var call = _calls.Peek();
-            var module_name = call.closure.func.GetModuleName();
+            var file_name = call.closure.func.GetFileName();
             var line = call.closure.func.GetInstructionLine(call.pc - 1);
-            return new Tuple<string, int>(module_name, line);
+            return new Tuple<string, int>(file_name, line);
         }
 
         RuntimeException NewRuntimeError(string format, params object[] args)
