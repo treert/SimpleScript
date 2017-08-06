@@ -11,12 +11,12 @@
 local int64 = import("System.Int64")
 local int32 = import("System.Int32")
 local DateTime = import("System.DateTime")
-import("SimpleScript.Instruction","Instruction")
-print(Instruction)
+import("SimpleScript.Instruction","Instruction");
+print(Instruction);
 
-a = Instruction.new(10,12)
+a = Instruction.new(10,12);
 a:SetBx(123);
-print(a:GetOp(),a:GetBx())
+print(a:GetOp(),a:GetBx());
 
 // local a = int32.new()
 // local b = int64.new()
@@ -28,7 +28,7 @@ print(a:GetOp(),a:GetBx())
 // print(date, date2)
 
 // print(a,int64.MinValue);
-//[[]-]
+//[[]]
 
 (function() print("hello world") end)()
 

@@ -43,6 +43,7 @@ namespace SimpleScript
                 var func = stack.Pop();
                 // module_name
                 func._file_name = reader.ReadString();
+                func._func_name = reader.ReadString();
                 // codes
                 count = reader.ReadInt32();
                 func._codes.Capacity = count;
@@ -140,6 +141,7 @@ namespace SimpleScript
                 var func = stack.Pop();
                 // module_name
                 writer.Write(func._file_name);
+                writer.Write(func._func_name);
                 //  codes
                 writer.Write(func._codes.Count);
                 foreach (var code in func._codes)
@@ -304,6 +306,18 @@ namespace SimpleScript
             }
             return null;
         }
+        public int GetLocalVarIndexByNameAndPc(string name, int pc)
+        {
+            foreach(var info in _local_var_infos)
+            {
+                if(info.name == name && info.begin_pc <= pc && pc < info.end_pc)
+                {
+                    return info.register_idx;
+                }
+            }
+            return -1;// not find
+        }
+
         public int GetMaxRegisterCount()
         {
             return _MaxRegisterCount;
@@ -374,7 +388,7 @@ namespace SimpleScript
         {
             return _upvalues[idx];
         }
-        // For CodeGenerate
+
         public int SearchUpValue(string name)
         {
             for (int i = 0; i < _upvalues.Count; ++i)

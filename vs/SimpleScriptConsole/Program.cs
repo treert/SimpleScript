@@ -121,6 +121,11 @@ ss -c xx.ss [-o xx.ssc]     // compile
                 LibBase.Register(vm_1);
 
                 Compile("test.ss", "test.ssc", vm_1);
+
+                var pipe = new IOPipe();
+                vm_1.m_hooker.SetPipeServer(pipe);
+                vm_1.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
+
                 ExecuteFile("test.ssc", vm_1);
                 return;
             }

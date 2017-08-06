@@ -188,11 +188,11 @@ namespace SimpleScript
         }
 
         //**************** debug ************************************/
-        public readonly Hooker m_debug_protocol;
+        public readonly Hooker m_hooker;
 
         public void CallDebugHook(Thread th)
         {
-            m_debug_protocol.Hook(th);
+            m_hooker.Hook(th);
         }
         
         //**************** global table *****************************/
@@ -311,7 +311,7 @@ namespace SimpleScript
             m_global = NewTable();
             m_import_manager = new ImportManager();
             m_delegate_generate_mananger = new DelegateGenerateManager();
-            m_debug_protocol = new Hooker();
+            m_hooker = new Hooker();
         }
     }
 }

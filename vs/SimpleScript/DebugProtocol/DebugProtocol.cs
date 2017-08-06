@@ -28,7 +28,7 @@ namespace SimpleScript.DebugProtocol
 
     public interface DebugResponse
     {
-        string ToString();
+        string ToResString();
         void WriteTo(BinaryWriter writer);
         void ReadFrom(BinaryReader reader);
     }
@@ -57,6 +57,11 @@ namespace SimpleScript.DebugProtocol
             {
                 return;
             }
+            OnBreakRes res = new OnBreakRes();
+            res.m_file = _cur_file;
+            res.m_line = _cur_line;
+            SendResponse(res);
+
 
             // break and wait for cmd
             var cmd = _pipe_server.ReadCmd();
@@ -76,7 +81,7 @@ namespace SimpleScript.DebugProtocol
             _pipe_server = server;
         }
 
-        internal void SetBreakMode(BreakMode mode)
+        public void SetBreakMode(BreakMode mode)
         {
             _break_mode = mode;
         }
@@ -89,8 +94,51 @@ namespace SimpleScript.DebugProtocol
         int _cur_line = 0;// line start from 1, 0 is before start
         int _cur_call_level = 0;
 
-        internal readonly List<BreakPoint> _breakpoints = new List<BreakPoint>();
+        LinkedList<BreakPoint> _breakpoints = new LinkedList<BreakPoint>();
         #endregion
+
+        internal BreakPoint AddBreakPoint(BreakPoint point)
+        {
+            int index = 1;
+            for(var iter = _breakpoints.First; iter != null; iter = iter.Next, ++index)
+            {
+                if(iter.Value.index > index)
+                {
+                    point.index = index;
+                    _breakpoints.AddBefore(iter, point);
+                    return point;
+                }
+            }
+
+            point.index = index;
+            _breakpoints.AddLast(point);
+            return point;
+        }
+
+        internal BreakPoint RemoveBreakPointByIndex(int index)
+        {
+            var iter = _breakpoints.First;
+            while(iter != null)
+            {
+                if(iter.Value.index == index)
+                {
+                    _breakpoints.Remove(iter);
+                    return iter.Value;
+                }
+                iter = iter.Next;
+            }
+            return null;
+        }
+
+        internal void ClearBreakPoint()
+        {
+            _breakpoints.Clear();
+        }
+
+        internal LinkedList<BreakPoint> GetBreakPoint()
+        {
+            return _breakpoints;
+        }
 
         bool CheckBreak(Thread th)
         {
@@ -136,6 +184,10 @@ namespace SimpleScript.DebugProtocol
                 _cur_line = line;
                 _cur_call_level = call_level;
             }
+            else
+            {
+                _cur_call_level = -1;// so can break many times in for
+            }
             return need_break;
         }
 
@@ -165,6 +217,7 @@ namespace SimpleScript.DebugProtocol
     {
         public string file_name;
         public int line;
+        public int index;
         public bool Hit(string file_, int line_)
         {
             if(line == line_ && file_name.EndsWith(file_))
@@ -173,235 +226,24 @@ namespace SimpleScript.DebugProtocol
             }
             return false;
         }
-    }
-
-    public class Continue : DebugCmd
-    {
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            hooker.SetBreakMode(BreakMode.Point);
-            return true;
-        }
 
         public void WriteTo(BinaryWriter writer)
         {
-            // ...
+            writer.Write(file_name);
+            writer.Write(line);
+            writer.Write(index);
         }
 
         public void ReadFrom(BinaryReader reader)
         {
-            // ...
-        }
-    }
-
-    public class StepOver : DebugCmd
-    {
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            hooker.SetBreakMode(BreakMode.StepOver);
-            return true;
+            file_name = reader.ReadString();
+            line = reader.ReadInt32();
+            index = reader.ReadInt32();
         }
 
-        public void WriteTo(BinaryWriter writer)
+        public override string ToString()
         {
-            // ...
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            // ...
-        }
-    }
-
-    public class StepIn: DebugCmd
-    {
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            hooker.SetBreakMode(BreakMode.StepIn);
-            return true;
-        }
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            // ...
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            /*throw new NotImplementedException();*/
-        }
-    }
-
-    public class StepOut : DebugCmd
-    {
-        
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            hooker.SetBreakMode(BreakMode.StepOut);
-            return true;
-        }
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            /*throw new NotImplementedException();*/
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            /*throw new NotImplementedException();*/
-        }
-    }
-
-    public class Terminate: DebugCmd
-    {
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            hooker.SetBreakMode(BreakMode.Ignore);
-            return true;
-        }
-
-        public void WriteTo(BinaryWriter writer)
-        {
-/*            throw new NotImplementedException();*/
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-/*            throw new NotImplementedException();*/
-        }
-    }
-
-    public class BreakCmd: DebugCmd
-    {
-        public enum BreakCmdMode
-        {
-            Set,
-            Replace,
-            Delete,
-            DeleteAll,
-            GetInfo,
-        }
-        public BreakCmdMode m_cmd_mode = BreakCmdMode.Set;
-        public List<BreakPoint> m_break_points = new List<BreakPoint>();
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            if(m_cmd_mode == BreakCmdMode.Set)
-            {
-                hooker._breakpoints.AddRange(m_break_points);
-            }
-            else if(m_cmd_mode == BreakCmdMode.Replace)
-            {
-                hooker._breakpoints.Clear();
-                hooker._breakpoints.AddRange(m_break_points);
-            }
-            else if(m_cmd_mode == BreakCmdMode.Delete)
-            {
-                hooker._breakpoints.RemoveAll(point => m_break_points.Contains(point));
-            }
-            else if(m_cmd_mode == BreakCmdMode.DeleteAll)
-            {
-                hooker._breakpoints.Clear();
-            }
-            else if(m_cmd_mode == BreakCmdMode.GetInfo)
-            {
-                
-            }
-            
-            return false;
-        }
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            writer.Write((int)m_cmd_mode);
-            writer.Write(m_break_points.Count);
-            foreach(var point in m_break_points)
-            {
-                writer.Write(point.file_name);
-                writer.Write(point.line);
-            }
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            m_cmd_mode = (BreakCmdMode)reader.ReadInt32();
-            int count = reader.ReadInt32();
-            m_break_points.Clear();
-            for(int i = 0; i < count; ++i)
-            {
-                var point = new BreakPoint();
-                point.file_name = reader.ReadString();
-                point.line = reader.ReadInt32();
-                m_break_points.Add(point);
-            }
-        }
-    }
-
-    public class PrintCmd: DebugCmd
-    {
-        public string m_name = string.Empty;
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            writer.Write(m_name);
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            m_name = reader.ReadString();
-        }
-    }
-
-    public class BackTraceCmd: DebugCmd
-    {
-        public bool Exec(Hooker hooker, Thread th)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class GetBreakInfoRes: DebugResponse
-    {
-
-
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class OnBreakRes: DebugResponse
-    {
-
-
-
-        public void WriteTo(BinaryWriter writer)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void ReadFrom(BinaryReader reader)
-        {
-            throw new NotImplementedException();
+            return string.Format("BreakPoint {0,3}: {1}:{2}", index, file_name, line);
         }
     }
 }

@@ -47,6 +47,7 @@
   <ItemGroup>
     <Compile Include="cstoss\ConvertHelper.cs" />
     <Compile Include="cstoss\ImportUseReflection.cs" />
+    <Compile Include="DebugProtocol\DebugCmdAndRes.cs" />
     <Compile Include="DebugProtocol\DebugProtocol.cs" />
     <Compile Include="DebugProtocol\IODebug.cs" />
     <Compile Include="tools\ImportCodeGenerate.cs" />

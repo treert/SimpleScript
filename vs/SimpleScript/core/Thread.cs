@@ -143,7 +143,7 @@ namespace SimpleScript
         {
             while (_upvalues.Count > 0)
             {
-                UpValue upvalue = _upvalues.Last<UpValue>();
+                UpValue upvalue = _upvalues.Last.Value;
                 if (upvalue.idx >= a)
                 {
                     upvalue.Close();
@@ -465,6 +465,24 @@ namespace SimpleScript
             OpReturn(call.func_idx, -1, 0, false);
         }
 
+        internal object GetObjByName(string name)
+        {
+            var call = _calls.Peek();
+            var closure = call.closure;
+            var func = closure.func;
+            int idx = func.GetLocalVarIndexByNameAndPc(name, Math.Max(0,call.pc));// todo@om think
+            if(idx >= 0)
+            {
+                return _stack[call.register_idx + idx];
+            }
+            idx = func.SearchUpValue(name);
+            if(idx >= 0)
+            {
+                return closure.GetUpvalue(idx).Read();
+            }
+            return closure.env_table.GetValue(name);
+        }
+
         internal Tuple<string, int, int> GetCurrentCallFrameInfo()
         {
             var call = _calls.Peek();
@@ -473,6 +491,20 @@ namespace SimpleScript
             var line = func.GetInstructionLine(call.pc);// do not need minus 1
             var call_count = _calls.Count;
             return new Tuple<string, int, int>(file_name, line, call_count);
+        }
+
+        internal List<Tuple<string, string, int>> GetBackTraceInfo()
+        {
+            List<Tuple<string, string, int>> frames = new List<Tuple<string, string, int>>(_calls.Count);
+            foreach(var call in _calls)
+            {
+                var func = call.closure.func;
+                var file = func.GetFileName();
+                var func_name = func.GetFuncName();
+                var line = func.GetInstructionLine(Math.Max(0,call.pc-1));
+                frames.Add(new Tuple<string, string, int>(file, func_name, line));
+            }
+            return frames;
         }
 
         Tuple<string, string> GetOperandNameAndScope(int idx)
