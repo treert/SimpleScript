@@ -1,11 +1,8 @@
-/**
- * Filename: c:\Users\treert\Desktop\git\SimpleScript\editor\VS Code\simplescript\test.ss
- * Path: c:\Users\treert\Desktop\git\SimpleScript\editor\VS Code\simplescript
- * Created Date: Sat Jul 08 2017
- * Author: treert
- * 
- * Copyright (c) 2017 Your Company
- */
+//[[header
+    > File Name: test.ss
+    > Create Time: 2017-08-25 星期五 17时30分16秒
+    > Athor: treertzhu
+]]
 
  
 function a()
@@ -38,22 +35,5 @@ end
 if condition then
     // body
 end
-
-//[=================================[
-filename:test.ss
-filepath:c:\Users\treert\Desktop\git\SimpleScript\editor\VS Code\simplescript\test.ss
-author:$who
-]=================================]
-
-
- /**
- * Filename: c:\Users\treert\Desktop\git\SimpleScript\editor\VS Code\simplescript\test.ss
- * Path: c:\Users\treert\Desktop\git\SimpleScript\editor\VS Code\simplescript
- * Created Date: Sat Jul 08 2017
- * Author: treert
- * 
- * Copyright (c) 2017 Your Company
- */
-
 
 

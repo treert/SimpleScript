@@ -2,13 +2,13 @@
     "name": "simplescript",
     "displayName": "simplescript",
     "description": "simplescript language support",
-    "version": "0.0.2",
+    "version": "0.0.3",
     "publisher": "onemore",
     "engines": {
         "vscode": "^1.13.0"
     },
     "categories": [
-        "Languages"
+        "Languages","Debuggers"
     ],
     "contributes": {
         "languages": [{
@@ -17,16 +17,81 @@
             "extensions": [".ss"],
             "configuration": "./language-configuration.json"
         }],
+        "debuggers": [{
+            "type": "simplescript",
+            "label": "SimpleScript Debuger",
+            "program": "./bin/VSCodeDebugAdapter.exe",
+			"osx": {
+				"runtime": "mono"
+			},
+			"linux": {
+				"runtime": "mono"
+            },
+			"initialConfigurations": [
+				{
+                    "name": "simplescript launch",
+					"type": "simplescript",
+					"request": "launch",
+					"program": "${workspaceRoot}/test.ss"
+                },
+                {
+                    "name": "simplescript attach",
+					"type": "simplescript",
+					"request": "attach",
+					"address": "localhost",
+					"port": 55555
+				}
+            ],
+            "configurationAttributes": {
+				"launch": {
+					"required": ["program"],
+					"properties": {
+						"program": {
+							"type": "string",
+							"description": "the first run ss file"
+						},
+						"args": {
+							"type": "array",
+							"description": "string arg list",
+							"items": { "type": "string" },
+							"default": []
+						}
+					}
+				},
+				"attach": {
+					"required": ["port"],
+					"properties": {
+						"port": {
+							"type": "number",
+							"description": "port",
+							"default": 55555
+						},
+						"address": {
+							"type": "string",
+							"description": "ip or hostname",
+							"default": "undefined"
+						}
+					}
+				}
+			}
+        }],
+        "breakpoints": [
+			{
+				"language": "simplescript"
+			}
+		],
         "snippets": [
 			{
 				"language": "simplescript",
 				"path": "./snippets/simplescript.json"
 			}
 		],
-        "grammars": [{
+        "grammars": [
+            {
             "language": "simplescript",
             "scopeName": "source.simplescript",
             "path": "./syntaxes/simplescript.tmLanguage.json"
-        }]
+            }
+        ]
     }
 }
