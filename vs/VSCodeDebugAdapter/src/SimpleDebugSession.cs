@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,7 +19,7 @@ namespace VSCodeDebugAdapter
     class SimpleDebugSession : DebugSession
     {
         public SimpleDebugSession()
-            : base(true)
+            : base(false)
         {
 
         }
@@ -43,8 +44,8 @@ namespace VSCodeDebugAdapter
                 // This debug adapter doesn't support conditional breakpoints.
                 supportsConditionalBreakpoints = false,
 
-                // This debug adapter does not support a side effect free evaluate request for data hovers.
-                supportsEvaluateForHovers = false,
+                // This debug adapter support a side effect free evaluate request for data hovers.
+                supportsEvaluateForHovers = true,
 
                 // This debug adapter does not support exception breakpoint filters
                 exceptionBreakpointFilters = new dynamic[0]
@@ -54,10 +55,33 @@ namespace VSCodeDebugAdapter
             SendEvent(new InitializedEvent());
         }
 
-        public override void Launch(Response response, dynamic arguments)
+        string _t_main_file = null;
+        string[] _t_main_lines;
+        int _t_cur_line = 0;
+        string _t_work_dir = null;
+        int _t_thread = 1;
+        public override void Launch(Response response, dynamic args)
         {
-            // ?
+            string programPath = getString(args, "program");
+            if (programPath == null)
+            {
+                SendErrorResponse(response, 3001, "Property 'program' is missing or empty.", null);
+                return;
+            }
+            programPath = ConvertClientPathToDebugger(programPath);
+            if (!File.Exists(programPath) && !Directory.Exists(programPath))
+            {
+                SendErrorResponse(response, 3002, "Program '{path}' does not exist.", new { path = programPath });
+                return;
+            }
+            _t_work_dir = Path.GetDirectoryName(programPath);
+
+            _t_main_file = programPath;
+            _t_main_lines = File.ReadAllLines(_t_main_file);
+
             SendResponse(response);
+
+            SendEvent(new StoppedEvent(_t_thread, "entry"));
         }
 
         public override void Attach(Response response, dynamic arguments)
@@ -67,73 +91,142 @@ namespace VSCodeDebugAdapter
 
         public override void Disconnect(Response response, dynamic arguments)
         {
+            // stop debug clear all
+
             SendResponse(response);
         }
 
-        public override void SetBreakpoints(Response response, dynamic arguments)
+        Dictionary<string, HashSet<int>> _t_breakpoints = new Dictionary<string, HashSet<int>>();
+        public override void SetBreakpoints(Response response, dynamic args)
         {
-            var clientLines = arguments.lines.ToObject<int[]>();
-            var breakpoints = new List<Breakpoint>();
-            foreach (var l in clientLines)
+            string path = null;
+            if (args.source != null)
             {
-                breakpoints.Add(new Breakpoint(true, l));
+                string p = (string)args.source.path;
+                if (p != null && p.Trim().Length > 0)
+                {
+                    path = p;
+                }
+            }
+            if (path == null)
+            {
+                SendErrorResponse(response, 3010, "setBreakpoints: property 'source' is empty or misformed", null, false, true);
+                return;
+            }
+            path = ConvertClientPathToDebugger(path);
+
+            int[] clientLines = args.lines.ToObject<int[]>();
+
+            var set = GetBreakLinesByFile(path);
+            set.Clear();
+            var breakpoints = new List<Breakpoint>();
+            for (var i = 0; i < clientLines.Length; ++i)
+            {
+                var l = ConvertClientLineToDebugger(clientLines[i]);
+                bool valid = false;
+                if(l < _t_main_lines.Length)
+                {
+                    var line = _t_main_lines[l].Trim();
+                    if(line.Length > 0)
+                    {
+                        set.Add(l);
+                        valid = true;
+                    }
+                }
+                breakpoints.Add(new Breakpoint(valid, clientLines[i]));
             }
 
             SendResponse(response, new SetBreakpointsResponseBody(breakpoints));
         }
 
+        HashSet<int> GetBreakLinesByFile(string file)
+        {
+            file = file.Replace('\\', '/');
+            if (_t_breakpoints.ContainsKey(file) == false)
+            {
+                _t_breakpoints.Add(file, new HashSet<int>());
+            }
+            return _t_breakpoints[file];
+        }
+
         public override void Continue(Response response, dynamic arguments)
         {
-            // ? wait for singal
+            var set = GetBreakLinesByFile(_t_main_file);
+            for(int l = _t_cur_line + 1; l < _t_main_lines.Length; ++l)
+            {
+                _t_cur_line = l;
+                if (set.Contains(l))
+                {
+                    SendResponse(response);
+                    SendEvent(new StoppedEvent(_t_thread, "breakpoint"));
+                    return;
+                }
+            }
+
             SendResponse(response);
-            // contine
+            SendEvent(new TerminatedEvent());
         }
 
         public override void Next(Response response, dynamic arguments)
         {
+            test_run(response, "next");
+        }
+
+        void test_run(Response response, string reason)
+        {
+            int l = _t_cur_line + 1;
+            if (l < _t_main_lines.Length)
+            {
+                _t_cur_line = l;
+                SendResponse(response);
+                SendEvent(new StoppedEvent(_t_thread, reason));
+                return;
+            }
+
             SendResponse(response);
-            // next line
+            SendEvent(new TerminatedEvent());
         }
 
         public override void StepIn(Response response, dynamic arguments)
         {
-            SendEvent(new StoppedEvent(1, "step"));
+            test_run(response, "step-in");
         }
 
         public override void StepOut(Response response, dynamic arguments)
         {
-            SendEvent(new StoppedEvent(1, "step"));
+            test_run(response, "step-out");
         }
 
         public override void Pause(Response response, dynamic arguments)
         {
-            SendEvent(new StoppedEvent(1, "pause"));
+            throw new NotImplementedException();
         }
 
         public override void StackTrace(Response response, dynamic arguments)
         {
             var stackFrames = new List<StackFrame>();
 
-            for (int i = 0; i < 3; ++i )
+            for (int i = 1; i <= 3; ++i )
             {
-                var source = VSCodeDebugAdapter.Source.Create("name","path");
-                stackFrames.Add(new StackFrame(i, "frame" + i, source, 2, 1));
+                var source = VSCodeDebugAdapter.Source.Create(Path.GetFileName(_t_main_file), ConvertDebuggerPathToClient(_t_main_file));
+                stackFrames.Add(new StackFrame(i, "frame" + i, source, _t_cur_line+1, 0));
             }
 
             SendResponse(response, new StackTraceResponseBody(stackFrames));
         }
 
+        Handles<object[]> _variableHandles = new Handles<object[]>();
         public override void Scopes(Response response, dynamic arguments)
         {
             int frameId = getInt(arguments, "frameId", 0);
 
             var scopes = new List<Scope>();
 
-            // om?todo handle exception
-            // ...
+            
 
-            scopes.Add(new Scope("local_test_1", 1));
-            scopes.Add(new Scope("local_test_2", 2));
+            scopes.Add(new Scope("Local", frameId * 10 + 1));
+            scopes.Add(new Scope("Closure", frameId * 10 + 2));
+            scopes.Add(new Scope("Global", frameId * 10 + 3));
 
             SendResponse(response, new ScopesResponseBody(scopes));
         }
@@ -150,8 +243,9 @@ namespace VSCodeDebugAdapter
             // waitforresponse
 
             var variables = new List<Variable>();
+            // _variableHandles.Get(reference, null);
 
-            variables.Add(new Variable("local_test_1", "1", "int"));
+            variables.Add(new Variable("ref_id", ""+ reference, "int"));
 
             SendResponse(response, new VariablesResponseBody(variables));
         }
@@ -159,7 +253,7 @@ namespace VSCodeDebugAdapter
         public override void Threads(Response response, dynamic arguments)
         {
             var threads = new List<Thread>();
-            threads.Add(new Thread(1, "main_thread"));
+            threads.Add(new Thread(1, "thread 1"));
 
             SendResponse(response, new ThreadsResponseBody(threads));
         }

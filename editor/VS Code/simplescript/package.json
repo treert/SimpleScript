@@ -29,19 +29,42 @@
             },
 			"initialConfigurations": [
 				{
-                    "name": "simplescript launch",
+                    "name": "SimpleScript Launch",
 					"type": "simplescript",
 					"request": "launch",
 					"program": "${workspaceRoot}/test.ss"
                 },
                 {
-                    "name": "simplescript attach",
+                    "name": "SimpleScript Attach",
 					"type": "simplescript",
 					"request": "attach",
 					"address": "localhost",
 					"port": 55555
 				}
-            ],
+			],
+			"configurationSnippets": [
+				{
+					"label": "SimpleScript Launch",
+					"description": "Run and debug program script file",
+					"body": {
+						"name": "SimpleScript Launch",
+						"type": "simplescript",
+						"request": "launch",
+						"program": "^\"\\${workspaceRoot}/${1:test.ss}\""
+					}
+				},
+				{
+					"label": "SimpleScript Attach",
+					"description": "Attach to ip:port",
+					"body": {
+						"name": "SimpleScript Attach",
+						"type": "simplescript",
+						"request": "attach",
+						"address": "${1:localhost}",
+						"port": "${2:55555}"
+					}
+				}
+			],
             "configurationAttributes": {
 				"launch": {
 					"required": ["program"],
