@@ -1,0 +1,358 @@
+FileName: test.ss
+FuncName: chunk
+Args: (...)
+Code: 252
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_Call 
+OpType_GetGlobal 
+OpType_GetGlobal 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_Call 
+OpType_SetGlobal 
+OpType_GetGlobal 
+OpType_Move 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_LoadConst 
+OpType_Call 
+OpType_GetGlobal 
+OpType_GetGlobal 
+OpType_Move 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_GetGlobal 
+OpType_Move 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_Call 
+OpType_Closure 
+OpType_Call 
+OpType_Closure 
+OpType_SetGlobal 
+OpType_NewTable 
+OpType_LoadInt 
+OpType_LoadConst 
+OpType_SetTable 
+OpType_GetGlobal 
+OpType_Call 
+OpType_AppendTable 
+OpType_SetGlobal 
+OpType_GetGlobal 
+OpType_TableIter 
+OpType_TableIterNext 
+OpType_JmpNil 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Move 
+OpType_LoadConst 
+OpType_Move 
+OpType_Call 
+OpType_CloseUpvalue 
+OpType_Jmp 
+OpType_CloseUpvalue 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_LoadInt 
+OpType_ForInit 
+OpType_ForCheck 
+OpType_Jmp 
+OpType_Move 
+OpType_Add 
+OpType_Move 
+OpType_LoadConst 
+OpType_Equal 
+OpType_JmpFalse 
+OpType_Jmp 
+OpType_CloseUpvalue 
+OpType_Jmp 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Move 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_Move 
+OpType_GetTable 
+OpType_Call 
+OpType_CloseUpvalue 
+OpType_Jmp 
+OpType_CloseUpvalue 
+OpType_Closure 
+OpType_Move 
+OpType_GetGlobal 
+OpType_Call 
+OpType_FillNilFromTopToA 
+OpType_Move 
+OpType_Move 
+OpType_Move 
+OpType_Call 
+OpType_FillNilFromTopToA 
+OpType_JmpNil 
+OpType_Move 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Move 
+OpType_LoadConst 
+OpType_Move 
+OpType_Call 
+OpType_CloseUpvalue 
+OpType_Jmp 
+OpType_CloseUpvalue 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_Closure 
+OpType_GetGlobal 
+OpType_Move 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_Call 
+OpType_Call 
+OpType_CloseUpvalue 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_Closure 
+OpType_GetGlobal 
+OpType_Move 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_LoadConst 
+OpType_Call 
+OpType_Call 
+OpType_CloseUpvalue 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_SetTable 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_LoadInt 
+OpType_Add 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_SetTable 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_LoadInt 
+OpType_Sub 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_SetTable 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_LoadConst 
+OpType_Add 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_SetTable 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_LoadConst 
+OpType_Sub 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_SetTable 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetTable 
+OpType_Call 
+OpType_CloseUpvalue 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_LoadConst 
+OpType_SetGlobal 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_Call 
+OpType_GetGlobal 
+OpType_GetGlobal 
+OpType_LoadConst 
+OpType_Call 
+OpType_Move 
+OpType_LoadConst 
+OpType_Call 
+OpType_Move 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_Call 
+OpType_LoadConst 
+OpType_SetGlobal 
+OpType_Move 
+OpType_LoadConst 
+OpType_GetGlobal 
+OpType_Call 
+OpType_Move 
+OpType_LoadConst 
+OpType_Call 
+OpType_Closure 
+OpType_Call 
+OpType_FillNilFromTopToA 
+OpType_SetGlobal 
+OpType_SetGlobal 
+OpType_GetGlobal 
+OpType_Call 
+OpType_GetGlobal 
+OpType_Call 
+OpType_GetGlobal 
+OpType_Call 
+OpType_GetGlobal 
+OpType_Call 
+OpType_GetGlobal 
+OpType_Call 
+OpType_CloseUpvalue 
+
+ChildFuncs: 1/6
+  FuncName: chunk+0
+  Args: ()
+  Code: 4
+  OpType_GetGlobal 
+  OpType_LoadConst 
+  OpType_Call 
+  OpType_CloseUpvalue 
+ChildFuncs: 2/6
+  FuncName: generate_array
+  Args: ()
+  Code: 4
+  OpType_LoadConst 
+  OpType_LoadConst 
+  OpType_Ret 
+  OpType_CloseUpvalue 
+ChildFuncs: 3/6
+  FuncName: ipairs
+  Args: (table)
+  Code: 5
+  OpType_Closure 
+  OpType_Move 
+  OpType_LoadConst 
+  OpType_Ret 
+  OpType_CloseUpvalue 
+
+  ChildFuncs: 1/1
+    FuncName: ipairs+0
+    Args: (table, idx)
+    Code: 21
+    OpType_Move 
+    OpType_LoadConst 
+    OpType_Add 
+    OpType_Move 
+    OpType_Move 
+    OpType_Move 
+    OpType_GetTable 
+    OpType_LoadNil 
+    OpType_Equal 
+    OpType_JmpFalse 
+    OpType_LoadNil 
+    OpType_Ret 
+    OpType_CloseUpvalue 
+    OpType_Jmp 
+    OpType_Move 
+    OpType_Move 
+    OpType_Move 
+    OpType_GetTable 
+    OpType_Ret 
+    OpType_CloseUpvalue 
+    OpType_CloseUpvalue 
+ChildFuncs: 4/6
+  FuncName: chunk+3
+  Args: (...)
+  Code: 4
+  OpType_LoadConst 
+  OpType_VarArg 
+  OpType_Ret 
+  OpType_CloseUpvalue 
+ChildFuncs: 5/6
+  FuncName: chunk+4
+  Args: (...)
+  Code: 4
+  OpType_LoadConst 
+  OpType_VarArg 
+  OpType_Ret 
+  OpType_CloseUpvalue 
+ChildFuncs: 6/6
+  FuncName: chunk+5
+  Args: ()
+  Code: 5
+  OpType_LoadConst 
+  OpType_Closure 
+  OpType_Closure 
+  OpType_Ret 
+  OpType_CloseUpvalue 
+
+  ChildFuncs: 1/2
+    FuncName: chunk+5+0
+    Args: ()
+    Code: 8
+    OpType_GetUpvalue 
+    OpType_LoadConst 
+    OpType_Add 
+    OpType_SetUpvalue 
+    OpType_GetUpvalue 
+    OpType_GetUpvalue 
+    OpType_Call 
+    OpType_CloseUpvalue 
+  ChildFuncs: 2/2
+    FuncName: chunk+5+1
+    Args: ()
+    Code: 8
+    OpType_GetUpvalue 
+    OpType_LoadConst 
+    OpType_Sub 
+    OpType_SetUpvalue 
+    OpType_GetUpvalue 
+    OpType_GetUpvalue 
+    OpType_Call 
+    OpType_CloseUpvalue 

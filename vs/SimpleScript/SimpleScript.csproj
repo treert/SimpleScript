@@ -45,6 +45,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="core\Function.BinCode.cs" />
+    <Compile Include="core\Function.Serialize.cs" />
     <Compile Include="cstoss\ConvertHelper.cs" />
     <Compile Include="cstoss\ImportUseReflection.cs" />
     <Compile Include="DebugProtocol\DebugCmdAndRes.cs" />

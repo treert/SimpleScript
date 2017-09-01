@@ -166,7 +166,7 @@ namespace SimpleScript
             return func;
         }
 
-        private Function Parse(Stream stream, string file_name)
+        public Function Parse(Stream stream, string file_name)
         {
             if(ReadBom(stream))
             {

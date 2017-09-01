@@ -39,6 +39,24 @@ namespace SimpleScriptConsole
             }
         }
 
+        static void ShowBinCode(string src_file, string bin_file, VM vm)
+        {
+            try
+            {
+                using (var stream = File.OpenRead(src_file))
+                {
+                    var func = vm.Parse(stream, src_file);
+                    File.WriteAllText(bin_file, func.ToBinCode());
+                }
+
+                Console.WriteLine("out file: {0}", bin_file);
+            }
+            catch (ScriptException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
         static void ExecuteConsole(VM vm)
         {
             Console.WriteLine("Simple Script 1.0 Copyright (C) 2017");
@@ -107,6 +125,8 @@ use way:
     {0}                          // run terminal
     {0} xx.ss or xx.ssc          // run source file or binary file
     {0} -c xx.ss [-o xx.ssc]     // compile
+    {0} -d xx.ss [-p port]       // debug port range is [1025,9999]    
+    {0} -b xx.ss [-o xx.ssb]     // show bin code
 ";
             Console.WriteLine(help_str, exe_file);
         }
@@ -122,15 +142,16 @@ use way:
                 ExecuteConsole(vm);
             }
 
-            if (args[0] == "-c")
+            if (args[0] == "-c" || args[0] == "-b")
             {
-                // 编译模式
+                bool is_compile = args[0] == "-c";
                 string src_file = null;
                 string bin_file = null;
                 if (args.Length == 2)
                 {
                     src_file = args[1];
                     bin_file = src_file + "c";
+                    if (is_compile == false) bin_file = src_file + "b";
                 }
                 else if (args.Length == 4 && args[2] == "-o")
                 {
@@ -138,9 +159,16 @@ use way:
                     bin_file = args[3];
                 }
                 if (src_file != null && File.Exists(src_file) &&
-                    Directory.Exists(Path.GetDirectoryName(bin_file)))
+                    Directory.Exists(Path.GetDirectoryName(Path.GetFullPath(bin_file))))
                 {
-                    Compile(src_file, bin_file, vm);
+                    if(is_compile)
+                    {
+                        Compile(src_file, bin_file, vm);
+                    }
+                    else
+                    {
+                        ShowBinCode(src_file, bin_file, vm);
+                    }
                 }
                 else
                 {
