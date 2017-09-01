@@ -7,24 +7,14 @@ using System.Threading.Tasks;
 using System.Reflection;
 
 using SimpleScript;
+using System.Net.Sockets;
+using System.Net;
 
 namespace SimpleScriptConsole
 {
     class Program
     {
         static void ExecuteFile(string file_name, VM vm)
-        {
-            try
-            {
-                vm.DoFile(file_name);
-            }
-            catch (ScriptException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
-        static void ExecuteBinFile(string file_name, VM vm)
         {
             try
             {
@@ -68,67 +58,61 @@ namespace SimpleScriptConsole
             }
         }
 
+        static void DebugFile(string file_name, VM vm, int port)
+        {
+            try
+            {
+                var func = vm.Parse(File.ReadAllText(file_name), file_name);
+
+                if(port > 0)
+                {
+                    TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), 7744);
+                    serverSocket.Start();
+
+                    var socket = serverSocket.AcceptSocket();
+                    if(socket != null)
+                    {
+                        using (var stream = new NetworkStream(socket))
+                        {
+                            var pipe = new SimpleScript.DebugProtocol.NetServerPipe(stream);
+                            vm.m_hooker.SetPipeServer(pipe);
+                            vm.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
+                            vm.CallFunction(func);
+                        }
+                    }
+                }
+                else
+                {
+                    var pipe = new IOPipe();
+                    vm.m_hooker.SetPipeServer(pipe);
+                    vm.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
+                    vm.CallFunction(func);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
         static void ShowHelpThenExit()
         {
+            string exe_file = "ss.exe";
+            if(Environment.GetCommandLineArgs().Length > 0)
+            {
+                exe_file = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
+            }
             string help_str = @"Simple Script 1.0 Copyright (C) 2017
 use way:
-ss                          // run terminal
-ss xx.ss or xx.ssc          // run source file or binary file
-ss -c xx.ss [-o xx.ssc]     // compile
+    {0}                          // run terminal
+    {0} xx.ss or xx.ssc          // run source file or binary file
+    {0} -c xx.ss [-o xx.ssc]     // compile
 ";
-            Console.WriteLine(help_str);
+            Console.WriteLine(help_str, exe_file);
         }
-
-        struct A { 
-        }
-
+        
         static void Main(string[] args)
         {
-            {
-                //Type[] types = new Type[] {
-                //    typeof(bool),
-                //    typeof(char),
-                //    typeof(byte), typeof(sbyte),
-                //    typeof(ushort), typeof(short),
-                //    typeof(uint), typeof(int),
-                //    typeof(ulong), typeof(long),
-                //    typeof(float), typeof(double),
-                //};
-
-                //foreach(var t in types)
-                //{
-                //    Console.WriteLine("{0}, {1}", t.IsPrimitive, t.IsValueType);
-                //    var obj = Activator.CreateInstance(t, true);
-                //    Console.WriteLine("{0}", obj);
-                //}
-
-                //return;
-            }
-
-            {
-                //SimpleScript.Test.TestManager.RunTest();
-                //return;
-            }
-
-            {
-                ImportCodeGenerate.GenDelegateFactorySource("generate/DelegateFactory.cs", new Type[]{
-                    typeof(Func<int,int>),
-                    typeof(Action),
-                });
-
-                Console.WriteLine(typeof(Int64).IsPrimitive);
-                VM vm_1 = new VM();
-                LibBase.Register(vm_1);
-
-                Compile("test.ss", "test.ssc", vm_1);
-
-                var pipe = new IOPipe();
-                vm_1.m_hooker.SetPipeServer(pipe);
-                vm_1.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
-
-                ExecuteFile("test.ssc", vm_1);
-                return;
-            }
 
             VM vm = new VM();
             LibBase.Register(vm);
@@ -168,6 +152,37 @@ ss -c xx.ss [-o xx.ssc]     // compile
                 if (File.Exists(args[0]))
                 {
                     ExecuteFile(args[0], vm);
+                }
+                else
+                {
+                    ShowHelpThenExit();
+                }
+            }
+            else if (args[0] == "-d" && args.Length >=2)
+            {
+                if (File.Exists(args[1]))
+                {
+                    if(args.Length == 2)
+                    {
+                        DebugFile(args[1], vm, 0);
+                    }
+                    else if(args.Length == 4 && args[2] == "-p")
+                    {
+                        int port = 0;
+                        int.TryParse(args[3], out port);
+                        if(port > 1024 && port <= 9999)
+                        {
+                            DebugFile(args[1], vm, port);
+                        }
+                        else
+                        {
+                            ShowHelpThenExit();
+                        }
+                    }
+                    else
+                    {
+                        ShowHelpThenExit();
+                    }
                 }
                 else
                 {

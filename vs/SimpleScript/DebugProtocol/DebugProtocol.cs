@@ -148,7 +148,11 @@ namespace SimpleScript.DebugProtocol
             var call_level = tuple.Item3;
 
             bool need_break = false;
-            if(_break_mode == BreakMode.StopForOnce)
+            if(line < 1)
+            {
+                return false;// some code line is set -1
+            }
+            else if(_break_mode == BreakMode.StopForOnce)
             {
                 _break_mode = BreakMode.Point;
                 need_break = true;// must break

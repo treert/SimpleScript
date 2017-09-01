@@ -90,7 +90,7 @@ namespace SimpleScript
             }
         }
 
-        private object[] CallFunction(Function func, params object[] args)
+        public object[] CallFunction(Function func, params object[] args)
         {
             var closure = NewClosure();
             closure.func = func;
@@ -158,7 +158,7 @@ namespace SimpleScript
             }
         }
         //**************** parse *******************************/
-        private Function Parse(string source, string file_name)
+        public Function Parse(string source, string file_name)
         {
             _lex.Init(source, file_name);
             var tree = _parser.Parse(_lex);

@@ -88,6 +88,7 @@ namespace SimpleScript.DebugProtocol
         public bool Exec(Hooker hooker, Thread th)
         {
             hooker.SetBreakMode(BreakMode.Ignore);
+            hooker.SetPipeServer(null);
             return true;
         }
 
