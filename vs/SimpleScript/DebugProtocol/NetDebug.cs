@@ -6,13 +6,13 @@ using System.Text;
 
 namespace SimpleScript.DebugProtocol
 {
-    class StreamUtils
+    public class NetStream
     {
         private Stream _stream;
         private BinaryReader _reader;
         private BinaryWriter _writer;
 
-        public StreamUtils(Stream stream)
+        public NetStream(Stream stream)
         {
             _stream = stream;
             _reader = new BinaryReader(stream);
@@ -157,11 +157,11 @@ namespace SimpleScript.DebugProtocol
             }
         }
 
-        private StreamUtils _stream;
+        private NetStream _stream;
 
         public NetServerPipe(Stream stream)
         {
-            _stream = new StreamUtils(stream);
+            _stream = new NetStream(stream);
         }
     }
 }

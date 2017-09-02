@@ -108,13 +108,14 @@ namespace SimpleScript.DebugProtocol
         public enum BreakCmdMode
         {
             Set,
-            Reset,
+            ResetOneFile,
             Delete,
             DeleteAll,
             List,
         }
         public BreakCmdMode m_cmd_mode = BreakCmdMode.Set;
         public List<BreakPoint> m_break_points = new List<BreakPoint>();
+        public string m_file = "";// for reset
         public bool Exec(Hooker hooker, Thread th)
         {
             BreakOpRes res = new BreakOpRes();
@@ -127,13 +128,9 @@ namespace SimpleScript.DebugProtocol
                 res.m_head_desc = "Add BreakPoint:";
                 res.m_break_points = m_break_points;
             }
-            else if (m_cmd_mode == BreakCmdMode.Reset)
+            else if (m_cmd_mode == BreakCmdMode.ResetOneFile)
             {
-                hooker.ClearBreakPoint();
-                for (int i = 0; i < m_break_points.Count; ++i)
-                {
-                    hooker.AddBreakPoint(m_break_points[i]);
-                }
+                hooker.ResetBreakPointForOneFile(m_file, m_break_points);
                 res.m_head_desc = "Reset BreakPoint:";
                 res.m_break_points = m_break_points;
             }
@@ -166,6 +163,7 @@ namespace SimpleScript.DebugProtocol
 
         public void WriteTo(BinaryWriter writer)
         {
+            writer.Write(m_file);
             writer.Write((int)m_cmd_mode);
             writer.Write(m_break_points.Count);
             foreach (var point in m_break_points)
@@ -176,6 +174,7 @@ namespace SimpleScript.DebugProtocol
 
         public void ReadFrom(BinaryReader reader)
         {
+            m_file = reader.ReadString();
             m_cmd_mode = (BreakCmdMode)reader.ReadInt32();
             int count = reader.ReadInt32();
             m_break_points.Clear();
@@ -191,12 +190,13 @@ namespace SimpleScript.DebugProtocol
     public class PrintCmd : DebugCmd
     {
         public string m_name = string.Empty;
+        public int m_stack_idx = 1;
         public bool Exec(Hooker hooker, Thread th)
         {
             PrintRes res = new PrintRes();
             res.m_name = m_name;
             var segments = m_name.Split('.');
-            var obj = th.GetObjByName(segments[0]);
+            var obj = th.GetObjByName(segments[0], m_stack_idx);
             for(int i = 1; i < segments.Length; ++i)
             {
                 if(obj is Table)
@@ -227,11 +227,13 @@ namespace SimpleScript.DebugProtocol
         public void WriteTo(BinaryWriter writer)
         {
             writer.Write(m_name);
+            writer.Write(m_stack_idx);
         }
 
         public void ReadFrom(BinaryReader reader)
         {
             m_name = reader.ReadString();
+            m_stack_idx = reader.ReadInt32();
         }
     }
 
@@ -254,6 +256,30 @@ namespace SimpleScript.DebugProtocol
         public void ReadFrom(BinaryReader reader)
         {
             /*throw new NotImplementedException();*/
+        }
+    }
+
+    public class GetFrameInfoCmd: DebugCmd
+    {
+
+        public int m_stack_idx = 1;
+
+        public bool Exec(Hooker hooker, Thread th)
+        {
+            GetFrameInfoRes res = new GetFrameInfoRes();
+            th.FillFrameInfo(res, m_stack_idx);
+            hooker.SendResponse(res);
+            return false;
+        }
+
+        public void WriteTo(BinaryWriter writer)
+        {
+            writer.Write(m_stack_idx);
+        }
+
+        public void ReadFrom(BinaryReader reader)
+        {
+            m_stack_idx = reader.ReadInt32();
         }
     }
 
@@ -358,6 +384,67 @@ namespace SimpleScript.DebugProtocol
                 var func_name = reader.ReadString();
                 var line = reader.ReadInt32();
                 m_frames.Add(new Tuple<string, string, int>(file, func_name, line));
+            }
+        }
+    }
+
+    public class GetFrameInfoRes: DebugResponse
+    {
+        public class ValueInfo
+        {
+            public string name;
+            public string type;
+            public string value;
+        }
+
+        public List<ValueInfo> m_locals = new List<ValueInfo>();
+        public List<ValueInfo> m_upvalues = new List<ValueInfo>();
+
+        public string ToResString()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void WriteTo(BinaryWriter writer)
+        {
+            writer.Write(m_locals.Count);
+            foreach(var v in m_locals)
+            {
+                writer.Write(v.name);
+                writer.Write(v.type);
+                writer.Write(v.value);
+            }
+            writer.Write(m_upvalues.Count);
+            foreach (var v in m_upvalues)
+            {
+                writer.Write(v.name);
+                writer.Write(v.type);
+                writer.Write(v.value);
+            }
+        }
+
+        public void ReadFrom(BinaryReader reader)
+        {
+            int count;
+            count = reader.ReadInt32();
+            m_locals.Clear();
+            for (var i = 0; i < count; ++i)
+            {
+                var v = new ValueInfo();
+                v.name = reader.ReadString();
+                v.type = reader.ReadString();
+                v.value = reader.ReadString();
+                m_locals.Add(v);
+            }
+            count = reader.ReadInt32();
+            m_upvalues.Clear();
+            for (var i = 0; i < count; ++i)
+            {
+                var v = new ValueInfo();
+                v.name = reader.ReadString();
+                v.type = reader.ReadString();
+                v.value = reader.ReadString();
+                m_upvalues.Add(v);
             }
         }
     }

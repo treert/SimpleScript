@@ -44,6 +44,10 @@ namespace SimpleScript
         {
             return _codes[idx];
         }
+        public int GetCodeCount()
+        {
+            return _codes.Count;
+        }
         public int GetInstructionLine(int idx)
         {
             return _code_lines[idx];
@@ -117,6 +121,11 @@ namespace SimpleScript
             return -1;// not find
         }
 
+        internal List<LocalVarInfo> GetAllLocalVarInfo()
+        {
+            return _local_var_infos;
+        }
+
         public int GetMaxRegisterCount()
         {
             return _MaxRegisterCount;
@@ -156,7 +165,7 @@ namespace SimpleScript
         List<int> _code_lines = new List<int>();
 
         // For debug
-        struct LocalVarInfo
+        internal struct LocalVarInfo
         {
             public string name;
             public int register_idx;
@@ -196,6 +205,11 @@ namespace SimpleScript
                     return i;
             }
             return -1;
+        }
+
+        internal List<UpValueInfo> GetAllUpValueInfos()
+        {
+            return _upvalues;
         }
 
         public class UpValueInfo

@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+/// <summary>
+/// for simple. the protocol should design as one request one response
+/// </summary>
 namespace SimpleScript.DebugProtocol
 {
 
@@ -79,6 +82,7 @@ namespace SimpleScript.DebugProtocol
         public void SetPipeServer(DebugPipeServer server)
         {
             _pipe_server = server;
+            _cur_call_level = -1;
         }
 
         public void SetBreakMode(BreakMode mode)
@@ -135,6 +139,28 @@ namespace SimpleScript.DebugProtocol
             _breakpoints.Clear();
         }
 
+        internal void ResetBreakPointForOneFile(string file, List<BreakPoint> points)
+        {
+            for (var iter = _breakpoints.First; iter != null; )
+            {
+                if(iter.Value.file_name == file)
+                {
+                    var tmp = iter;
+                    iter = iter.Next;
+                    _breakpoints.Remove(tmp);
+                }
+                else
+                {
+                    iter = iter.Next;
+                }
+            }
+
+            foreach(var p in points)
+            {
+                AddBreakPoint(p);
+            }
+        }
+
         internal LinkedList<BreakPoint> GetBreakPoint()
         {
             return _breakpoints;
@@ -150,7 +176,7 @@ namespace SimpleScript.DebugProtocol
             bool need_break = false;
             if(line < 1)
             {
-                return false;// some code line is set -1
+                return false;// some code line is set -1 or 0(Fuck ME)
             }
             else if(_break_mode == BreakMode.StopForOnce)
             {
@@ -190,7 +216,10 @@ namespace SimpleScript.DebugProtocol
             }
             else
             {
-                _cur_call_level = -1;// so can break many times in for
+                // do not need do any thing
+                // so can break many times in for
+                //_cur_line = -1;
+                //_cur_call_level = -1;// call level can not change, or step over will fail
             }
             return need_break;
         }

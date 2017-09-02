@@ -191,6 +191,11 @@ namespace SimpleScript
             return _upvalues[idx];
         }
 
+        internal List<UpValue> GetAllUpvalues()
+        {
+            return _upvalues;
+        }
+
         List<UpValue> _upvalues = new List<UpValue>();
     }
 }

@@ -1,9 +1,14 @@
-﻿using System;
+﻿using SimpleScript.DebugProtocol;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 /***
  * 准备支持的调试命令
@@ -19,7 +24,7 @@ namespace VSCodeDebugAdapter
     class SimpleDebugSession : DebugSession
     {
         public SimpleDebugSession()
-            : base(false)
+            : base(true)
         {
 
         }
@@ -60,6 +65,10 @@ namespace VSCodeDebugAdapter
         int _t_cur_line = 0;
         string _t_work_dir = null;
         int _t_thread = 1;
+
+        Process _process;
+        TcpClient _tcp_connect;
+        NetStream _net_stream;
         public override void Launch(Response response, dynamic args)
         {
             string programPath = getString(args, "program");
@@ -79,9 +88,43 @@ namespace VSCodeDebugAdapter
             _t_main_file = programPath;
             _t_main_lines = File.ReadAllLines(_t_main_file);
 
+            // start client
+            {
+                int port = Utilities.FindFreePort(0);
+                if(port <= 0)
+                {
+                    SendErrorResponse(response, 3003, "Can not launch ss.exe with a port", null);
+                    return;
+                }
+                ProcessStartInfo info = new ProcessStartInfo();
+                info.FileName = Utilities.FindExeDirectory() + "\\ss.exe";
+                //info.Arguments = string.Format("-d {0}", Path.GetFileName(_t_main_file), port);
+                info.Arguments = string.Format("-d {0} -p {1}", Path.GetFileName(_t_main_file), port);
+                info.WorkingDirectory = _t_work_dir;
+                _process = Process.Start(info);
+
+                // Connect
+                try
+                {
+                    System.Threading.Thread.Sleep(20);
+                    _tcp_connect = new TcpClient();
+                    _tcp_connect.Connect(IPAddress.Parse("127.0.0.1"), port);
+                    _net_stream = new NetStream(_tcp_connect.GetStream());
+                }
+                catch
+                {
+                    SendErrorResponse(response, 3004, "Can not connect to ss.exe");
+                    ClearNetConnect();
+                    return;
+                }
+            }
+
             SendResponse(response);
 
             SendEvent(new StoppedEvent(_t_thread, "entry"));
+
+            // immediate handle one break
+            WaitForResponse();
         }
 
         public override void Attach(Response response, dynamic arguments)
@@ -92,8 +135,30 @@ namespace VSCodeDebugAdapter
         public override void Disconnect(Response response, dynamic arguments)
         {
             // stop debug clear all
+            if (_process != null)
+            {
+                //_process.Kill();
+                _process = null;
+            }
+
+            ClearNetConnect();
 
             SendResponse(response);
+        }
+
+        public void ClearNetConnect()
+        {
+
+            if(_tcp_connect != null)
+            {
+                _tcp_connect.Close();
+                _tcp_connect = null;
+            }
+            if(_net_stream != null)
+            {
+                _net_stream.Close();
+                _net_stream = null;
+            }
         }
 
         Dictionary<string, HashSet<int>> _t_breakpoints = new Dictionary<string, HashSet<int>>();
@@ -117,24 +182,23 @@ namespace VSCodeDebugAdapter
 
             int[] clientLines = args.lines.ToObject<int[]>();
 
-            var set = GetBreakLinesByFile(path);
-            set.Clear();
+            var file = path.Replace(_t_work_dir , "").Trim('/','\\');
+
+            BreakCmd cmd = new BreakCmd();
+            cmd.m_file = file;
+            cmd.m_cmd_mode = BreakCmd.BreakCmdMode.ResetOneFile;
+
             var breakpoints = new List<Breakpoint>();
             for (var i = 0; i < clientLines.Length; ++i)
             {
                 var l = ConvertClientLineToDebugger(clientLines[i]);
-                bool valid = false;
-                if(l < _t_main_lines.Length)
-                {
-                    var line = _t_main_lines[l].Trim();
-                    if(line.Length > 0)
-                    {
-                        set.Add(l);
-                        valid = true;
-                    }
-                }
-                breakpoints.Add(new Breakpoint(valid, clientLines[i]));
+                var p = new BreakPoint();
+                p.file_name = file;
+                p.line = l;
+                cmd.m_break_points.Add(p);
+                breakpoints.Add(new Breakpoint(true, clientLines[i]));
             }
+            SendOneCmdAndWaitForResponse(cmd);
 
             SendResponse(response, new SetBreakpointsResponseBody(breakpoints));
         }
@@ -151,82 +215,106 @@ namespace VSCodeDebugAdapter
 
         public override void Continue(Response response, dynamic arguments)
         {
-            var set = GetBreakLinesByFile(_t_main_file);
-            for(int l = _t_cur_line + 1; l < _t_main_lines.Length; ++l)
-            {
-                _t_cur_line = l;
-                if (set.Contains(l))
-                {
-                    SendResponse(response);
-                    SendEvent(new StoppedEvent(_t_thread, "breakpoint"));
-                    return;
-                }
-            }
-
+            SimpleScript.DebugProtocol.Continue cmd = new SimpleScript.DebugProtocol.Continue();
+            SendOneCmdAndWaitForResponse(cmd);
             SendResponse(response);
-            SendEvent(new TerminatedEvent());
         }
 
         public override void Next(Response response, dynamic arguments)
         {
-            test_run(response, "next");
+            StepOver cmd = new StepOver();
+            SendOneCmdAndWaitForResponse(cmd);
+            SendResponse(response);
         }
 
-        void test_run(Response response, string reason)
+        DebugResponse SendOneCmdAndWaitForResponse(DebugCmd cmd)
         {
-            int l = _t_cur_line + 1;
-            if (l < _t_main_lines.Length)
+            try
             {
-                _t_cur_line = l;
-                SendResponse(response);
-                SendEvent(new StoppedEvent(_t_thread, reason));
-                return;
+                _net_stream.WriteCmd(cmd);
+
+                return WaitForResponse();
+            }
+            catch
+            {
+                _process = null; // For debug, cmd windows do not close
+                Stop();
+                return null;
+            }
+        }
+
+        DebugResponse WaitForResponse()
+        {
+            var res = _net_stream.ReadOneRes();
+            if (res == null)
+            {
+                SendEvent(new TerminatedEvent());
+                return res;
+            }
+            if (res.GetType() == typeof(OnBreakRes))
+            {
+                var r = res as OnBreakRes;
+                SendEvent(new StoppedEvent(_t_thread, "breakpoint"));
             }
 
-            SendResponse(response);
-            SendEvent(new TerminatedEvent());
+            return res;
         }
 
         public override void StepIn(Response response, dynamic arguments)
         {
-            test_run(response, "step-in");
+            SimpleScript.DebugProtocol.StepIn cmd = new SimpleScript.DebugProtocol.StepIn();
+            SendOneCmdAndWaitForResponse(cmd);
+            SendResponse(response);
         }
 
         public override void StepOut(Response response, dynamic arguments)
         {
-            test_run(response, "step-out");
+            SimpleScript.DebugProtocol.StepOut cmd = new SimpleScript.DebugProtocol.StepOut();
+            SendOneCmdAndWaitForResponse(cmd);
+            SendResponse(response);
         }
 
         public override void Pause(Response response, dynamic arguments)
         {
-            throw new NotImplementedException();
+            SendErrorResponse(response, 5001, "Do not Support Pause Cmd");
         }
 
         public override void StackTrace(Response response, dynamic arguments)
         {
+            BackTraceCmd cmd = new BackTraceCmd();
+            BackTraceRes res =  SendOneCmdAndWaitForResponse(cmd) as BackTraceRes;
+
             var stackFrames = new List<StackFrame>();
 
-            for (int i = 1; i <= 3; ++i )
+            if(res != null)
             {
-                var source = VSCodeDebugAdapter.Source.Create(Path.GetFileName(_t_main_file), ConvertDebuggerPathToClient(_t_main_file));
-                stackFrames.Add(new StackFrame(i, "frame" + i, source, _t_cur_line+1, 0));
+                for (int i = 0; i < res.m_frames.Count; ++i)
+                {
+                    var frame = res.m_frames[i];
+                    var file = frame.Item1;
+                    file = Path.Combine(_t_work_dir, file);
+                    var line = frame.Item3;
+                    var func_name = frame.Item2;
+                    var source = VSCodeDebugAdapter.Source.Create(Path.GetFileName(file), ConvertDebuggerPathToClient(file));
+                    stackFrames.Add(new StackFrame(i+1, func_name, source, line, 0));
+                }
             }
 
             SendResponse(response, new StackTraceResponseBody(stackFrames));
         }
 
         Handles<object[]> _variableHandles = new Handles<object[]>();
+        GetFrameInfoRes _cur_frame_variables; 
         public override void Scopes(Response response, dynamic arguments)
         {
             int frameId = getInt(arguments, "frameId", 0);
-
-            var scopes = new List<Scope>();
-
+            GetFrameInfoCmd cmd = new GetFrameInfoCmd();
+            cmd.m_stack_idx = frameId;
+            _cur_frame_variables = SendOneCmdAndWaitForResponse(cmd) as GetFrameInfoRes;
             
-
-            scopes.Add(new Scope("Local", frameId * 10 + 1));
-            scopes.Add(new Scope("Closure", frameId * 10 + 2));
-            scopes.Add(new Scope("Global", frameId * 10 + 3));
+            var scopes = new List<Scope>();
+            scopes.Add(new Scope("Local", 1));
+            scopes.Add(new Scope("Closure", 2));
 
             SendResponse(response, new ScopesResponseBody(scopes));
         }
@@ -239,13 +327,25 @@ namespace VSCodeDebugAdapter
                 SendErrorResponse(response, 3009, "variables: property 'variablesReference' is missing", null, false, true);
                 return;
             }
-
-            // waitforresponse
+            
 
             var variables = new List<Variable>();
-            // _variableHandles.Get(reference, null);
-
-            variables.Add(new Variable("ref_id", ""+ reference, "int"));
+            if(_cur_frame_variables != null)
+            {
+                List<GetFrameInfoRes.ValueInfo> values;
+                if(reference == 1)
+                {
+                    values = _cur_frame_variables.m_locals;
+                }
+                else
+                {
+                    values = _cur_frame_variables.m_upvalues;
+                }
+                foreach(var val in values)
+                {
+                    variables.Add(new Variable(val.name, val.value, val.type));
+                }
+            }
 
             SendResponse(response, new VariablesResponseBody(variables));
         }
@@ -270,8 +370,25 @@ namespace VSCodeDebugAdapter
             else
             {
                 // todo check expression
+                int frameId = getInt(arguments, "frameId", -1);
+                if(frameId == -1)
+                {
+                    error = "frameId miss";
+                }
 
-                SendResponse(response, new EvaluateResponseBody("ecaluate: " + expression, 0));
+                PrintCmd cmd = new PrintCmd();
+                cmd.m_name = expression;
+                cmd.m_stack_idx = frameId;
+
+                PrintRes res = SendOneCmdAndWaitForResponse(cmd) as PrintRes;
+                if(res != null)
+                {
+                    SendResponse(response, new EvaluateResponseBody(res.ToResString(), 0));
+                }
+                else
+                {
+                    error = "can not ecaluate, network seems break";
+                }
             }
 
             SendErrorResponse(response, 3014, "Evaluate request failed ({_reason}).", new { _reason = error });

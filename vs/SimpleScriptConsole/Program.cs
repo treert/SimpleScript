@@ -78,18 +78,21 @@ namespace SimpleScriptConsole
 
         static void DebugFile(string file_name, VM vm, int port)
         {
+            //Console.WriteLine(Environment.CurrentDirectory);
             try
             {
                 var func = vm.Parse(File.ReadAllText(file_name), file_name);
 
                 if(port > 0)
                 {
-                    TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), 7744);
+                    TcpListener serverSocket = new TcpListener(IPAddress.Parse("127.0.0.1"), port);
                     serverSocket.Start();
+                    Console.WriteLine("DebugMode: Listen At {0}", port);
 
                     var socket = serverSocket.AcceptSocket();
                     if(socket != null)
                     {
+                        Console.WriteLine("DebugMode: Build Connect With {0}", socket.RemoteEndPoint);
                         using (var stream = new NetworkStream(socket))
                         {
                             var pipe = new SimpleScript.DebugProtocol.NetServerPipe(stream);
@@ -111,6 +114,8 @@ namespace SimpleScriptConsole
             {
                 Console.WriteLine(e.Message);
             }
+            Console.WriteLine("Press Any Key To Exit");
+            Console.ReadKey();
         }
 
         static void ShowHelpThenExit()
@@ -133,7 +138,6 @@ use way:
         
         static void Main(string[] args)
         {
-
             VM vm = new VM();
             LibBase.Register(vm);
 
@@ -198,7 +202,7 @@ use way:
                     {
                         int port = 0;
                         int.TryParse(args[3], out port);
-                        if(port > 1024 && port <= 9999)
+                        if(port > 0)
                         {
                             DebugFile(args[1], vm, port);
                         }

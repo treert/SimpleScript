@@ -127,6 +127,12 @@ namespace VSCodeDebugAdapter
 			return fallback;
 		}
 
+        public static string FindExeDirectory()
+        {
+            var str = System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName;
+            return Path.GetDirectoryName(str);
+        }
+
 		public static string ExpandVariables(string format, dynamic variables, bool underscoredOnly = true)
 		{
 			if (variables == null) {

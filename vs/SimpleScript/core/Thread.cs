@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SimpleScript.DebugProtocol;
 
 namespace SimpleScript
 {
@@ -66,7 +67,7 @@ namespace SimpleScript
         {
             if(_calls.Count > 0)
             {
-                _calls.Peek().closure.env_table = table;
+                _calls.Last().closure.env_table = table;
             }
             else
             {
@@ -128,7 +129,8 @@ namespace SimpleScript
             public Closure closure;
         }
 
-        Stack<CallInfo> _calls = new Stack<CallInfo>(256);
+        List<CallInfo> _calls = new List<CallInfo>(256);
+        //Stack<CallInfo> _calls = new Stack<CallInfo>(256);
 
         #region upvalue
 
@@ -156,7 +158,7 @@ namespace SimpleScript
 
         void OpGenerateClosure(int a, Function func)
         {
-            CallInfo call = _calls.Peek();
+            CallInfo call = _calls.Last();
             Closure closure = call.closure;
 
             Closure new_closure = _vm.NewClosure();
@@ -261,7 +263,7 @@ namespace SimpleScript
 
         void ExecuteFrame()
         {
-            CallInfo call = _calls.Peek();
+            CallInfo call = _calls.Last();
             Closure closure = call.closure;
             Function func = closure.func;
             int code_size = func.OpCodeSize();
@@ -465,9 +467,14 @@ namespace SimpleScript
             OpReturn(call.func_idx, -1, 0, false);
         }
 
-        internal object GetObjByName(string name)
+        internal object GetObjByName(string name, int stack_idx)
         {
-            var call = _calls.Peek();
+            if(stack_idx > _calls.Count)
+            {
+                return null;
+            }
+            var call_idx = _calls.Count - stack_idx;
+            var call = _calls[call_idx];
             var closure = call.closure;
             var func = closure.func;
             int idx = func.GetLocalVarIndexByNameAndPc(name, Math.Max(0,call.pc));// todo@om think
@@ -485,7 +492,7 @@ namespace SimpleScript
 
         internal Tuple<string, int, int> GetCurrentCallFrameInfo()
         {
-            var call = _calls.Peek();
+            var call = _calls.Last();
             var func = call.closure.func;
             var file_name = func.GetFileName();
             var line = func.GetInstructionLine(call.pc);// do not need minus 1
@@ -493,15 +500,80 @@ namespace SimpleScript
             return new Tuple<string, int, int>(file_name, line, call_count);
         }
 
+        internal void FillFrameInfo(GetFrameInfoRes res, int stack_idx)
+        {
+            if (stack_idx > _calls.Count)
+            {
+                return;
+            }
+            var call_idx = _calls.Count - stack_idx;
+            var call = _calls[call_idx];
+            var closure = call.closure;
+            var func = closure.func;
+            var pc = call.pc;
+            if(stack_idx != 1)
+            {
+                pc -= 1;
+            }
+            pc = Math.Max(0, pc);
+
+            var all_local_var_infos = func.GetAllLocalVarInfo();
+            foreach(var info in all_local_var_infos)
+            {
+                if(info.begin_pc <= pc && pc < info.end_pc)
+                {
+                    GetFrameInfoRes.ValueInfo value = new GetFrameInfoRes.ValueInfo();
+                    value.name = info.name;
+                    var obj = _stack[call.register_idx + info.register_idx];
+                    if(obj == null)
+                    {
+                        value.type = "null";
+                        value.value = "nil";
+                    }
+                    else
+                    {
+                        value.type = obj.GetType().Name;
+                        value.value = obj.ToString();
+                    }
+                    res.m_locals.Add(value);
+                }
+            }
+            
+            var all_upvalue_infos = func.GetAllUpValueInfos();
+            for(int i = 0; i < all_upvalue_infos.Count; ++i)
+            {
+                GetFrameInfoRes.ValueInfo value = new GetFrameInfoRes.ValueInfo();
+                value.name = all_upvalue_infos[i].name;
+                var obj = closure.GetUpvalue(i);
+                if (obj == null)
+                {
+                    value.type = "null";
+                    value.value = "nil";
+                }
+                else
+                {
+                    value.type = obj.GetType().Name;
+                    value.value = obj.ToString();
+                }
+                res.m_upvalues.Add(value);
+            }
+        }
+
         internal List<Tuple<string, string, int>> GetBackTraceInfo()
         {
             List<Tuple<string, string, int>> frames = new List<Tuple<string, string, int>>(_calls.Count);
-            foreach(var call in _calls)
+            for(var i  = _calls.Count - 1; i >= 0; --i)
             {
+                var call = _calls[i];
                 var func = call.closure.func;
                 var file = func.GetFileName();
                 var func_name = func.GetFuncName();
-                var line = func.GetInstructionLine(Math.Max(0,call.pc-1));
+                var pc = call.pc;
+                if(i != _calls.Count - 1)
+                {
+                    pc -= 1;
+                }
+                var line = func.GetInstructionLine(Math.Max(0,pc));
                 frames.Add(new Tuple<string, string, int>(file, func_name, line));
             }
             return frames;
@@ -509,7 +581,7 @@ namespace SimpleScript
 
         Tuple<string, string> GetOperandNameAndScope(int idx)
         {
-            var call = _calls.Peek();
+            var call = _calls.Last();
             var reg = idx - call.register_idx;
             var closure = call.closure;
             var func = call.closure.func;
@@ -573,7 +645,7 @@ namespace SimpleScript
 
         Tuple<string, int> GetCurrentInstructionPos()
         {
-            var call = _calls.Peek();
+            var call = _calls.Last();
             var file_name = call.closure.func.GetFileName();
             var line = call.closure.func.GetInstructionLine(call.pc - 1);
             return new Tuple<string, int>(file_name, line);
@@ -768,7 +840,7 @@ namespace SimpleScript
                 _stack[arg_idx + i] = null;
             }
 
-            _calls.Push(call);
+            _calls.Add(call);
 
             SetMaxUsedStackIdx(call.register_idx + func.GetMaxRegisterCount() +
                 Math.Max(0, arg_count - fixed_args));// ... will copy all var args
@@ -811,7 +883,7 @@ namespace SimpleScript
             // set new top and pop current callinfo
             _active_top = dst + ret_count;
             _stack[_active_top] = null;
-            _calls.Pop();
+            _calls.RemoveAt(_calls.Count - 1);
         }
 
         void OpCopyVarArg(int dst, CallInfo call)
