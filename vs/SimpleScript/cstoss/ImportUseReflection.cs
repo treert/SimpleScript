@@ -28,7 +28,7 @@ namespace SimpleScript
         {
             var obj = new ImportTypeHandler();
             obj._type = t;
-            if (t.IsInterface || t.IsAbstract || t.ContainsGenericParameters)
+            if (t.IsInterface || t.ContainsGenericParameters)
             {
                 return obj;
             }

@@ -1,39 +1,131 @@
 //[[header
     > File Name: test.ss
-    > Create Time: 2017-08-25 星期五 17时30分16秒
+    > Create Time: 2017-07-23 星期日 15时48分51秒
     > Athor: treertzhu
+    > -----
+    > Last Modified: 2017-09-03 星期日 15时59分24秒
+    > Modified By: treertzhu
+    > -----
 ]]
 
- 
-function a()
-    print("abc")
+
+local int64 = import("System.Int64")
+local int32 = import("System.Int32")
+local DateTime = import("System.DateTime")
+import("SimpleScript.Instruction","Instruction");
+print(Instruction);
+
+a = Instruction.new(10,12);
+a:SetBx(123);
+print(a:GetOp(),a:GetBx());
+
+local File = import("System.IO.File")
+
+local content = File.ReadAllText("test.ss")
+
+print(content)
+
+// local a = int32.new()
+// local b = int64.new()
+
+// print(DateTime)
+// local date = DateTime.Now;
+// local date2 = DateTime.new();
+// date2 = date2:AddDays(12);
+// print(date, date2)
+
+// print(a,int64.MinValue);
+//[[]]
+
+(function() print("hello world") end)()
+
+function generate_array()
+	return 22,33
 end
 
-math.sin( x )
+a = {11,generate_array(),}
 
-assert(v[, message])
-
-foreach k,v in table_name do
-    // print(k,v)
+foreach k,v in a do
+	print("foreach k = ", k, "v = ",v)
 end
 
-if condition then
-    // body
+for i = 1,3 do
+	if i == 2 then continue end
+	print("for i= ",i, " a[i] = ", a[i])
 end
 
-for i=1,10 do
-    print(i)
+local function ipairs(table)
+	return function(table, idx)
+		idx = idx + 1
+		if (table[idx] == nil) then
+			return nil
+		else
+			return idx,table[idx]
+		end
+	end, table, 0
 end
 
-for
-
-
-for i=1,10 do
-    
+for k,v in ipairs(a) do
+	print("for in k = ", k, "v = ",v)
 end
 
-if condition then
-    // body
+do
+	print("test ...")
+	local test_var_arg = function(...)
+		return "... = ",...
+	end
+	print(test_var_arg(1,2,3))
 end
+
+do
+	print("test ...")
+	local test_var_arg = function(...)
+		return "... = ",...
+	end
+	print(test_var_arg(1,2,3))
+end
+
+do
+	print("test += -= ++ --")
+	a[0] = 4
+	print("start a[0] = ", a[0]);
+	a[0] ++
+	print("++    a[0] = ", a[0]);
+	a[0] --
+	print("--    a[0] = ", a[0]);
+	a[0] += 10.5
+	print("+=    a[0] = ", a[0]);
+	a[0] -= 10.5
+	print("-=    a[0] = ", a[0]);
+end
+
+print("test module")
+a = "global a"
+print("a = ", a)
+local print = print
+module("name.space")
+print("enter name.space")
+print("a = ", a)
+a = "module a"
+print("a = ", a)
+
+print("test closure")
+a,b = (function()
+	local a = 0
+	return function()
+		a = a+1
+		print(a)
+	end,function()
+		a= a-1
+		print(a)
+	end
+end)()
+
+a()
+a()
+a()
+b()
+b()
+
 
 

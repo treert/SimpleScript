@@ -2,118 +2,134 @@
     "name": "simplescript",
     "displayName": "simplescript",
     "description": "simplescript language support",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "publisher": "onemore",
     "engines": {
         "vscode": "^1.13.0"
     },
     "categories": [
-        "Languages","Debuggers"
+        "Languages",
+        "Debuggers"
     ],
     "contributes": {
-        "languages": [{
-            "id": "simplescript",
-            "aliases": ["SimpleScript", "simplescript"],
-            "extensions": [".ss"],
-            "configuration": "./language-configuration.json"
-        }],
-        "debuggers": [{
-            "type": "simplescript",
-            "label": "SimpleScript Debuger",
-            "program": "./bin/VSCodeDebugAdapter.exe",
-			"osx": {
-				"runtime": "mono"
-			},
-			"linux": {
-				"runtime": "mono"
-            },
-			"initialConfigurations": [
-				{
-                    "name": "SimpleScript Launch",
-					"type": "simplescript",
-					"request": "launch",
-					"program": "${workspaceRoot}/test.ss"
+        "languages": [
+            {
+                "id": "simplescript",
+                "aliases": [
+                    "SimpleScript",
+                    "simplescript"
+                ],
+                "extensions": [
+                    ".ss"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "simplescript",
+                "label": "SimpleScript Debuger",
+                "program": "./bin/VSCodeDebugAdapter.exe",
+                "osx": {
+                    "runtime": "mono"
                 },
-                {
-                    "name": "SimpleScript Attach",
-					"type": "simplescript",
-					"request": "attach",
-					"address": "localhost",
-					"port": 55555
-				}
-			],
-			"configurationSnippets": [
-				{
-					"label": "SimpleScript Launch",
-					"description": "Run and debug program script file",
-					"body": {
-						"name": "SimpleScript Launch",
-						"type": "simplescript",
-						"request": "launch",
-						"program": "^\"\\${workspaceRoot}/${1:test.ss}\""
-					}
-				},
-				{
-					"label": "SimpleScript Attach",
-					"description": "Attach to ip:port",
-					"body": {
-						"name": "SimpleScript Attach",
-						"type": "simplescript",
-						"request": "attach",
-						"address": "${1:localhost}",
-						"port": "${2:55555}"
-					}
-				}
-			],
-            "configurationAttributes": {
-				"launch": {
-					"required": ["program"],
-					"properties": {
-						"program": {
-							"type": "string",
-							"description": "the first run ss file"
-						},
-						"args": {
-							"type": "array",
-							"description": "string arg list",
-							"items": { "type": "string" },
-							"default": []
-						}
-					}
-				},
-				"attach": {
-					"required": ["port"],
-					"properties": {
-						"port": {
-							"type": "number",
-							"description": "port",
-							"default": 55555
-						},
-						"address": {
-							"type": "string",
-							"description": "ip or hostname",
-							"default": "undefined"
-						}
-					}
-				}
-			}
-        }],
+                "linux": {
+                    "runtime": "mono"
+                },
+                "initialConfigurations": [
+                    {
+                        "name": "SimpleScript Launch",
+                        "type": "simplescript",
+                        "request": "launch",
+                        "program": "${workspaceRoot}/test.ss"
+                    },
+                    {
+                        "name": "SimpleScript Attach",
+                        "type": "simplescript",
+                        "request": "attach",
+                        "address": "localhost",
+                        "port": 55555
+                    }
+                ],
+                "configurationSnippets": [
+                    {
+                        "label": "SimpleScript Launch",
+                        "description": "Run and debug program script file",
+                        "body": {
+                            "name": "SimpleScript Launch",
+                            "type": "simplescript",
+                            "request": "launch",
+                            "program": "^\"\\${workspaceRoot}/${1:test.ss}\""
+                        }
+                    },
+                    {
+                        "label": "SimpleScript Attach",
+                        "description": "Attach to ip:port",
+                        "body": {
+                            "name": "SimpleScript Attach",
+                            "type": "simplescript",
+                            "request": "attach",
+                            "address": "${1:localhost}",
+                            "port": "${2:55555}"
+                        }
+                    }
+                ],
+                "configurationAttributes": {
+                    "launch": {
+                        "required": [
+                            "program"
+                        ],
+                        "properties": {
+                            "program": {
+                                "type": "string",
+                                "description": "the first run ss file"
+                            },
+                            "args": {
+                                "type": "array",
+                                "description": "string arg list",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "default": []
+                            }
+                        }
+                    },
+                    "attach": {
+                        "required": [
+                            "port"
+                        ],
+                        "properties": {
+                            "port": {
+                                "type": "number",
+                                "description": "port",
+                                "default": 55555
+                            },
+                            "address": {
+                                "type": "string",
+                                "description": "ip or hostname",
+                                "default": "undefined"
+                            }
+                        }
+                    }
+                }
+            }
+        ],
         "breakpoints": [
-			{
-				"language": "simplescript"
-			}
-		],
+            {
+                "language": "simplescript"
+            }
+        ],
         "snippets": [
-			{
-				"language": "simplescript",
-				"path": "./snippets/simplescript.json"
-			}
-		],
+            {
+                "language": "simplescript",
+                "path": "./snippets/simplescript.json"
+            }
+        ],
         "grammars": [
             {
-            "language": "simplescript",
-            "scopeName": "source.simplescript",
-            "path": "./syntaxes/simplescript.tmLanguage.json"
+                "language": "simplescript",
+                "scopeName": "source.simplescript",
+                "path": "./syntaxes/simplescript.tmLanguage.json"
             }
         ]
     }
