@@ -2,6 +2,12 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "SimpleScript Launch",
+            "type": "simplescript",
+            "request": "launch",
+            "program": "${workspaceRoot}/vs/test.ss"
+        },
+        {
             "name": "Launch",
             "type": "mono",
             "request": "launch",

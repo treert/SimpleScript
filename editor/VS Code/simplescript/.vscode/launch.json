@@ -3,6 +3,12 @@
     "version": "0.1.0",
     "configurations": [
         {
+            "name": "SimpleScript Launch",
+            "type": "simplescript",
+            "request": "launch",
+            "program": "${workspaceRoot}/test.ss"
+        },
+        {
             "name": "Launch Extension",
             "type": "extensionHost",
             "request": "launch",
