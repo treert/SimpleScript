@@ -34,8 +34,8 @@ namespace Test
             }
 
             {
-                //SimpleScript.Test.TestManager.RunTest();
-                //return;
+                SimpleScript.Test.TestManager.RunTest();
+                return;
             }
 
             {

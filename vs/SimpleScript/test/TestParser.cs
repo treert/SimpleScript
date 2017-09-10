@@ -851,9 +851,12 @@ namespace SimpleScript.Test
     {
         public override void Run()
         {
-            // oms 特殊处理的语法
-            TestUtils.Parse("(f + 1):xx{1,2}");
-            ExpectTrue(TestUtils.IsEOF());
+            try
+            {
+                TestUtils.Parse("(f + 1):xx{1,2}");
+                Error("no exception");
+            }
+            catch (ParserException) { }
         }
     }
     class TestParser_parser38 : TestBase

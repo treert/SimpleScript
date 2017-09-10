@@ -1,7 +1,7 @@
-# Change Log
-All notable changes to the "simplescript" extension will be documented in this file.
-
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+# SimpleScript
+## [0.0.5] - 2017-09-03
+### doc
+- 补充点说明
 
 ## [0.0.4] - 2017-09-03
 ### Fixed
@@ -10,3 +10,8 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [0.0.3] - 2017-09-03
 ### Init
 - 开始维护个修改日志，现在已经可以用vscode调试ss了。
+
+# Change Log
+All notable changes to the "simplescript" extension will be documented in this file.
+
+Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.

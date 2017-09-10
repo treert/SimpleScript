@@ -19,12 +19,6 @@ a = Instruction.new(10,12);
 a:SetBx(123);
 print(a:GetOp(),a:GetBx());
 
-local File = import("System.IO.File")
-
-local content = File.ReadAllText("test.ss")
-
-print(content)
-
 // local a = int32.new()
 // local b = int64.new()
 
@@ -37,7 +31,8 @@ print(content)
 // print(a,int64.MinValue);
 //[[]]
 
-(function() print("hello world") end)()
+// 这个语法不支持了
+// (function() print("hello world") end)()
 
 function generate_array()
 	return 22,33

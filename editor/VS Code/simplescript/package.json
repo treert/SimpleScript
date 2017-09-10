@@ -2,7 +2,7 @@
     "name": "simplescript",
     "displayName": "simplescript",
     "description": "simplescript language support",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "publisher": "onemore",
     "engines": {
         "vscode": "^1.13.0"
@@ -42,13 +42,6 @@
                         "type": "simplescript",
                         "request": "launch",
                         "program": "${workspaceRoot}/test.ss"
-                    },
-                    {
-                        "name": "SimpleScript Attach",
-                        "type": "simplescript",
-                        "request": "attach",
-                        "address": "localhost",
-                        "port": 55555
                     }
                 ],
                 "configurationSnippets": [
@@ -60,17 +53,6 @@
                             "type": "simplescript",
                             "request": "launch",
                             "program": "^\"\\${workspaceRoot}/${1:test.ss}\""
-                        }
-                    },
-                    {
-                        "label": "SimpleScript Attach",
-                        "description": "Attach to ip:port",
-                        "body": {
-                            "name": "SimpleScript Attach",
-                            "type": "simplescript",
-                            "request": "attach",
-                            "address": "${1:localhost}",
-                            "port": "${2:55555}"
                         }
                     }
                 ],

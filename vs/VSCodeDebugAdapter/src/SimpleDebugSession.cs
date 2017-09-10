@@ -62,7 +62,7 @@ namespace VSCodeDebugAdapter
 
         string _t_main_file = null;
         string[] _t_main_lines;
-        int _t_cur_line = 0;
+        //int _t_cur_line = 0;
         string _t_work_dir = null;
         int _t_thread = 1;
 

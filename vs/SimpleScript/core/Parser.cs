@@ -289,7 +289,6 @@ namespace SimpleScript
         SyntaxTree ParseOtherStatement()
         {
             // lua做了限制，其他语句只有两种，assign statement and func call
-            // oms放松了些，可以有'('开头的prefixexp
             // SS还增加几个语法支持，+=，-=，++，--
             SyntaxTree exp;
             if (LookAhead().m_type == (int)TokenType.NAME)
@@ -360,11 +359,6 @@ namespace SimpleScript
                     Debug.Assert(exp is FuncCall);
                     return exp;
                 }
-            }
-            else if (LookAhead().m_type == '(')
-            {
-                // special handle, so can use (ok and dosomething())
-                return ParsePrefixExp();
             }
             else
             {

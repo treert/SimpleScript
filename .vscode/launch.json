@@ -6,20 +6,6 @@
             "type": "simplescript",
             "request": "launch",
             "program": "${workspaceRoot}/vs/test.ss"
-        },
-        {
-            "name": "Launch",
-            "type": "mono",
-            "request": "launch",
-            "program": "${workspaceRoot}/vs/SimpleScriptConsole/bin/Debug/SimpleScriptConsole.exe",
-            "cwd": "${workspaceRoot}"
-        },
-        {
-            "name": "Attach",
-            "type": "mono",
-            "request": "attach",
-            "address": "localhost",
-            "port": 55555
         }
     ]
 }

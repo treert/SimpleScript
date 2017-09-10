@@ -3,41 +3,17 @@
     > Create Time: 2017-07-23 星期日 15时48分51秒
     > Athor: treertzhu
     > -----
-    > Last Modified: 2017-09-03 星期日 15时59分24秒
-    > Modified By: treertzhu
+    > Last Modified: 2017-09-10 星期日 22时42分55秒
+    > Modified By: treert
     > -----
 ]]
 
-
-local int64 = import("System.Int64")
-local int32 = import("System.Int32")
 local DateTime = import("System.DateTime")
-import("SimpleScript.Instruction","Instruction");
-print(Instruction);
 
-a = Instruction.new(10,12);
-a:SetBx(123);
-print(a:GetOp(),a:GetBx());
+print("Today is ", DateTime.Now);
 
-local File = import("System.IO.File")
-
-local content = File.ReadAllText("test.ss")
-
-print(content)
-
-// local a = int32.new()
-// local b = int64.new()
-
-// print(DateTime)
-// local date = DateTime.Now;
-// local date2 = DateTime.new();
-// date2 = date2:AddDays(12);
-// print(date, date2)
-
-// print(a,int64.MinValue);
-//[[]]
-
-(function() print("hello world") end)()
+// 这个语法支持的有问题，后面不支持了。怪不得C#必须要没有语句带分号呢
+// (function() print("hello world") end)();
 
 function generate_array()
 	return 22,33
@@ -45,15 +21,22 @@ end
 
 a = {11,generate_array(),}
 
+print("test foreach")
+
 foreach k,v in a do
 	print("foreach k = ", k, "v = ",v)
 end
 
+print("test for")
 for i = 1,3 do
-	if i == 2 then continue end
+	if i == 2 then 
+		print ("for continue")
+		continue
+	end
 	print("for i= ",i, " a[i] = ", a[i])
 end
 
+print("test for-in")
 local function ipairs(table)
 	return function(table, idx)
 		idx = idx + 1
@@ -78,14 +61,6 @@ do
 end
 
 do
-	print("test ...")
-	local test_var_arg = function(...)
-		return "... = ",...
-	end
-	print(test_var_arg(1,2,3))
-end
-
-do
 	print("test += -= ++ --")
 	a[0] = 4
 	print("start a[0] = ", a[0]);
@@ -98,16 +73,6 @@ do
 	a[0] -= 10.5
 	print("-=    a[0] = ", a[0]);
 end
-
-print("test module")
-a = "global a"
-print("a = ", a)
-local print = print
-module("name.space")
-print("enter name.space")
-print("a = ", a)
-a = "module a"
-print("a = ", a)
 
 print("test closure")
 a,b = (function()
@@ -127,5 +92,12 @@ a()
 b()
 b()
 
-
-
+print("test module")
+a = "global a"
+print("a = ", a)
+local print = print
+module("name.space")
+print("enter name.space")
+print("a = ", a)
+a = "module a"
+print("a = ", a)
