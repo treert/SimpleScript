@@ -54,20 +54,37 @@ namespace SimpleScript
         }
     }
 
-    public interface IUserData
+    public interface IGetSet
     {
         object Get(object name);
         void Set(object name, object value);
     }
 
-    public class Table
+    public interface INext
     {
-        public void SetValue(object key, object value)
+        bool Next(out object key, out object value);
+    }
+
+    public interface IForEach
+    {
+        INext GetIter();
+    }
+
+    public class Table:IGetSet, IForEach
+    {
+        public void Set(object key, object value)
         {
             Debug.Assert(key != null);
-            _dic[key] = value;
+            if(value == null)
+            {
+                _dic.Remove(key);
+            }
+            else
+            {
+                _dic[key] = value;
+            }
         }
-        public object GetValue(object key)
+        public object Get(object key)
         {
             if (_dic.ContainsKey(key))
                 return _dic[key];
@@ -85,12 +102,12 @@ namespace SimpleScript
             return _dic.Count;
         }
 
-        internal Iterator GetIter()
+        public INext GetIter()
         {
             return new Iterator(this);
         }
 
-        internal class Iterator
+        class Iterator:INext
         {
             Table _table;
             Dictionary<object, object>.Enumerator _iter;

@@ -46,11 +46,11 @@ namespace SimpleScript
                 var vm = th.VM;
                 for (int i = 0; i < segments.Length; ++i)
                 {
-                    Table tmp = table.GetValue(segments[i]) as Table;
+                    Table tmp = table.Get(segments[i]) as Table;
                     if(tmp == null)
                     {
                         tmp = vm.NewTable();
-                        table.SetValue(segments[i], tmp);
+                        table.Set(segments[i], tmp);
                     }
                     table = tmp;
                 }
@@ -121,15 +121,15 @@ namespace SimpleScript
                 var table = vm.m_global;
                 for (int i = 0; i < segments.Length - 1; ++i)
                 {
-                    Table tmp = table.GetValue(segments[i]) as Table;
+                    Table tmp = table.Get(segments[i]) as Table;
                     if (tmp == null)
                     {
                         tmp = vm.NewTable();
-                        table.SetValue(segments[i], tmp);
+                        table.Set(segments[i], tmp);
                     }
                     table = tmp;
                 }
-                table.SetValue(segments.Last(), handler);
+                table.Set(segments.Last(), handler);
             }
             return handler;
         }

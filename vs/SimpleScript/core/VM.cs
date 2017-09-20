@@ -223,15 +223,15 @@ namespace SimpleScript
                 var table = m_global;
                 for (int i = 0; i < segments.Length - 1; ++i)
                 {
-                    Table tmp = table.GetValue(segments[i]) as Table;
+                    Table tmp = table.Get(segments[i]) as Table;
                     if (tmp == null)
                     {
                         tmp = NewTable();
-                        table.SetValue(segments[i], tmp);
+                        table.Set(segments[i], tmp);
                     }
                     table = tmp;
                 }
-                table.SetValue(segments.Last(), obj);
+                table.Set(segments.Last(), obj);
             }
         }
 
@@ -243,14 +243,14 @@ namespace SimpleScript
                 var table = m_global;
                 for (int i = 0; i < segments.Length - 1; ++i)
                 {
-                    Table tmp = table.GetValue(segments[i]) as Table;
+                    Table tmp = table.Get(segments[i]) as Table;
                     if (tmp == null)
                     {
                         return null;
                     }
                     table = tmp;
                 }
-                return table.GetValue(segments.Last());
+                return table.Get(segments.Last());
             }
             return null;
         }

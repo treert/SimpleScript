@@ -318,10 +318,10 @@ namespace SimpleScript
                         upvalue.Write(_stack[a]);
                         break;
                     case OpType.OpType_GetGlobal:
-                        _stack[a] = closure.env_table.GetValue(func.GetConstValue(bx));
+                        _stack[a] = closure.env_table.Get(func.GetConstValue(bx));
                         break;
                     case OpType.OpType_SetGlobal:
-                        closure.env_table.SetValue(func.GetConstValue(bx), _stack[a]);
+                        closure.env_table.Set(func.GetConstValue(bx), _stack[a]);
                         break;
                     case OpType.OpType_VarArg:
                         OpCopyVarArg(a, call);
@@ -423,14 +423,14 @@ namespace SimpleScript
                         OpGetTable(a, b, c);
                         break;
                     case OpType.OpType_TableIter:
-                        if (_stack[a] is Table)
-                            _stack[a] = (_stack[b] as Table).GetIter();
+                        if (_stack[b] is IForEach)
+                            _stack[a] = (_stack[b] as IForEach).GetIter();
                         else
                             throw NewOpTypeError("foreach ", a);
                         break;
                     case OpType.OpType_TableIterNext:
-                        Debug.Assert(_stack[a] is Table.Iterator);
-                        (_stack[a] as Table.Iterator).Next(out _stack[b], out _stack[c]);
+                        Debug.Assert(_stack[a] is INext);
+                        (_stack[a] as INext).Next(out _stack[b], out _stack[c]);
                         break;
                     case OpType.OpType_ForInit:
                         if (!(_stack[a] is double))
@@ -487,7 +487,7 @@ namespace SimpleScript
             {
                 return closure.GetUpvalue(idx).Read();
             }
-            return closure.env_table.GetValue(name);
+            return closure.env_table.Get(name);
         }
 
         internal Tuple<string, int, int> GetCurrentCallFrameInfo()
@@ -544,7 +544,7 @@ namespace SimpleScript
             {
                 GetFrameInfoRes.ValueInfo value = new GetFrameInfoRes.ValueInfo();
                 value.name = all_upvalue_infos[i].name;
-                var obj = closure.GetUpvalue(i);
+                var obj = closure.GetUpvalue(i).Read();
                 if (obj == null)
                 {
                     value.type = "null";
@@ -690,21 +690,6 @@ namespace SimpleScript
             }
         }
 
-        void CheckTableType(int a, int b, string op)
-        {
-            if (_stack[a] is Table && _stack[b] != null)
-                return;
-
-            if(_stack[b] == null)
-            {
-                throw NewRuntimeError("the key of Table can not be nil");
-            }
-            else
-            {
-                throw NewOpTypeError(op, a);
-            }
-        }
-
         void OpSetTable(int a, int b, int c)
         {
             if (_stack[a] == null)
@@ -717,13 +702,9 @@ namespace SimpleScript
             }
 
             var obj = _stack[a];
-            if(obj is Table)
+            if (obj is IGetSet)
             {
-                (obj as Table).SetValue(_stack[b], _stack[c]);
-            }
-            else if(obj is IUserData)
-            {
-                (obj as IUserData).Set(_stack[b], _stack[c]);
+                (obj as IGetSet).Set(_stack[b], _stack[c]);
             }
             else
             {
@@ -744,13 +725,9 @@ namespace SimpleScript
             }
 
             var obj = _stack[a];
-            if (obj is Table)
+            if (obj is IGetSet)
             {
-                _stack[c] = (obj as Table).GetValue(_stack[b]);
-            }
-            else if (obj is IUserData)
-            {
-                _stack[c] = (obj as IUserData).Get(_stack[b]);
+                _stack[c] = (obj as IGetSet).Get(_stack[b]);
             }
             else
             {

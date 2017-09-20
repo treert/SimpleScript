@@ -196,12 +196,12 @@ namespace SimpleScript.DebugProtocol
             PrintRes res = new PrintRes();
             res.m_name = m_name;
             var segments = m_name.Split('.');
-            var obj = th.GetObjByName(segments[0], m_stack_idx);
+            object obj = th.GetObjByName(segments[0], m_stack_idx);
             for(int i = 1; i < segments.Length; ++i)
             {
-                if(obj is Table)
+                if(obj is IGetSet)
                 {
-                    obj = (obj as Table).GetValue(segments[i]);
+                    obj = (obj as IGetSet).Get(segments[i]);
                 }
                 else
                 {

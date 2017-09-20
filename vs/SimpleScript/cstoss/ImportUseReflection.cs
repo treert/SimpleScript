@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace SimpleScript
 {
-    public class ImportTypeHandler : IUserData, IImportTypeHandler
+    public class ImportTypeHandler : IGetSet, IImportTypeHandler
     {
         Type _type = null;
 
