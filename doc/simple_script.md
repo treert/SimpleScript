@@ -35,7 +35,7 @@ block ::= {stat [";"]}
 stat ::=
      "do" block "end" |
      "while" exp "do" block "end" |
-     "if" exp "then" block ["elseif" exp "then" block] ["else" block] "end" |
+     "if" exp "then" block {"elseif" exp "then" block} ["else" block] "end" |
      "for" Name "=" exp "," exp ["," exp] "do" block "end" |
      "foreach" Name ["," Name] "in" exp "do" block "end" |
      "function" funcname funcbody |
@@ -75,14 +75,13 @@ exp ::= mainexp | exp binop exp
 
 mainexp ::= nil | false | true | Number | String |
      "..." | function | tableconstructor |
-     prefixexp |
-     "(" exp ")" | unop exp
+     prefixexp | unop exp
 
 function ::= "function" funcbody
 
 tableindex ::= "[" exp "]" | "." Name
 
-prefixexp ::= Name {tableindex | args }
+prefixexp ::= (Name | "(" exp ")") {tableindex | args }
 
 var ::= Name [{tableindex | args } tableindex]
 

@@ -217,8 +217,8 @@
 			"name": "constant.language.simplescript"
 		},
 		{
-			"match": "(?<![^.]\\.|:)\\b(self)\\b",
-			"name": "variable.language.self.simplescript"
+			"match": "(?<![^.]\\.|:)\\b(this)\\b",
+			"name": "variable.language.this.simplescript"
 		},
 		{
 			"match": "(?<![^.]\\.|:)\\b(assert|collectgarbage|dofile|error|getfenv|getmetatable|ipairs|loadfile|loadstring|module|next|pairs|pcall|print|rawequal|rawget|rawset|require|select|setfenv|setmetatable|tonumber|tostring|type|unpack|xpcall)\\b(?=\\s*(?:[({\"']|\\[\\[))",

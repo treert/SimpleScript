@@ -2,7 +2,7 @@
     "name": "simplescript",
     "displayName": "simplescript",
     "description": "simplescript language support",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "publisher": "onemore",
     "engines": {
         "vscode": "^1.13.0"
