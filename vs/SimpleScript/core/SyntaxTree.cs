@@ -281,7 +281,6 @@ namespace SimpleScript
             _line = line_;
         }
         public SyntaxTree caller;
-        public Token member_name;
         public ExpressionList args;
     }
 

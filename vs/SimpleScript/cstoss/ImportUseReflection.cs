@@ -279,6 +279,7 @@ namespace SimpleScript
             ParameterInfo[] param_arr = method.GetParameters();
             List<int> out_idx_arr = new List<int>();
             int obj_extra = ((method.IsStatic | method.IsConstructor) ? 0 : 1);
+            obj_extra = 1;// do not need the arg0
 
             int argc = th.GetCFunctionArgCount();
 
@@ -320,7 +321,7 @@ namespace SimpleScript
         {
             CFunction cfunc = (Thread th) =>
             {
-                if (th.GetCFunctionArgCount() == 0)
+                if (th.GetCFunctionArgCount() == 1)
                 {
                     object obj = Activator.CreateInstance(t);
                     th.PushValue(obj);

@@ -35,7 +35,7 @@ block ::= {stat [";"]}
 stat ::=
      "do" block "end" |
      "while" exp "do" block "end" |
-     "if" exp "then" block {"elseif" exp "then" block} ["else" block] "end" |
+     "if" exp "then" block ["elseif" exp "then" block] ["else" block] "end" |
      "for" Name "=" exp "," exp ["," exp] "do" block "end" |
      "foreach" Name ["," Name] "in" exp "do" block "end" |
      "function" funcname funcbody |
@@ -45,7 +45,7 @@ stat ::=
      "break" |
      "continue" |
      varlist "=" explist |
-     Name {tableindex | funccall} funccall |
+     funccall |
      var += exp |
      var ++ |
      var -= exp |
@@ -54,8 +54,6 @@ stat ::=
 namelist ::= Name {"," Name}
 
 varlist ::= var {"," var}
-
-var ::= Name [{tableindex | funccall} tableindex]
 
 funcname ::= Name {"." Name} [":" Name]
 
@@ -78,15 +76,17 @@ exp ::= mainexp | exp binop exp
 mainexp ::= nil | false | true | Number | String |
      "..." | function | tableconstructor |
      prefixexp |
-     unop exp|
+     "(" exp ")" | unop exp
 
 function ::= "function" funcbody
 
-prefixexp ::= (Name | "(" exp ")") {tableindex | funccall}
-
 tableindex ::= "[" exp "]" | "." Name
 
-funccall ::= args | ":" Name args
+prefixexp ::= Name {tableindex | args }
+
+var ::= Name [{tableindex | args } tableindex]
+
+funccall ::= Name {tableindex | args } args
 
 args ::=  "(" [explist] ")" | tableconstructor
 

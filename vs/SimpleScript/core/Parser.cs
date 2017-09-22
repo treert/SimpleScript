@@ -217,13 +217,6 @@ namespace SimpleScript
         {
             var func_call = new FuncCall(LookAhead().m_line);
             func_call.caller = caller;
-            if(LookAhead().m_type == (int)':')
-            {
-                NextToken();
-                if (NextToken().m_type != (int)TokenType.NAME)
-                    throw NewParserException("expect 'id' after ':'", _current);
-                func_call.member_name = _current;
-            }
             func_call.args = ParseArgs();
             return func_call;
         }
@@ -273,8 +266,7 @@ namespace SimpleScript
                 {
                     exp = ParseTableAccessor(exp);
                 }
-                else if(LookAhead().m_type == (int)':'
-                    || LookAhead().m_type == (int)'('
+                else if(LookAhead().m_type == (int)'('
                     || LookAhead().m_type == (int)'{')
                 {
                     exp = ParseFunctionCall(exp);
@@ -580,17 +572,15 @@ namespace SimpleScript
             NextToken();// skip 'function'
 
             var statement = new FunctionStatement(_current.m_line);
-            bool add_self = false;
-            statement.func_name = ParseFunctionName(out add_self);
-            statement.func_body = ParseFunctionBody(add_self);
+            statement.func_name = ParseFunctionName();
+            statement.func_body = ParseFunctionBody();
             return statement;
         }
-        FunctionName ParseFunctionName(out bool add_self)
+        FunctionName ParseFunctionName()
         {
             if (NextToken().m_type != (int)TokenType.NAME)
                 throw NewParserException("expect 'id' after 'function'", _current);
-
-            add_self = false;
+            
             var func_name = new FunctionName(_current.m_line);
             func_name.names.Add(_current);
             while(LookAhead().m_type == (int)'.')
@@ -601,23 +591,14 @@ namespace SimpleScript
                 func_name.names.Add(_current);
             }
 
-            if(LookAhead().m_type == (int)':')
-            {
-                NextToken();
-                if (NextToken().m_type != (int)TokenType.NAME)
-                    throw NewParserException("unexpect token in function name after ':'", _current);
-                add_self = true;
-                func_name.names.Add(_current);
-            }
-
             return func_name;
         }
-        FunctionBody ParseFunctionBody(bool add_self = false)
+        FunctionBody ParseFunctionBody()
         {
             if (NextToken().m_type != (int)'(')
                 throw NewParserException("expect '(' to start function-body", _current);
             var statement = new FunctionBody(_current.m_line);
-            statement.param_list = ParseParamList(add_self);
+            statement.param_list = ParseParamList();
             if (NextToken().m_type != (int)')')
                 throw NewParserException("expect ')' after param-list", _current);
             statement.block = ParseBlock();
@@ -626,13 +607,10 @@ namespace SimpleScript
             
             return statement;
         }
-        ParamList ParseParamList(bool add_self)
+        ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-            if (add_self)
-            {
-                statement.name_list.Add(new Token("self"));
-            }
+            statement.name_list.Add(new Token("this"));
 
             // special func(a,b,c,) is OK
             while (LookAhead().m_type == (int)TokenType.NAME)

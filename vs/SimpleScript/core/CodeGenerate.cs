@@ -763,24 +763,46 @@ namespace SimpleScript
         {
             var f = GetCurrentFunction();
             Instruction code;
-            HandleExpRead(tree.caller);
-            var caller_register = GenerateRegisterId();
-            int arg_count = 0;
-            if(tree.member_name != null)
+
+            SyntaxTree caller = tree.caller;
+            Token member_name = null;
+            if(tree.caller is TableAccess)
             {
-                arg_count++;
+                // Handle a.f(), take a as the arg0
+                var table_access = tree.caller as TableAccess;
+                if (table_access.index is Terminator)
+                {
+                    var index = table_access.index as Terminator;
+                    if (index.token.m_type == (int)TokenType.STRING)
+                    {
+                        caller = table_access.table;
+                        member_name = index.token;
+                    }
+                }
+            }
+
+            HandleExpRead(caller);
+            var caller_register = GenerateRegisterId();
+            int arg_count = 1;
+            if(member_name != null)
+            {
                 // first_arg = caller_table
                 var arg_register = GenerateRegisterId();
                 code = Instruction.AB(OpType.OpType_Move, arg_register, caller_register);
-                f.AddInstruction(code, tree.member_name.m_line);
+                f.AddInstruction(code, member_name.m_line);
 
                 // caller = caller_table[member_name]
                 int key_register = arg_register + 1;
-                int index = f.AddConstString(tree.member_name.m_string);
+                int index = f.AddConstString(member_name.m_string);
                 code = Instruction.ABx(OpType.OpType_LoadConst, key_register, index);
-                f.AddInstruction(code, tree.member_name.m_line);
+                f.AddInstruction(code, member_name.m_line);
                 code = Instruction.ABC(OpType.OpType_GetTable, caller_register, key_register, caller_register);
-                f.AddInstruction(code, tree.member_name.m_line);
+                f.AddInstruction(code, member_name.m_line);
+            }
+            else
+            {
+                code = Instruction.A(OpType.OpType_LoadNil, GenerateRegisterId());
+                f.AddInstruction(code, tree.line);
             }
             int is_any_arg = 0;
             if(tree.args != null)
