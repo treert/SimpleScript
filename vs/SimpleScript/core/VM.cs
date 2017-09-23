@@ -59,10 +59,25 @@ namespace SimpleScript
         //**************** call ********************************/
         public object[] CallClosure(Closure closure, params object[] args)
         {
+            return CallClosureWithThis(closure, null, args);
+        }
+
+        public object[] CallFunction(Function func, params object[] args)
+        {
+            var closure = NewClosure();
+            closure.func = func;
+            closure.env_table = m_global;
+
+            return CallClosureWithThis(closure, null, args);
+        }
+
+        public object[] CallClosureWithThis(Closure closure, object this_, params object[] args)
+        {
             var work_thread = GetWorkThread();
             try
             {
                 work_thread.PushValue(closure);
+                work_thread.PushValue(this_);
                 for (int i = 0; i < args.Length; ++i)
                 {
                     work_thread.PushValue(args[i]);
@@ -88,15 +103,6 @@ namespace SimpleScript
                 work_thread.Clear();
                 PutWorkThread(work_thread);
             }
-        }
-
-        public object[] CallFunction(Function func, params object[] args)
-        {
-            var closure = NewClosure();
-            closure.func = func;
-            closure.env_table = m_global;
-
-            return CallClosure(closure, args);
         }
 
         //**************** compile *****************************/

@@ -80,7 +80,7 @@ namespace SimpleScript
                 // other
                 func._fixed_arg_count = reader.ReadInt32();
                 func._has_vararg = reader.ReadBoolean();
-                func._MaxRegisterCount = reader.ReadInt32();
+                func._max_register_count = reader.ReadInt32();
 
                 // childs, Must handle at last
                 count = reader.ReadInt32();
@@ -173,7 +173,7 @@ namespace SimpleScript
                 // other
                 writer.Write(func._fixed_arg_count);
                 writer.Write(func._has_vararg);
-                writer.Write(func._MaxRegisterCount);
+                writer.Write(func._max_register_count);
 
                 // childs, Must handle at last
                 writer.Write(func._child_functions.Count);

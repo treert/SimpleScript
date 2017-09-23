@@ -188,6 +188,11 @@ namespace SimpleScript
             return vm.CallClosure(this, args);
         }
 
+        public object[] CallWithThis(object this_, params object[] args)
+        {
+            return vm.CallClosureWithThis(this, this_, args);
+        }
+
         // for convenient, add it hear
         public Delegate ConvertToDelegate(Type t)
         {

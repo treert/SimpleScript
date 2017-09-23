@@ -128,15 +128,14 @@ namespace SimpleScript
 
         public int GetMaxRegisterCount()
         {
-            return _MaxRegisterCount;
+            return _max_register_count;
         }
         public void SetMaxRegisterCount(int count)
         {
-            // !!! 实现好像有错误，这个貌似可以设置设成256最大值。
-            _MaxRegisterCount = Math.Max(_MaxRegisterCount, count);
+            _max_register_count = Math.Max(_max_register_count, count);
         }
 
-        int _MaxRegisterCount = 0;// 需要的最大寄存器数量
+        int _max_register_count = 0;
 
         public string GetFileName()
         {

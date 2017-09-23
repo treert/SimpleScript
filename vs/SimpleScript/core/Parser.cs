@@ -610,7 +610,7 @@ namespace SimpleScript
         ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-            statement.name_list.Add(new Token("this"));
+            statement.name_list.Add(new Token(OmsConf.MAGIC_THIS));
 
             // special func(a,b,c,) is OK
             while (LookAhead().m_type == (int)TokenType.NAME)

@@ -825,7 +825,7 @@ namespace SimpleScript
 
         void OpCallCFunction(CFunction cfunc, int func_idx, int arg_count)
         {
-            SetMaxUsedStackIdx(func_idx + OmsConf.MAX_FUNC_REGISTER);
+            SetMaxUsedStackIdx(func_idx + OmsConf.MAX_CFUNC_ARG_COUNT);
 
             _cfunc_register_idx = func_idx + 1;
             // call c function
@@ -834,11 +834,14 @@ namespace SimpleScript
             // copy result to stack
             int src = _active_top - ret_count;
             int dst = func_idx;
-            for (int i = 0; i < ret_count; ++i)
+            if(src != dst)
             {
-                _stack[dst + i] = _stack[src + i];
+                for (int i = 0; i < ret_count; ++i)
+                {
+                    _stack[dst + i] = _stack[src + i];
+                }
+                _active_top = dst + ret_count;
             }
-            _active_top = dst + ret_count;
             _stack[_active_top] = null;
         }
 
@@ -874,7 +877,6 @@ namespace SimpleScript
             _active_top = dst;
             _stack[_active_top] = null;
         }
-
 
         bool OpForCheck(int a, int b, int c)
         {
