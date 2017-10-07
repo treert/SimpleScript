@@ -556,8 +556,13 @@ namespace SimpleScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("f:m()");
-            ExpectTrue(TestUtils.IsEOF());
+            try
+            {
+                // do not support this, because it is easy to write wrong code
+                TestUtils.Parse("f:m()");
+                Error("no exception");
+            }
+            catch (ParserException) { }
         }
     }
     class TestParser_parser10 : TestBase
@@ -585,7 +590,7 @@ namespace SimpleScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("f(1, 2, 3):m{1, 2, 3}.m[123].m = 1");
+            TestUtils.Parse("f(1, 2, 3).m{1, 2, 3}.m[123].m = 1");
             ExpectTrue(TestUtils.IsEOF());
         }
     }
@@ -625,7 +630,7 @@ namespace SimpleScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("function f() function a.b.c:d() return end end");
+            TestUtils.Parse("function f() function a.b.c.d() return end end");
             ExpectTrue(TestUtils.IsEOF());
         }
     }

@@ -49,7 +49,10 @@ foreach k,v in a do
 end
 
 for i = 1,3 do
-    if i == 2 then continue end
+    if i == 2 then
+        print("for i=2 meet continue")
+        continue
+    end
     print("for i= ",i, " a[i] = ", a[i])
 end
 

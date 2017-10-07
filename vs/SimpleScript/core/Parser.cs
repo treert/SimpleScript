@@ -104,37 +104,26 @@ namespace SimpleScript
         {
             return t.m_type == (int)'^';
         }
-        SyntaxTree ParseExp(SyntaxTree left = null,Token op = null,int left_priority = 0)
+
+        SyntaxTree ParseExp(int left_priority = 0)
         {
             var exp = ParseMainExp();
             while(true)
             {
                 int right_priority = GetOpPriority(LookAhead());
-                if(left_priority < right_priority ||
-                    (left_priority == right_priority
-                    && IsRightAssociation(LookAhead())))
+                if (left_priority < right_priority ||(left_priority == right_priority && IsRightAssociation(LookAhead())))
                 {
-                    exp = ParseExp(exp, NextToken(), right_priority);
-                }
-                else if(left_priority == right_priority)
-                {
-                    if (left_priority == 0)
-                        return exp;
-                    Debug.Assert(left != null);
-                    left = new BinaryExpression(left, op, exp);
-                    op = NextToken();
-                    exp = ParseMainExp();
+                    // C++的函数参数执行顺序没有明确定义，方便起见，不在函数参数里搞出两个有依赖的函数调用，方便往C++里迁移
+                    var op = NextToken();
+                    exp = new BinaryExpression(exp, op, ParseExp(right_priority));
                 }
                 else
                 {
-                    if(left != null)
-                    {
-                        exp = new BinaryExpression(left, op, exp); 
-                    }
                     return exp;
                 }
             }
         }
+
         SyntaxTree ParseMainExp()
         {
             SyntaxTree exp;
@@ -164,7 +153,7 @@ namespace SimpleScript
                 case (int)TokenType.NOT:
                     var unexp = new UnaryExpression(LookAhead().m_line);
                     unexp.op = NextToken();
-                    unexp.exp = ParseExp(null, null, 90);
+                    unexp.exp = ParseExp(90);
                     exp = unexp;
                     break;
                 default:
