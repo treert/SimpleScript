@@ -10,11 +10,11 @@ namespace SimpleScript
     {
         static int Print(Thread th)
         {
-            int arg_count = th.GetCFunctionArgCount();
+            int arg_count = th.GetStackSize();
 
             for (int i = 1; i < arg_count; ++i)
             {
-                object obj = th.GetCFunctionArg(i);
+                object obj = th.GetValue(i);
                 if (obj == null)
                     Console.Write("nil");
                 else if (obj is bool)
@@ -37,7 +37,7 @@ namespace SimpleScript
 
         static int Module(Thread th)
         {
-            string name = th.GetCFunctionArg(1) as string;
+            string name = th.GetValue(1) as string;
             if(name != null)
             {
                 // todo 没有容错
@@ -63,11 +63,11 @@ namespace SimpleScript
 
         static int Import(Thread th)
         {
-            string name = th.GetCFunctionArg(1) as string;
+            string name = th.GetValue(1) as string;
             if (name != null)
             {
                 var vm = th.VM;
-                string name2 = th.GetCFunctionArg(2) as string;
+                string name2 = th.GetValue(2) as string;
                 if(name2 == null)
                 {
                     var handler = vm.GetGlobalThing(name) as IImportTypeHandler;

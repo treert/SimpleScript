@@ -8,6 +8,15 @@ using SimpleScript.DebugProtocol;
 
 namespace SimpleScript
 {
+    public enum ThreadStatus
+    {
+        InValid,
+        Stop,
+        Runing,
+        Finished,
+        Error,
+    }
+
     /// <summary>
     /// 执行线程【CFuntionCall里再次使用vm，新开执行线程，好处：避免函数调用栈来回穿插】
     ///     1. 执行指令
@@ -23,12 +32,12 @@ namespace SimpleScript
             }
         }
 
-        public int GetCFunctionArgCount()
+        public int GetStackSize()
         {
             return _active_top - _cfunc_register_idx;
         }
 
-        public object GetCFunctionArg(int idx)
+        public object GetValue(int idx)
         {
             int index;
             if (idx < 0)
@@ -42,20 +51,10 @@ namespace SimpleScript
                 return null;
         }
 
-        public void PushCFunctionValue(object obj)
-        {
-            PushValue(obj);
-        }
-
         internal void PushValue(object obj)
         {
             obj = ConvertHelper.ConvertFromCSToSS(obj);// ...
             _stack[_active_top++] = obj;
-        }
-
-        internal object GetValue(int idx)
-        {
-            return _stack[idx];
         }
 
         public int GetTopIdx()
@@ -253,11 +252,60 @@ namespace SimpleScript
             
         }
 
+        ThreadStatus _status = ThreadStatus.InValid;
+
+        public ThreadStatus GetStatus()
+        {
+            return _status;
+        }
+
+        public void Reset(Closure closure)
+        {
+            _stack[0] = closure;
+            _stack[1] = null;// for this
+            _active_top = 2;
+            _status = ThreadStatus.Stop;
+
+            var call = new CallInfo();
+            call.register_idx = 1;
+            call.pc = 0;
+            call.func_idx = 0;
+            call.closure = closure;
+            _calls.Clear();
+            _calls.Add(call);
+        }
+
+        public void ConsumeAllResult()
+        {
+            _active_top = _cfunc_register_idx;
+        }
+
+        public bool Resume()
+        {
+            if(_status == ThreadStatus.Stop)
+            {
+                Execute();
+                return true;
+            }
+            // status error
+            return false;
+        }
+
+        public void Pause()
+        {
+            _status = ThreadStatus.Stop;
+        }
+
         void Execute()
         {
-            while(_calls.Count > 0)
+            _status = ThreadStatus.Runing;
+            while (_status == ThreadStatus.Runing && _calls.Count > 0)
             {
                 ExecuteFrame();
+            }
+            if(_status == ThreadStatus.Runing)
+            {
+                _status = ThreadStatus.Finished;
             }
         }
 
@@ -307,6 +355,10 @@ namespace SimpleScript
                         {
                             // will enter next frame
                             return;
+                        }
+                        if (_status == ThreadStatus.Stop)
+                        {
+                            return;// pause
                         }
                         break;
                     case OpType.OpType_GetUpvalue:
@@ -843,6 +895,8 @@ namespace SimpleScript
                 _active_top = dst + ret_count;
             }
             _stack[_active_top] = null;
+            // coroutine.resume use it to tell father how many args pass to resume
+            _cfunc_register_idx = func_idx; 
         }
 
         void OpReturn(int dst, int src, int ret_count, bool ret_any)
@@ -864,6 +918,8 @@ namespace SimpleScript
             _active_top = dst + ret_count;
             _stack[_active_top] = null;
             _calls.RemoveAt(_calls.Count - 1);
+            // coroutine.resume use it to tell father how many args pass to resume
+            _cfunc_register_idx = dst;
         }
 
         void OpCopyVarArg(int dst, CallInfo call)

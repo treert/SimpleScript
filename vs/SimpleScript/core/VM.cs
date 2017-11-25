@@ -85,7 +85,7 @@ namespace SimpleScript
                 work_thread.Run();
 
                 // get results
-                int count = work_thread.GetTopIdx();
+                int count = work_thread.GetStackSize();
                 object[] ret = new object[count];
                 for (int i = 0; i < count; ++i)
                 {

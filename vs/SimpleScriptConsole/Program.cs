@@ -108,6 +108,13 @@ namespace SimpleScriptConsole
                     vm.m_hooker.SetPipeServer(pipe);
                     vm.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
                     vm.CallFunction(func);
+
+                    // 测试协程，当成是事件循环也行
+                    while (true)
+                    {
+                        CoroutineMgr.Update();
+                        System.Threading.Thread.Sleep(10);
+                    }
                 }
             }
             catch (Exception e)
@@ -140,6 +147,7 @@ use way:
         {
             VM vm = new VM();
             LibBase.Register(vm);
+            LibCoroutine.Register(vm);
 
             if (args.Length == 0)
             {

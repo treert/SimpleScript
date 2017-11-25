@@ -53,6 +53,7 @@
     <Compile Include="DebugProtocol\DebugProtocol.cs" />
     <Compile Include="DebugProtocol\IODebug.cs" />
     <Compile Include="DebugProtocol\NetDebug.cs" />
+    <Compile Include="lib\libCoroutine.cs" />
     <Compile Include="tools\ImportCodeGenerate.cs" />
     <Compile Include="cstoss\ImportManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

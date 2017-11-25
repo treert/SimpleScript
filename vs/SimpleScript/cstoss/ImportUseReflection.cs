@@ -226,7 +226,7 @@ namespace SimpleScript
 
             CFunction cfunc = (Thread th) =>
             {
-                int argc = th.GetCFunctionArgCount();
+                int argc = th.GetStackSize();
                 // todo check param
                 if (argc < param_need_count + obj_extra)
                 {
@@ -237,14 +237,14 @@ namespace SimpleScript
                 if (obj_extra == 1)
                 {
                     // class obj
-                    obj = ConvertHelper.CheckAndConvertFromSSToCS(th.GetCFunctionArg(0), method.DeclaringType);
+                    obj = ConvertHelper.CheckAndConvertFromSSToCS(th.GetValue(0), method.DeclaringType);
                 }
                 object[] args = new object[param_total_count];
                 for (int i = 0; i < param_total_count; ++i)
                 {
                     if (i + obj_extra < argc)
                     {
-                        args[i] = ConvertHelper.CheckAndConvertFromSSToCS(th.GetCFunctionArg(i + obj_extra), param_arr[i].ParameterType);
+                        args[i] = ConvertHelper.CheckAndConvertFromSSToCS(th.GetValue(i + obj_extra), param_arr[i].ParameterType);
                     }
                     else
                     {
@@ -281,7 +281,7 @@ namespace SimpleScript
             int obj_extra = ((method.IsStatic | method.IsConstructor) ? 0 : 1);
             obj_extra = 1;// do not need the arg0
 
-            int argc = th.GetCFunctionArgCount();
+            int argc = th.GetStackSize();
 
             object[] args = new object[param_arr.Length];
             for (int i = 0; i < param_arr.Length; ++i)
@@ -291,7 +291,7 @@ namespace SimpleScript
                 {
                     try
                     {
-                        args[i] = ConvertHelper.CheckAndConvertFromSSToCS(th.GetCFunctionArg(i + obj_extra), param.ParameterType);
+                        args[i] = ConvertHelper.CheckAndConvertFromSSToCS(th.GetValue(i + obj_extra), param.ParameterType);
                     }
                     catch
                     {
@@ -321,7 +321,7 @@ namespace SimpleScript
         {
             CFunction cfunc = (Thread th) =>
             {
-                if (th.GetCFunctionArgCount() == 1)
+                if (th.GetStackSize() == 1)
                 {
                     object obj = Activator.CreateInstance(t);
                     th.PushValue(obj);

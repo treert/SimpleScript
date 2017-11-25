@@ -101,6 +101,42 @@ do
     print("-=    a[0] = ", a[0]);
 end
 
+print ("test coroutine")
+
+producer = coroutine.create(function(x)
+    x = coroutine.yield(1,x)
+    x = coroutine.yield(2,x)
+    x = coroutine.yield(3,x)
+    return 4,x
+end)
+
+function consumer()
+
+    print(coroutine.resume(producer,100))
+    print(coroutine.resume(producer,200))
+    print(coroutine.resume(producer,300))
+    print(coroutine.resume(producer,400))
+    print(coroutine.resume(producer,500))
+end
+
+if producer then
+    consumer()
+end
+
+coroutine.resume(
+coroutine.create(function()
+    print("儿子1 睡4秒")
+    print(coroutine.sleep(4000));
+    print("儿子1 醒过来了");
+end));
+
+coroutine.resume(
+coroutine.create(function()
+    print("儿子2 睡2秒")
+    print(coroutine.sleep(2000));
+    print("儿子2 醒过来了");
+end));
+
 print("test module")
 a = "global a"
 print("a = ", a)
@@ -128,6 +164,4 @@ a()
 a()
 b()
 b()
-
-
 
