@@ -49,6 +49,8 @@ namespace SimpleScript
         NUMBER,
         STRING,
         NAME,
+        // async run
+        ASYNC,
         // End
         EOS,
     }
@@ -140,6 +142,7 @@ namespace SimpleScript
                 {"true", TokenType.TRUE},
                 {"while", TokenType.WHILE},
                 {"until", TokenType.UNTIL},
+                {"async", TokenType.ASYNC},
             };
         }
 

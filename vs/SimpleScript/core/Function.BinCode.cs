@@ -131,6 +131,8 @@ namespace SimpleScript
                     break;
                 case OpType.OpType_Closure:
                     break;
+                case OpType.OpType_AsyncCall:
+                    break;
                 case OpType.OpType_Call:
                     break;
                 case OpType.OpType_VarArg:

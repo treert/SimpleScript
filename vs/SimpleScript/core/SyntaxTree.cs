@@ -235,6 +235,7 @@ namespace SimpleScript
         public ParamList param_list;
         public Block block;
     }
+
     class ParamList:SyntaxTree
     {
         public ParamList(int line_)
@@ -282,6 +283,13 @@ namespace SimpleScript
         }
         public SyntaxTree caller;
         public ExpressionList args;
+    }
+
+    class AsyncCall : FuncCall
+    {
+        public AsyncCall(int line_):base(line_)
+        {
+        }
     }
 
     class ExpressionList:SyntaxTree

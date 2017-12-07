@@ -361,6 +361,10 @@ namespace SimpleScript
                             return;// pause
                         }
                         break;
+                    case OpType.OpType_AsyncCall:
+                        // new thread to run, and return nothing
+                        OpAsyncCall(a, i.GetB(), i.GetC() == 1);
+                        break;
                     case OpType.OpType_GetUpvalue:
                         upvalue = closure.GetUpvalue(bx);
                         _stack[a] = upvalue.Read();
@@ -840,6 +844,42 @@ namespace SimpleScript
             else
             {
                 throw NewOpTypeError("call", func_idx);
+            }
+        }
+
+        void OpAsyncCall(int func_idx, int arg_count, bool any_value)
+        {
+            if (any_value)
+            {
+                arg_count = _active_top - func_idx - 1;
+            }
+            else
+            {
+                _active_top = func_idx + 1 + arg_count;
+            }
+
+            object func = _stack[func_idx];
+
+            if (func is Closure)
+            {
+                Closure closure = func as Closure;
+                if(arg_count > 0)
+                {
+                    object[] args_ = new object[arg_count];
+                    for (int i = 0; i < arg_count; i++)
+                    {
+                        args_[i] = _stack[func_idx + i];
+                    }
+                    _vm.AsyncCall(closure, args_);
+                }
+                else
+                {
+                    _vm.AsyncCall(closure);
+                }
+            }
+            else
+            {
+                throw NewOpTypeError("asyncCall", func_idx);
             }
         }
 

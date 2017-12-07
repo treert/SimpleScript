@@ -338,7 +338,8 @@ namespace SimpleScript.Test
             _TrySetResult(tree);
             if (_result != null) return;
 
-            VisitAnySyntaxTree(tree.param_list);
+            if(tree.param_list != null)
+                VisitAnySyntaxTree(tree.param_list);
             VisitAnySyntaxTree(tree.block);
         }
         protected override void VisitParamList(ParamList tree)

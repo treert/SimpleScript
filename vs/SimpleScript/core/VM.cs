@@ -105,6 +105,24 @@ namespace SimpleScript
             }
         }
 
+        internal void AsyncCall(Closure closure, params object[] args)
+        {
+            var work_thread = GetWorkThread();
+            try
+            {
+                work_thread.PushValue(closure);
+                for (int i = 0; i < args.Length; ++i)
+                {
+                    work_thread.PushValue(args[i]);
+                }
+                work_thread.Run();
+            }
+            catch (ScriptException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
         //**************** compile *****************************/
         public void ComileFile(string src_file, string out_file = "")
         {

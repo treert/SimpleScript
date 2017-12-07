@@ -44,6 +44,8 @@ stat ::=
      "return" [explist] |
      "break" |
      "continue" |
+     "async" funccall |
+     "async" "do" block "end"|
      varlist "=" explist |
      funccall |
      var += exp |

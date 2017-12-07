@@ -27,6 +27,7 @@ namespace SimpleScript
         OpType_GetGlobal,               // ABx  R(A) := Global(Bx)
         OpType_SetGlobal,               // ABx  Global(Bx) := R(A)
         OpType_Closure,                 // ABx  R(A) := Closure(ChildFunc(Bx))
+        OpType_AsyncCall,               // ABC  async Call(R(A),B:fix arg count,C==1:any arg to top)
         OpType_Call,                    // ABC  R(A)..R(top-1) := Call(R(A),B:fix arg count,C==1:any arg to top)
         OpType_VarArg,                  // A    R(A)..R(top-1) := ...
         OpType_Ret,                     // ABC  return C!=1 ? R(A)..R(B) : R(A)..R(top-1)

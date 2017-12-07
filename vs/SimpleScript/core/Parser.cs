@@ -450,6 +450,8 @@ namespace SimpleScript
                         statement = ParseBreakStatement(); break;
                     case (int)TokenType.CONTINUE:
                         statement = ParseContinueStatement(); break;
+                    case (int)TokenType.ASYNC:
+                        statement = ParseAsyncStatement(); break;
                     case (int)TokenType.GOTO:
                         throw NewParserException("'goto' is reserve key word", _look_ahead);
                     case (int)TokenType.ECHO:
@@ -489,6 +491,39 @@ namespace SimpleScript
             NextToken();
             return new ContinueStatement(_current.m_line);
         }
+
+        AsyncCall ParseAsyncStatement()
+        {
+            NextToken();
+            var statement = new AsyncCall(_current.m_line);
+            if(LookAhead().m_type == (int)TokenType.DO)
+            {
+                var func = new FunctionBody(_current.m_line);
+                NextToken();
+                func.block = ParseBlock();
+                if (NextToken().m_type != (int)TokenType.END)
+                    throw NewParserException("expect 'end' after async function-body", _current);
+                statement.caller = func;
+            }
+            else
+            {
+                var tmp_token = LookAhead();
+                // must be funccall
+                SyntaxTree tmp = ParseOtherStatement();
+                if(tmp is FuncCall)
+                {
+                    var t = tmp as FuncCall;
+                    statement.caller = t.caller;
+                    statement.args = t.args;
+                }
+                else
+                {
+                    throw NewParserException("expect 'func call' after async", tmp_token);
+                }
+            }
+            return statement;
+        }
+
         DoStatement ParseDoStatement()
         {
             NextToken();// skip 'do'

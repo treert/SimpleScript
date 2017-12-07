@@ -611,7 +611,8 @@ namespace SimpleScript
             var func_index = GetFunctionIndex();
             {
                 EnterBlock();
-                HandleParamList(tree.param_list);
+                if(tree.param_list != null)
+                    HandleParamList(tree.param_list);
                 HandleBlock(tree.block);
                 LeaveBlock();
             }
@@ -835,8 +836,9 @@ namespace SimpleScript
                 HandleExpList(tree.args, -1);
             }
 
-            // call function
-            code = Instruction.ABC(OpType.OpType_Call, caller_register,arg_count,is_any_arg);
+            // call function            
+            code = Instruction.ABC(
+                (tree is AsyncCall) ? OpType.OpType_AsyncCall : OpType.OpType_Call, caller_register,arg_count,is_any_arg);
             f.AddInstruction(code, tree.line);
 
             ResetRegisterId(caller_register);

@@ -137,6 +137,20 @@ coroutine.create(function()
     print("儿子2 醒过来了");
 end));
 
+async do 
+    print("儿子3 睡1秒")
+    print(coroutine.sleep(1000));
+    print("儿子3 醒过来了");
+end
+
+local t = function ()
+    print("儿子4 睡0.5秒")
+    print(coroutine.sleep(500));
+    print("儿子4 醒过来了");
+end
+
+async t();
+
 print("test module")
 a = "global a"
 print("a = ", a)
