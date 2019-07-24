@@ -47,6 +47,7 @@ namespace Test
                 //Console.WriteLine(typeof(Int64).IsPrimitive);
                 VM vm = new VM();
                 LibBase.Register(vm);
+                LibCoroutine.Register(vm);
 
                 vm.ComileFile("test.ss", "test.ssc");
 
