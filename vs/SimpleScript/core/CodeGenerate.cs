@@ -422,7 +422,7 @@ namespace SimpleScript
                 f.AddInstruction(code, tree.name.m_line);
 
                 // var += step, must place here, because may have continue cmd in block 
-                code = Instruction.ABC(OpType.OpType_Add, var_register, var_register, step_register);
+                code = Instruction.ABC(OpType. , var_register, var_register, step_register);
                 f.AddInstruction(code, tree.name.m_line);
 
                 HandleBlock(tree.block);
