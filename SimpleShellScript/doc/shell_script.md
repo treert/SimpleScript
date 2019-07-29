@@ -18,14 +18,16 @@
 ```
 module ::= block
 
-block ::= {stat [";"]}
+stats ::= {stat [";"]}
+
+block ::= "{" stats "}"
 
 stat ::=
-     "do" block "end" |
-     "while" exp "do" block "end" |
-     "if" exp "then" block {"elseif" exp "then" block} ["else" block] "end" |
-     "for" Name "=" exp "," exp ["," exp] "do" block "end" |
-     "foreach" Name ["," Name] "in" exp "do" block "end" |
+     block |
+     "while" exp block |
+     "if" exp "then" block {"elseif" exp block} ["else" block]|
+     "for" Name "=" exp "," exp ["," exp] block |
+     "foreach" Name ["," Name] "in" exp block |
      "function" funcname funcbody |
      "local" "function" Name funcbody |
      "local" namelist ["=" explist] |
@@ -45,7 +47,7 @@ varlist ::= var {"," var}
 
 funcname ::= Name {"." Name} [":" Name]
 
-funcbody ::= "(" [parlist] ")" block "end"
+funcbody ::= "(" [parlist] ")" block
 
 parlist ::= Name {"," Name} ["," "..."] | "..."
 
@@ -81,6 +83,6 @@ binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." |
      "<" | "<=" | ">" | ">=" | "==" | "!=" |
      "and" | "or"
 
-unop ::= "-" | "not" | "#"
+unop ::= "-" | "not"
 
 ```
