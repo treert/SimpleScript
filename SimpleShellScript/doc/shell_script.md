@@ -25,7 +25,7 @@ block ::= "{" stats "}"
 stat ::=
      block |
      "while" exp block |
-     "if" exp "then" block {"elseif" exp block} ["else" block]|
+     "if" exp block {"elseif" exp block} ["else" block]|
      "for" Name "=" exp "," exp ["," exp] block |
      "foreach" Name ["," Name] "in" exp block |
      "function" funcname funcbody |
@@ -53,13 +53,11 @@ parlist ::= Name {"," Name} ["," "..."] | "..."
 
 explist ::= {exp ","} exp
 
-tableconstructor ::= "{" [fieldlist] "}"
+arrayconstructor ::= "[" {exp ","}"]"
 
-fieldlist ::= field {fieldsep field} [fieldsep]
+tableconstructor ::= "{" {field ","} "}"
 
 field ::= "[" exp "]" "=" exp | Name "=" exp | exp
-
-fieldsep ::= "," | ";"
 
 exp ::= mainexp | exp binop exp
 

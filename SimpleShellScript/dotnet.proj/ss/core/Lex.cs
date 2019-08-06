@@ -13,11 +13,9 @@ namespace SS
         AND = 257,
         BREAK,
         CONTINUE,// break and continue use exception to implement
-        DO,
-        ECHO,// current not used
+        DO,// do not like lua, not use in do-while
         ELSE,
         ELSEIF,
-        END,
         FALSE,
         FOR,
         FOREACH,
@@ -25,7 +23,7 @@ namespace SS
         IF,
         IN,
         LOCAL,
-        NIL,
+        NIL,// use null
         NOT,
         OR,
         REPEAT,// current not used
@@ -63,6 +61,13 @@ namespace SS
 
         public Token()
         {
+            if xx {
+
+            }
+            else
+            {
+
+            }
             m_type = (int)TokenType.EOS;
         }
         public Token(double number_)
@@ -138,7 +143,6 @@ namespace SS
                 {"true", TokenType.TRUE},
                 {"while", TokenType.WHILE},
                 {"until", TokenType.UNTIL},
-                {"async", TokenType.ASYNC},
             };
         }
 
