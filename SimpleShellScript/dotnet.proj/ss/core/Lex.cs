@@ -61,13 +61,6 @@ namespace SS
 
         public Token()
         {
-            if xx {
-
-            }
-            else
-            {
-
-            }
             m_type = (int)TokenType.EOS;
         }
         public Token(double number_)
@@ -123,10 +116,8 @@ namespace SS
                 {"break", TokenType.BREAK},
                 {"continue", TokenType.CONTINUE},
                 {"do", TokenType.DO},
-                {"echo", TokenType.ECHO},
                 {"else", TokenType.ELSE},
                 {"elseif", TokenType.ELSEIF},
-                {"end", TokenType.END},
                 {"false", TokenType.FALSE},
                 {"for", TokenType.FOR},
                 {"foreach", TokenType.FOREACH},

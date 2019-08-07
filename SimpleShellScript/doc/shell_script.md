@@ -28,9 +28,9 @@ stat ::=
      "if" exp block {"elseif" exp block} ["else" block]|
      "for" Name "=" exp "," exp ["," exp] block |
      "foreach" Name ["," Name] "in" exp block |
-     "function" funcname funcbody |
-     "local" "function" Name funcbody |
-     "local" namelist ["=" explist] |
+     "def" funcname funcbody |
+     ("global"|"local") "def" Name funcbody |
+     ("global"|"local") namelist ["=" explist] |
      "return" [explist] |
      "break" |
      "continue" |
@@ -65,7 +65,7 @@ mainexp ::= nil | false | true | Number | String |
      "..." | function | tableconstructor |
      prefixexp | unop exp
 
-function ::= "function" funcbody
+function ::= "def" funcbody
 
 tableindex ::= "[" exp "]" | "." Name
 
