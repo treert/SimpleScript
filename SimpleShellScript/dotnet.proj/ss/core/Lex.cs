@@ -41,14 +41,17 @@ namespace SS
         NE,// !=
         ADD_SELF,// +=
         DEC_SELF,// -=
+        CONCAT_SELF,// .=
         ADD_ONE,// ++
         DEC_ONE,// --
         NUMBER,
-        STRING,
+        STRING,// 这个在词法解析时特殊处理下，标记下是什么类似的字符串，
         NAME,
         // End
         EOS,
     }
+
+
 
     class Token
     {
@@ -107,6 +110,32 @@ namespace SS
 
     class Lex
     {
+        // 字符串的类型，词法解析时记录下来，语法解析时会用到。
+        public enum StringType
+        {
+            // 注释留着，是想着要不要放在语法树里，然后反序列化，得到格式标准的源码。
+            // 【预留着吧，有空搞搞。语法解析关心这个其实挺麻烦的说。简单实现是在Token上加个前置注释链表结构，(๑ŐдŐ)b】
+            SingleComment,// //
+            MultiComment,// //[[   ]]
+            SquareBrackets,// [=[ xxx ]=]
+            SingleQuotation,// ' $x '' x '
+            DoubleQuotation,// " $x \n \" \t "
+                            // 下面这连个
+            InverseQuotation,// ` ${abc}  `
+            InverseThreeQuotation, // ```bash ```
+        }
+
+        enum BlockType
+        {
+            SquareBrackets,// [=[ xxx ]=]
+            SingleQuotation,// ' $x '' x '
+            DoubleQuotation,// " $x \n \" \t "
+                            // 下面这连个
+            InverseQuotation,// ` ${abc}  `
+            InverseThreeQuotation, // ```bash ```
+
+        }
+
         static Dictionary<string, TokenType> s_reserve_keys;
         static Lex()
         {
@@ -138,6 +167,13 @@ namespace SS
         }
 
         private StringBuilder _buf;
+
+        
+
+        public StringType GetStringType()
+        {
+            return StringType.DoubleQuotation;
+        }
 
         private void _NewLine()
         {
