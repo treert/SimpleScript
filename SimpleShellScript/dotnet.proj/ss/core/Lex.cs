@@ -110,32 +110,6 @@ namespace SS
 
     class Lex
     {
-        // 字符串的类型，词法解析时记录下来，语法解析时会用到。
-        public enum StringType
-        {
-            // 注释留着，是想着要不要放在语法树里，然后反序列化，得到格式标准的源码。
-            // 【预留着吧，有空搞搞。语法解析关心这个其实挺麻烦的说。简单实现是在Token上加个前置注释链表结构，(๑ŐдŐ)b】
-            SingleComment,// //
-            MultiComment,// //[[   ]]
-            SquareBrackets,// [=[ xxx ]=]
-            SingleQuotation,// ' $x '' x '
-            DoubleQuotation,// " $x \n \" \t "
-                            // 下面这连个
-            InverseQuotation,// ` ${abc}  `
-            InverseThreeQuotation, // ```bash ```
-        }
-
-        enum BlockType
-        {
-            SquareBrackets,// [=[ xxx ]=]
-            SingleQuotation,// ' $x '' x '
-            DoubleQuotation,// " $x \n \" \t "
-                            // 下面这连个
-            InverseQuotation,// ` ${abc}  `
-            InverseThreeQuotation, // ```bash ```
-
-        }
-
         static Dictionary<string, TokenType> s_reserve_keys;
         static Lex()
         {
@@ -166,14 +140,40 @@ namespace SS
             };
         }
 
-        private StringBuilder _buf;
-
-        
-
-        public StringType GetStringType()
+        // 块类型。字符串会被 ${a} 这种语法打断，需要一个栈维护打断的字符串
+        public enum BlockType
         {
-            return StringType.DoubleQuotation;
+            Begin,
+
+            //CircleBracket,
+            BigBracket,
+            //SquareBracket,
+
+            StringBegin,
+
+            // 注释留着，是想着要不要放在语法树里，然后反序列化，得到格式标准的源码。
+            // 【预留着吧，有空搞搞。语法解析关心这个其实挺麻烦的说。简单实现是在Token上加个前置注释链表结构，(๑ŐдŐ)b】
+            SingleComment,// //
+            MultiComment,// //[[   ]]
+
+            DoubleSquareBrackets,// [=[ xxx ]=]
+
+            SingleQuotation,// ' $x '' x '
+            DoubleQuotation,// " $x \n \" \t "
+
+            ForwardSlash,// /\w*/igm
+            InverseQuotation,// ` ${abc}  `
+            InverseThreeQuotation, // ```bash ```
         }
+
+        BlockType _string_type = BlockType.StringBegin;
+        Stack<BlockType> _block_stack = new Stack<BlockType>();
+
+        StringBuilder _buf = new StringBuilder();
+
+
+        public BlockType LastStringType => _string_type;
+        public bool IsStringEnded => _block_stack.Peek() < BlockType.StringBegin;
 
         private void _NewLine()
         {
