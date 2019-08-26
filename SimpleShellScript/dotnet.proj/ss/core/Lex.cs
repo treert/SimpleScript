@@ -144,24 +144,14 @@ namespace SS
         public enum BlockType
         {
             Begin,
-
-            //CircleBracket,
+            
             BigBracket,
-            //SquareBracket,
 
             StringBegin,
 
-            // 注释留着，是想着要不要放在语法树里，然后反序列化，得到格式标准的源码。
-            // 【预留着吧，有空搞搞。语法解析关心这个其实挺麻烦的说。简单实现是在Token上加个前置注释链表结构，(๑ŐдŐ)b】
-            SingleComment,// //
-            MultiComment,// //[[   ]]
-
-            DoubleSquareBrackets,// [=[ xxx ]=]
-
             SingleQuotation,// ' $x '' x '
             DoubleQuotation,// " $x \n \" \t "
-
-            ForwardSlash,// /\w*/igm
+            
             InverseQuotation,// ` ${abc}  `
             InverseThreeQuotation, // ```bash ```
         }
@@ -447,8 +437,29 @@ namespace SS
             return ret;
         }
 
+        Token _GetNextTokenInString(ref int line, ref int column)
+        {
+            switch (_block_stack.Peek())
+            {
+                case BlockType.SingleQuotation:
+                    break;
+                case BlockType.DoubleQuotation:
+                    break;
+                case BlockType.InverseQuotation:
+                    break;
+                case BlockType.InverseThreeQuotation:
+                    break;
+            }
+            throw NewLexException("expect in string");
+        }
+
         Token _GetNextToken(ref int line, ref int column)
         {
+            if(_block_stack.Peek() > BlockType.StringBegin)
+            {
+                return _GetNextTokenInString(ref line, ref column);
+            }
+
             while (_current != '\0')
             {
                 switch (_current)
@@ -650,11 +661,6 @@ namespace SS
             _line = 1;
             _column = 0;
             _NextChar();
-        }
-
-        public Lex()
-        {
-            _buf = new StringBuilder();
         }
     }
 }
