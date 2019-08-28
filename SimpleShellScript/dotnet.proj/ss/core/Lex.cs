@@ -45,7 +45,8 @@ namespace SS
         ADD_ONE,// ++
         DEC_ONE,// --
         NUMBER,
-        STRING,// 这个在词法解析时特殊处理下，标记下是什么类似的字符串，
+        STRING_BEGIN,// 方便词法解析代码编写，字符串可能被$语法打断
+        STRING,
         NAME,
         // End
         EOS,
@@ -155,14 +156,11 @@ namespace SS
             InverseQuotation,// ` ${abc}  `
             InverseThreeQuotation, // ```bash ```
         }
-
-        BlockType _string_type = BlockType.StringBegin;
+        
         Stack<BlockType> _block_stack = new Stack<BlockType>();
 
         StringBuilder _buf = new StringBuilder();
 
-
-        public BlockType LastStringType => _string_type;
         public bool IsStringEnded => _block_stack.Peek() < BlockType.StringBegin;
 
         private void _NewLine()
@@ -439,18 +437,74 @@ namespace SS
 
         Token _GetNextTokenInString(ref int line, ref int column)
         {
+            // $ 语法统一处理
+            _buf.Clear();
+            if(_current == '$')
+            {
+                _NextChar();
+                if(_current == '{')
+                {
+                    _block_stack.Push(BlockType.BigBracket);
+                    column++;
+                    return new Token('{');
+                }
+                else if(_GetName() != null)
+                {
+                    column++;
+                    return new Token(TokenType.NAME, _buf.ToString());
+                }
+                else if(_current == '$')
+                {
+                    _NextChar();// $$ => $
+                }
+                _buf.Append('$');
+            }
             switch (_block_stack.Peek())
             {
                 case BlockType.SingleQuotation:
+                    _ReadStringInSingleQuotation();
                     break;
                 case BlockType.DoubleQuotation:
+                    _ReadStringInDoubleQuotation();
                     break;
                 case BlockType.InverseQuotation:
+                    _ReadStringInInverseQuotation();
                     break;
                 case BlockType.InverseThreeQuotation:
+                    _ReadStringInInverseThreeQuotation();
                     break;
             }
-            throw NewLexException("expect in string");
+            return new Token(_buf.ToString());
+        }
+
+        void _ReadStringInSingleQuotation()
+        {
+
+        }
+
+        void _ReadStringInDoubleQuotation()
+        {
+
+        }
+
+        void _ReadStringInInverseQuotation()
+        {
+
+        }
+
+        void _ReadStringInInverseThreeQuotation()
+        {
+
+        }
+
+        void _ReadStringInSquareBrackets()
+        {
+
+        }
+
+        void _ReadStringInSingleLineComment()
+        {
+
         }
 
         Token _GetNextToken(ref int line, ref int column)
@@ -594,33 +648,46 @@ namespace SS
                             _buf.Clear();
                             return _ReadNumber();
                         }
-                        else if (_current == '_' || char.IsLetter(_current))
+                        else
                         {
-                            _buf.Clear();
-                            do
+                            var name = _GetName();
+                            if(name != null)
                             {
-                                _buf.Append(_current);
-                                _NextChar();
-                            } while (_current == '_' || char.IsLetterOrDigit(_current));
-                            TokenType token_type;
-                            if (s_reserve_keys.TryGetValue(_buf.ToString(), out token_type))
-                            {
-                                return new Token(token_type);
+                                TokenType token_type;
+                                if (s_reserve_keys.TryGetValue(name, out token_type))
+                                {
+                                    return new Token(token_type);
+                                }
+                                else
+                                {
+                                    return new Token(TokenType.NAME, name);
+                                }
                             }
                             else
                             {
-                                return new Token(TokenType.NAME, _buf.ToString());
+                                var c = _current;
+                                _NextChar();
+                                return new Token(c);
                             }
-                        }
-                        else
-                        {
-                            var c = _current;
-                            _NextChar();
-                            return new Token(c);
                         }
                 }
             }
             return new Token();
+        }
+
+        string _GetName()
+        {
+            if (_current == '_' || char.IsLetter(_current))
+            {
+                _buf.Clear();
+                do
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                } while (_current == '_' || char.IsLetterOrDigit(_current));
+                return _buf.ToString();
+            }
+            return null;
         }
 
         private LexException NewLexException(string msg)
