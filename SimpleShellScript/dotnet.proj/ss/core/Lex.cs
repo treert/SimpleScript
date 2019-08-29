@@ -161,18 +161,24 @@ namespace SS
 
         StringBuilder _buf = new StringBuilder();
 
+        public BlockType CurStringType => _block_stack.Peek();
         public bool IsStringEnded => _block_stack.Peek() < BlockType.StringBegin;
 
-        private void _NewLine()
+        bool _TryReadNewLine()
         {
-            var c = _current;
-            _NextChar();
-            if ((_current == '\r' || _current == '\n') && _current != c)
+            if (_current == '\r' || _current == '\n')
             {
+                var c = _current;
                 _NextChar();
+                if ((_current == '\r' || _current == '\n') && _current != c)
+                {
+                    _NextChar();
+                }
+                ++_line;
+                _column = 1;
+                return true;
             }
-            ++_line;
-            _column = 1;
+            return false;
         }
 
         private Token _ReadNumber()
@@ -214,7 +220,7 @@ namespace SS
             }
             catch
             {
-                throw NewLexException(String.Format("{0} is not valid double", _buf));
+                throw NewLexException($"{_buf} is not valid double");
             }
         }
 
@@ -233,6 +239,90 @@ namespace SS
             return new Token(_buf.ToString());
         }
 
+        void _PutSpecialCharInBuf()
+        {
+            Debug.Assert(_current == '\\');
+            _NextChar();
+            if (_current == 'a')
+                _buf.Append('\a');
+            else if (_current == 'b')
+                _buf.Append('\b');
+            else if (_current == 'f')
+                _buf.Append('\f');
+            else if (_current == 'n')
+                _buf.Append('\n');
+            else if (_current == 'r')
+                _buf.Append('\r');
+            else if (_current == 't')
+                _buf.Append('\t');
+            else if (_current == 'v')
+                _buf.Append('\v');
+            else if (_current == '\\')
+                _buf.Append('\\');
+            else if (_current == '"')
+                _buf.Append('"');
+            else if (_current == '\'')
+                _buf.Append('\'');
+            else if (_current == '0')
+                _buf.Append('\0');
+            else if (_current == 'x' || _current == 'u' || _current == 'U')
+            {
+                char head = _current;
+                _NextChar();
+                int cnt = 2;
+                if (cnt == 'u') cnt = 4;
+                else if (cnt == 'U') cnt = 8;
+                int code = 0;
+                int i = 0;
+                for (; i < cnt; ++i)
+                {
+                    if (char.IsDigit(_current))
+                    {
+                        code = code * 16 + _current - '0';
+                    }
+                    else if (_current >= 'a' && _current <= 'f')
+                    {
+                        code = code * 16 + _current - 'a';
+                    }
+                    else if (_current >= 'A' && _current <= 'F')
+                    {
+                        code = code * 16 + _current - 'A';
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    _NextChar();
+                }
+                if (i == 0) throw NewLexException($"expect {cnt} hexadecimal number after '\\{head}'");
+                _buf.Append(char.ConvertFromUtf32(code));
+                return;
+            }
+            else if (char.IsDigit(_current))// 特殊支持\d[d][d]，三位十进制（不是C++的八进制），需要小于255。
+            {
+                int code = 0;
+                int i = 0;
+                for (; i < 3; ++i)
+                {
+                    if (char.IsDigit(_current))
+                    {
+                        code = code * 10 + _current - '0';
+                    }
+                    else
+                    {
+                        break;
+                    }
+                    _NextChar();
+                }
+                if (code > byte.MaxValue) throw NewLexException("char code big than 255, not support");
+                _buf.Append(char.ConvertFromUtf32(code));
+                return;
+            }
+            else
+                throw NewLexException("unexpect character after '\\'");
+        }
+
+        
         private void _PutCharInBuf()
         {
             if (_current == '\\')
@@ -313,118 +403,6 @@ namespace SS
             _NextChar();
         }
 
-        private Token _ReadMultiLineString()
-        {
-            int equal_cnt = 0;
-            while (_current == '=')
-            {
-                ++equal_cnt;
-                _NextChar();
-            }
-            if (_current != '[')
-                throw NewLexException("incomplete multi line string");
-            _NextChar();
-            _buf.Clear();
-            if (_current == '\r' || _current == '\n')
-                _NewLine();// ignore first \n
-
-            while (_current != '\0')
-            {
-                if (_current == ']')
-                {
-                    _NextChar();
-                    int i = 0;
-                    for (; i < equal_cnt; ++i)
-                    {
-                        if (_current != '=') break;
-                        _NextChar();
-                    }
-                    if (i == equal_cnt && _current == ']')
-                    {
-                        _NextChar();
-                        break;// break while
-                    }
-                    else
-                    {
-                        _buf.Append(']');
-                        _buf.Append('=', i);
-                    }
-                }
-                else if (_current == '\r' || _current == '\n')
-                {
-                    _buf.Append('\n');
-                    _NewLine();
-                }
-                else
-                {
-                    _buf.Append(_current);
-                    _NextChar();
-                }
-            }
-            if (_current == '\0' && _buf.Length > 1)
-            {
-                if (_buf[_buf.Length - 1] == '\n')
-                {
-                    _buf.Remove(_buf.Length - 1, 1);// ignore last '\n'
-                }
-            }
-            return new Token(_buf.ToString());
-            //throw NewLexException("incomplete multi line string");
-        }
-
-        private void _SkipComment()
-        {
-            Debug.Assert(_current == '/');
-            _NextChar();
-            if (_current == '[')
-            {
-                _NextChar();
-                int equal_cnt = 0;
-                while (_current == '=')
-                {
-                    ++equal_cnt;
-                    _NextChar();
-                }
-                if (_current != '[')
-                    throw NewLexException("incomplete multi line comment");
-                _NextChar();
-
-                while (_current != '\0')
-                {
-                    if (_current == ']')
-                    {
-                        _NextChar();
-                        int i = 0;
-                        for (; i < equal_cnt; ++i)
-                        {
-                            if (_current != '=') break;
-                            _NextChar();
-                        }
-                        if (i == equal_cnt && _current == ']')
-                        {
-                            _NextChar();
-                            return;// end of multi line comment
-                        }
-                    }
-                    else if (_current == '\r' || _current == '\n')
-                    {
-                        _NewLine();
-                    }
-                    else
-                    {
-                        _NextChar();
-                    }
-                }
-            }
-            else
-            {
-                while (_current != '\r' && _current != '\n' && _current != '\0')
-                {
-                    _NextChar();
-                }
-            }
-        }
-
         public Token GetNextToken()
         {
             int line = _line;
@@ -474,37 +452,179 @@ namespace SS
                     _ReadStringInInverseThreeQuotation();
                     break;
             }
+            if(_current == '\0' && IsStringEnded == false)
+            {
+                _block_stack.Pop();// 文件尾也可以用于表示字符串结束
+            }
+
             return new Token(_buf.ToString());
         }
 
         void _ReadStringInSingleQuotation()
         {
-
+            while(_current != '\0' && _current != '$')
+            {
+                if (_TryReadNewLine())
+                {
+                    _buf.Append('\n');
+                }
+                else if (_current == '\'')
+                {
+                    _NextChar();
+                    if (_current == '\'') _buf.Append('\'');// '' => '
+                    else
+                    {
+                        _block_stack.Pop();
+                        return;
+                    }
+                }
+            }
         }
 
         void _ReadStringInDoubleQuotation()
         {
-
+            while (_current != '\0' && _current != '$')
+            {
+                if (_TryReadNewLine())
+                {
+                    _buf.Append('\n');
+                }
+                else if(_current == '\\')
+                {
+                    _PutSpecialCharInBuf();
+                }
+                else if (_current == '\"')
+                {
+                    _NextChar();
+                    _block_stack.Pop();
+                    return;
+                }
+            }
         }
 
         void _ReadStringInInverseQuotation()
         {
-
+            while (_current != '\0' && _current != '$')
+            {
+                if (_TryReadNewLine())
+                {
+                    _buf.Append('\n');
+                }
+                else if (_current == '`')
+                {
+                    _NextChar();
+                    _block_stack.Pop();
+                    return;
+                }
+            }
         }
 
         void _ReadStringInInverseThreeQuotation()
         {
-
+            while (_current != '\0' && _current != '$')
+            {
+                if (_TryReadNewLine())
+                {
+                    _buf.Append('\n');
+                }
+                else if (_current == '`')
+                {
+                    _NextChar();
+                    if(_current == '`')
+                    {
+                        if (_current == '`')
+                        {
+                            _block_stack.Pop();
+                            return;
+                        }
+                        else
+                        {
+                            _buf.Append("``");
+                        }
+                    }
+                    else
+                    {
+                        _buf.Append('`');
+                    }
+                }
+            }
         }
 
         void _ReadStringInSquareBrackets()
         {
+            Debug.Assert(_current == '/' || _current == '=');
 
+            int equal_cnt = 0;
+            while (_current == '=')
+            {
+                ++equal_cnt;
+                _NextChar();
+            }
+            if (_current != '[')
+                throw NewLexException("expect '[' for string");
+            _NextChar();
+            _buf.Clear();
+            _TryReadNewLine();// ignore first \n
+
+            while (_current != '\0')
+            {
+                if (_current == ']')
+                {
+                    _NextChar();
+                    int i = 0;
+                    for (; i < equal_cnt; ++i)
+                    {
+                        if (_current != '=') break;
+                        _NextChar();
+                    }
+                    if (i == equal_cnt && _current == ']')
+                    {
+                        if (_buf.Length > 1 && _buf[_buf.Length - 1] == '\n')
+                        {
+                            _buf.Remove(_buf.Length - 1, 1);// ignore last '\n'
+                        }
+                        _NextChar();
+                        break;// end while
+                    }
+                    else
+                    {
+                        _buf.Append(']');
+                        _buf.Append('=', i);
+                    }
+                }
+                if (_TryReadNewLine())
+                {
+                    _buf.Append('\n');
+                }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
+            }
         }
 
-        void _ReadStringInSingleLineComment()
+        void _ReadStringInComment()
         {
-
+            Debug.Assert(_current == '/');
+            _NextChar();
+            _buf.Clear();
+            if(_current == '[')
+            {
+                _buf.Append(_current);
+                _NextChar();
+                if(_current == '=' || _current == '[')
+                {
+                    _ReadStringInSquareBrackets();
+                    return;
+                }
+            }
+            // util line end
+            while (_current != '\r' && _current != '\n' && _current != '\0')
+            {
+                _buf.Append(_current);
+                _NextChar();
+            }
         }
 
         Token _GetNextToken(ref int line, ref int column)
@@ -520,14 +640,20 @@ namespace SS
                 {
                     case '\r':
                     case '\n':
-                        _NewLine();
+                        _TryReadNewLine();
                         line = _line; column = _column;
                         break;
+                    case '{':
+                        _block_stack.Push(BlockType.BigBracket);
+                        return new Token('{');
+                    case '}':
+                        _block_stack.Pop();
+                        return new Token('}');
                     case '/':
                         _NextChar();
                         if (_current == '/')
                         {
-                            _SkipComment();
+                            _ReadStringInComment();
                             line = _line; column = _column;
                             break;
                         }
@@ -628,12 +754,38 @@ namespace SS
                         _NextChar();
                         return new Token(TokenType.GE);
                     case '\'':
+                        _block_stack.Push(BlockType.SingleQuotation);
+                        return new Token(TokenType.STRING_BEGIN);
                     case '"':
-                        return _ReadSingleLineString();
+                        _block_stack.Push(BlockType.DoubleQuotation);
+                        return new Token(TokenType.STRING_BEGIN);
+                    case '`':
+                        _NextChar();
+                        if(_current == '`')
+                        {
+                            _NextChar();
+                            if (_current == '`')
+                            {
+                                _block_stack.Push(BlockType.InverseThreeQuotation);
+                                return new Token(TokenType.STRING_BEGIN);
+                            }
+                            else
+                            {
+                                throw NewLexException("not support ``, do you mean ```");
+                            }
+                        }
+                        else
+                        {
+                            _block_stack.Push(BlockType.InverseQuotation);
+                            return new Token(TokenType.STRING_BEGIN);
+                        }
                     case '[':
                         _NextChar();
                         if (_current == '[' || _current == '=')
-                            return _ReadMultiLineString();
+                        {
+                            _ReadStringInSquareBrackets();
+                            return new Token(_buf.ToString());
+                        }
                         else
                             return new Token('[');
                     default:
