@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SS.Test;
+using System;
 
 namespace ss
 {
@@ -7,6 +8,7 @@ namespace ss
         static void Main(string[] args)
         {
             Console.WriteLine("Hello World!");
+            TestManager.RunTest();
         }
     }
 }

@@ -20,6 +20,7 @@ namespace SS
         FOR,
         FOREACH,
         FUNCTION,// use def like python
+        GLOBAL,
         IF,
         IN,
         LOCAL,
@@ -125,6 +126,7 @@ namespace SS
                 {"false", TokenType.FALSE},
                 {"for", TokenType.FOR},
                 {"foreach", TokenType.FOREACH},
+                {"global", TokenType.GLOBAL},
                 {"def", TokenType.FUNCTION},
                 {"if", TokenType.IF},
                 {"in", TokenType.IN},
@@ -224,21 +226,6 @@ namespace SS
             }
         }
 
-        private Token _ReadSingleLineString()
-        {
-            var quote = _current;
-            _NextChar();
-            _buf.Clear();
-            while (_current != quote)
-            {
-                if (_current == '\r' || _current == '\n' || _current == '\0')
-                    throw NewLexException("incomplete string at line end");
-                _PutCharInBuf();
-            }
-            _NextChar();
-            return new Token(_buf.ToString());
-        }
-
         void _PutSpecialCharInBuf()
         {
             Debug.Assert(_current == '\\');
@@ -320,86 +307,7 @@ namespace SS
             }
             else
                 throw NewLexException("unexpect character after '\\'");
-        }
 
-        
-        private void _PutCharInBuf()
-        {
-            if (_current == '\\')
-            {
-                _NextChar();
-                if (_current == 'a')
-                    _buf.Append('\a');
-                else if (_current == 'b')
-                    _buf.Append('\b');
-                else if (_current == 'f')
-                    _buf.Append('\f');
-                else if (_current == 'n')
-                    _buf.Append('\n');
-                else if (_current == 'r')
-                    _buf.Append('\r');
-                else if (_current == 't')
-                    _buf.Append('\t');
-                else if (_current == 'v')
-                    _buf.Append('\v');
-                else if (_current == '\\')
-                    _buf.Append('\\');
-                else if (_current == '"')
-                    _buf.Append('"');
-                else if (_current == '\'')
-                    _buf.Append('\'');
-                else if (_current == 'x')
-                {
-                    _NextChar();
-                    int code = 0;
-                    int i = 0;
-                    for (; i < 2; ++i)
-                    {
-                        if (char.IsDigit(_current))
-                        {
-                            code = code * 16 + _current - '0';
-                        }
-                        else if (_current >= 'a' && _current <= 'f')
-                        {
-                            code = code * 16 + _current - 'a';
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        _NextChar();
-                    }
-                    if (i == 0) throw NewLexException("unexpect char after '\\x'");
-                    _buf.Append(char.ConvertFromUtf32(code));
-                    return;
-                }
-                else if (char.IsDigit(_current))
-                {
-                    int code = 0;
-                    int i = 0;
-                    for (; i < 3; ++i)
-                    {
-                        if (char.IsDigit(_current))
-                        {
-                            code = code * 10 + _current - '0';
-                        }
-                        else
-                        {
-                            break;
-                        }
-                        _NextChar();
-                    }
-                    if (code > byte.MaxValue) throw NewLexException("char code too big");
-                    _buf.Append(char.ConvertFromUtf32(code));
-                    return;
-                }
-                else
-                    throw NewLexException("unexpect character after '\\'");
-            }
-            else
-            {
-                _buf.Append(_current);
-            }
             _NextChar();
         }
 
@@ -422,6 +330,7 @@ namespace SS
                 _NextChar();
                 if(_current == '{')
                 {
+                    _NextChar();
                     _block_stack.Push(BlockType.BigBracket);
                     column++;
                     return new Token('{');
@@ -471,12 +380,21 @@ namespace SS
                 else if (_current == '\'')
                 {
                     _NextChar();
-                    if (_current == '\'') _buf.Append('\'');// '' => '
+                    if (_current == '\'')
+                    {
+                        _NextChar();
+                        _buf.Append('\'');// '' => '
+                    }
                     else
                     {
                         _block_stack.Pop();
                         return;
                     }
+                }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
                 }
             }
         }
@@ -499,6 +417,11 @@ namespace SS
                     _block_stack.Pop();
                     return;
                 }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
             }
         }
 
@@ -516,6 +439,11 @@ namespace SS
                     _block_stack.Pop();
                     return;
                 }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
             }
         }
 
@@ -532,8 +460,10 @@ namespace SS
                     _NextChar();
                     if(_current == '`')
                     {
+                        _NextChar();
                         if (_current == '`')
                         {
+                            _NextChar();
                             _block_stack.Pop();
                             return;
                         }
@@ -547,12 +477,17 @@ namespace SS
                         _buf.Append('`');
                     }
                 }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
             }
         }
 
         void _ReadStringInSquareBrackets()
         {
-            Debug.Assert(_current == '/' || _current == '=');
+            Debug.Assert(_current == '[' || _current == '=');
 
             int equal_cnt = 0;
             while (_current == '=')
@@ -644,9 +579,11 @@ namespace SS
                         line = _line; column = _column;
                         break;
                     case '{':
+                        _NextChar();
                         _block_stack.Push(BlockType.BigBracket);
                         return new Token('{');
                     case '}':
+                        _NextChar();
                         _block_stack.Pop();
                         return new Token('}');
                     case '/':
@@ -754,9 +691,11 @@ namespace SS
                         _NextChar();
                         return new Token(TokenType.GE);
                     case '\'':
+                        _NextChar();
                         _block_stack.Push(BlockType.SingleQuotation);
                         return new Token(TokenType.STRING_BEGIN);
                     case '"':
+                        _NextChar();
                         _block_stack.Push(BlockType.DoubleQuotation);
                         return new Token(TokenType.STRING_BEGIN);
                     case '`':
@@ -766,6 +705,7 @@ namespace SS
                             _NextChar();
                             if (_current == '`')
                             {
+                                _NextChar();
                                 _block_stack.Push(BlockType.InverseThreeQuotation);
                                 return new Token(TokenType.STRING_BEGIN);
                             }
@@ -879,6 +819,8 @@ namespace SS
             _pos = 0;
             _line = 1;
             _column = 0;
+            _block_stack.Clear();
+            _block_stack.Push(BlockType.Begin);
             _NextChar();
         }
     }
