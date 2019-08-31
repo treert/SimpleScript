@@ -16,7 +16,7 @@
 	
 ## BNF
 ```
-module ::= block
+module ::= stats
 
 stats ::= {stat [";"]}
 

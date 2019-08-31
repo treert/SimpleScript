@@ -96,7 +96,7 @@ namespace SS.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"and do else elseif false for foreach def global if in local 
+            lex.Init(@"and do else elseif false for def global if in local 
 nil not or return then true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.AND);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DO);
@@ -104,7 +104,6 @@ nil not or return then true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSEIF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FALSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOR);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOREACH);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FUNCTION);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.GLOBAL);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IF);

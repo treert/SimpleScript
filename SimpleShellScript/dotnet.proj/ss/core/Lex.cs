@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SS
 {
-    enum TokenType
+    public enum TokenType
     {
         // reserved words
         AND = 257,
@@ -18,7 +18,6 @@ namespace SS
         ELSEIF,
         FALSE,
         FOR,
-        FOREACH,
         FUNCTION,// use def like python
         GLOBAL,
         IF,
@@ -55,7 +54,7 @@ namespace SS
 
 
 
-    class Token
+    public class Token
     {
         public int m_type;
         public double m_number;
@@ -110,7 +109,7 @@ namespace SS
         }
     }
 
-    class Lex
+    public class Lex
     {
         static Dictionary<string, TokenType> s_reserve_keys;
         static Lex()
@@ -125,7 +124,6 @@ namespace SS
                 {"elseif", TokenType.ELSEIF},
                 {"false", TokenType.FALSE},
                 {"for", TokenType.FOR},
-                {"foreach", TokenType.FOREACH},
                 {"global", TokenType.GLOBAL},
                 {"def", TokenType.FUNCTION},
                 {"if", TokenType.IF},
