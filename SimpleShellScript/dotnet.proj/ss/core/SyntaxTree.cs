@@ -102,6 +102,25 @@ namespace SimpleScript
         public BlockTree block;
     }
 
+    public class ForeverStatement : SyntaxTree
+    {
+        public ForeverStatement(int line_)
+        {
+            _line = line_;
+        }
+        public BlockTree block;
+    }
+
+    public class TryStatement : SyntaxTree
+    {
+        public TryStatement(int line_)
+        {
+            _line = line_;
+        }
+        public BlockTree block;
+        public Token catch_name;
+        public BlockTree catch_block;
+    }
 
     public class FunctionStatement : SyntaxTree
     {
@@ -273,5 +292,27 @@ namespace SimpleScript
             _line = line_;
         }
         public List<SyntaxTree> exp_list = new List<SyntaxTree>();
+    }
+
+    public class ComplexString : SyntaxTree
+    {
+        public ComplexString(int line_)
+        {
+            _line = line_;
+        }
+        public bool is_shell = false;// ` and ```
+        public string shell_name = null;// 默认空的执行时取 Config.def_shell
+        public List<SyntaxTree> list = new List<SyntaxTree>();
+    }
+
+    public class ComplexStringItem : SyntaxTree
+    {
+        public ComplexStringItem(int line_)
+        {
+            _line = line_;
+        }
+        public SyntaxTree exp;
+        public int len = 0;
+        public string format = null;
     }
 }

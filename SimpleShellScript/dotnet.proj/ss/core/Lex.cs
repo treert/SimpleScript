@@ -28,6 +28,9 @@ namespace SimpleScript
         RETURN,
         TRUE,
         WHILE,
+        // exception handle, not need for finally
+        TRY,
+        CATCH,
         // other terminal symbols
         CONCAT,// .. string concat
         DOTS,// ...
@@ -48,13 +51,30 @@ namespace SimpleScript
         EOS,
     }
 
+    // 块类型。字符串会被 ${a} 这种语法打断，需要一个栈维护打断的字符串
+    public enum StringBlockType
+    {
+        Begin,
 
+        BigBracket,
+
+        StringBegin,
+
+        SingleQuotation,// ' $x '' x '
+        DoubleQuotation,// " $x \n \" \t "
+
+        InverseQuotation,// ` ${abc}  `
+        InverseThreeQuotation, // ```bash ```
+    }
 
     public class Token
     {
         public int m_type;
         public double m_number;
         public string m_string;
+        // for complex string
+        public StringBlockType m_string_type;
+        public bool IsStringEnded => m_type == (int)TokenType.STRING && m_string_type < StringBlockType.StringBegin;
         // for error report
         public int m_line;
         public int m_column;
@@ -130,31 +150,17 @@ namespace SimpleScript
                 {"return", TokenType.RETURN},
                 {"true", TokenType.TRUE},
                 {"while", TokenType.WHILE},
+                {"try", TokenType.TRY},
+                {"catch", TokenType.CATCH },
             };
         }
-
-        // 块类型。字符串会被 ${a} 这种语法打断，需要一个栈维护打断的字符串
-        public enum BlockType
-        {
-            Begin,
-            
-            BigBracket,
-
-            StringBegin,
-
-            SingleQuotation,// ' $x '' x '
-            DoubleQuotation,// " $x \n \" \t "
-            
-            InverseQuotation,// ` ${abc}  `
-            InverseThreeQuotation, // ```bash ```
-        }
         
-        Stack<BlockType> _block_stack = new Stack<BlockType>();
+        Stack<StringBlockType> _block_stack = new Stack<StringBlockType>();
 
         StringBuilder _buf = new StringBuilder();
 
-        public BlockType CurStringType => _block_stack.Peek();
-        public bool IsStringEnded => _block_stack.Peek() < BlockType.StringBegin;
+        public StringBlockType CurStringType => _block_stack.Peek();
+        public bool IsStringEnded => _block_stack.Peek() < StringBlockType.StringBegin;
 
         bool _TryReadNewLine()
         {
@@ -308,6 +314,7 @@ namespace SimpleScript
             Token ret = _GetNextToken(ref line, ref column);
             ret.m_line = line;
             ret.m_column = column;
+            ret.m_string_type = CurStringType;
             return ret;
         }
 
@@ -321,7 +328,7 @@ namespace SimpleScript
                 if(_current == '{')
                 {
                     _NextChar();
-                    _block_stack.Push(BlockType.BigBracket);
+                    _block_stack.Push(StringBlockType.BigBracket);
                     column++;
                     return new Token('{');
                 }
@@ -338,16 +345,16 @@ namespace SimpleScript
             }
             switch (_block_stack.Peek())
             {
-                case BlockType.SingleQuotation:
+                case StringBlockType.SingleQuotation:
                     _ReadStringInSingleQuotation();
                     break;
-                case BlockType.DoubleQuotation:
+                case StringBlockType.DoubleQuotation:
                     _ReadStringInDoubleQuotation();
                     break;
-                case BlockType.InverseQuotation:
+                case StringBlockType.InverseQuotation:
                     _ReadStringInInverseQuotation();
                     break;
-                case BlockType.InverseThreeQuotation:
+                case StringBlockType.InverseThreeQuotation:
                     _ReadStringInInverseThreeQuotation();
                     break;
             }
@@ -554,7 +561,7 @@ namespace SimpleScript
 
         Token _GetNextToken(ref int line, ref int column)
         {
-            if(_block_stack.Peek() > BlockType.StringBegin)
+            if(_block_stack.Peek() > StringBlockType.StringBegin)
             {
                 return _GetNextTokenInString(ref line, ref column);
             }
@@ -570,7 +577,7 @@ namespace SimpleScript
                         break;
                     case '{':
                         _NextChar();
-                        _block_stack.Push(BlockType.BigBracket);
+                        _block_stack.Push(StringBlockType.BigBracket);
                         return new Token('{');
                     case '}':
                         _NextChar();
@@ -682,11 +689,11 @@ namespace SimpleScript
                         return new Token(TokenType.GE);
                     case '\'':
                         _NextChar();
-                        _block_stack.Push(BlockType.SingleQuotation);
+                        _block_stack.Push(StringBlockType.SingleQuotation);
                         return new Token(TokenType.STRING_BEGIN);
                     case '"':
                         _NextChar();
-                        _block_stack.Push(BlockType.DoubleQuotation);
+                        _block_stack.Push(StringBlockType.DoubleQuotation);
                         return new Token(TokenType.STRING_BEGIN);
                     case '`':
                         _NextChar();
@@ -696,7 +703,7 @@ namespace SimpleScript
                             if (_current == '`')
                             {
                                 _NextChar();
-                                _block_stack.Push(BlockType.InverseThreeQuotation);
+                                _block_stack.Push(StringBlockType.InverseThreeQuotation);
                                 return new Token(TokenType.STRING_BEGIN);
                             }
                             else
@@ -706,7 +713,7 @@ namespace SimpleScript
                         }
                         else
                         {
-                            _block_stack.Push(BlockType.InverseQuotation);
+                            _block_stack.Push(StringBlockType.InverseQuotation);
                             return new Token(TokenType.STRING_BEGIN);
                         }
                     case '[':
@@ -810,7 +817,7 @@ namespace SimpleScript
             _line = 1;
             _column = 0;
             _block_stack.Clear();
-            _block_stack.Push(BlockType.Begin);
+            _block_stack.Push(StringBlockType.Begin);
             _NextChar();
         }
     }

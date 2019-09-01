@@ -142,7 +142,7 @@ nil not or return true while");
 ```
 } \n \t end""");
             ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
-            ExpectTrue(lex.CurStringType == Lex.BlockType.DoubleQuotation);
+            ExpectTrue(lex.CurStringType == StringBlockType.DoubleQuotation);
             {
                 ExpectTrue(lex.GetNextToken().EqualTo('{'));
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.NAME));
@@ -150,15 +150,15 @@ nil not or return true while");
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING));
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
-                ExpectTrue(lex.CurStringType == Lex.BlockType.SingleQuotation);
+                ExpectTrue(lex.CurStringType == StringBlockType.SingleQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "'");
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
-                ExpectTrue(lex.CurStringType == Lex.BlockType.InverseQuotation);
+                ExpectTrue(lex.CurStringType == StringBlockType.InverseQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "ls -l");
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
-                ExpectTrue(lex.CurStringType == Lex.BlockType.InverseThreeQuotation);
+                ExpectTrue(lex.CurStringType == StringBlockType.InverseThreeQuotation);
                 ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING));
                 ExpectTrue(lex.GetNextToken().EqualTo('}'));
             }

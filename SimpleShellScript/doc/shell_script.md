@@ -28,6 +28,8 @@ stat ::=
      "if" exp block {"elseif" exp block} ["else" block]|
      "for" Name "=" exp "," exp ["," exp] block |
      "foreach" Name ["," Name] "in" exp block |
+	 "for" block |
+	 "try" block ["catch" [Name] block] | 
      "def" funcname funcbody |
      ("global"|"local") "def" Name funcbody |
      ("global"|"local") namelist ["=" explist] |

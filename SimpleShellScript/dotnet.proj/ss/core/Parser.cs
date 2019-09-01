@@ -65,13 +65,13 @@ namespace SimpleScript
                 token_type == (int)TokenType.TRUE ||
                 token_type == (int)TokenType.NUMBER ||
                 token_type == (int)TokenType.STRING ||
+                token_type == (int)TokenType.STRING_BEGIN || 
                 token_type == (int)TokenType.DOTS ||
                 token_type == (int)TokenType.FUNCTION ||
                 token_type == (int)TokenType.NAME ||
                 token_type == (int)'(' ||
                 token_type == (int)'{' ||
                 token_type == (int)'-' ||
-                token_type == (int)'#' ||
                 token_type == (int)TokenType.NOT;
         }
         int GetOpPriority(Token t)
@@ -142,6 +142,9 @@ namespace SimpleScript
                 case (int)TokenType.DOTS:
                     exp = new Terminator(NextToken());
                     break;
+                case (int)TokenType.STRING_BEGIN:
+                    exp = ParseComplexString();
+                    break;
                 case (int)TokenType.FUNCTION:
                     exp = ParseFunctionDef();
                     break;
@@ -154,7 +157,6 @@ namespace SimpleScript
                     break;
                 // unop exp priority is 90 less then ^
                 case (int)'-':
-                case (int)'#':
                 case (int)TokenType.NOT:
                     var unexp = new UnaryExpression(LookAhead().m_line);
                     unexp.op = NextToken();
@@ -166,6 +168,98 @@ namespace SimpleScript
             }
             return exp;
         }
+
+        private ComplexString ParseComplexString()
+        {
+            var head = NextToken();
+            var next = LookAhead();
+
+            var exp = new ComplexString(_current.m_line);
+            if(head.m_string_type >= StringBlockType.InverseQuotation)
+            {
+                exp.is_shell = true;
+                if (next.EqualTo(TokenType.STRING)
+                    && next.m_string.Length > 3
+                    && head.m_string_type == StringBlockType.InverseThreeQuotation)
+                {
+                    int idx = 0;
+                    var str = next.m_string;
+                    while(idx < str.Length && char.IsLetter(str[idx]))
+                    {
+                        idx++;
+                    }
+                    if(idx < str.Length && str[idx] == ' ')
+                    {
+                        exp.shell_name = str.Substring(0, idx);
+                        next.m_string = str.Substring(idx + 1);
+                    }
+                }
+            }
+
+            do
+            {
+                next = NextToken();
+                if (next.EqualTo(TokenType.STRING) || next.EqualTo(TokenType.NAME))
+                {
+                    var term = new Terminator(next);
+                    exp.list.Add(term);
+                }
+                else if(next.EqualTo('{'))
+                {
+                    var term = ParseComplexItem();
+                    exp.list.Add(term);
+                }
+            } while (next.IsStringEnded);
+
+
+            return exp;
+        }
+
+        ComplexStringItem ParseComplexItem()
+        {
+            var item = new ComplexStringItem(_current.m_line);
+            item.exp = ParseExp();
+            var next = NextToken();
+            if(next.EqualTo(','))
+            {
+                next = NextToken();
+                if (next.EqualTo(TokenType.NUMBER))
+                {
+                    item.len = (int)next.m_number;
+                    if(item.len != next.m_number)
+                    {
+                        throw NewParserException($"complex string item len must be int, now is {next.m_number}", next);
+                    }
+                }
+                else
+                {
+                    throw NewParserException($"complex string item len must be int type", next);
+                }
+                next = NextToken();
+            }
+            if (next.EqualTo('|'))
+            {
+                next = NextToken();
+                if (next.EqualTo(TokenType.NAME))
+                {
+                    item.format = next.m_string;
+                }
+                else
+                {
+                    throw NewParserException($"complex string item format must be a string", next);
+                }
+                next = NextToken();
+            }
+            if (next.EqualTo('}'))
+            {
+                return item;
+            }
+            else
+            {
+                throw NewParserException("complex string item expect '}' to end", next);
+            }
+        }
+
         ExpressionList ParseExpList(bool is_args = false)
         {
             var exp = new ExpressionList(LookAhead().m_line);
@@ -179,7 +273,6 @@ namespace SimpleScript
                 }
                 exp.exp_list.Add(ParseExp());
             }
-            exp.return_any_value = IsExpReturnAnyCountValue(exp.exp_list[exp.exp_list.Count - 1]);
             return exp;
         }
         FunctionBody ParseFunctionDef()
@@ -465,6 +558,8 @@ namespace SimpleScript
                         statement = ParseBreakStatement(); break;
                     case (int)TokenType.CONTINUE:
                         statement = ParseContinueStatement(); break;
+                    case (int)TokenType.TRY:
+                        statement = ParseTryStatement(); break;
                     default:
                         statement = ParseOtherStatement();
                         break;
@@ -474,6 +569,24 @@ namespace SimpleScript
                 list.Add(statement);
             }
         }
+
+        private SyntaxTree ParseTryStatement()
+        {
+            NextToken();
+            var statement = new TryStatement(_current.m_line);
+            statement.block = ParseBlock();
+            if (LookAhead().EqualTo(TokenType.CATCH))
+            {
+                NextToken();
+                if (LookAhead().EqualTo(TokenType.NAME))
+                {
+                    statement.catch_name = NextToken();
+                }
+                statement.catch_block = ParseBlock();
+            }
+            return statement;
+        }
+
         ReturnStatement ParseReturnStatement()
         {
             NextToken();
@@ -513,9 +626,6 @@ namespace SimpleScript
             var statement = new IfStatement(_current.m_line);
 
             var exp = ParseConditionExp();
-            if (NextToken().EqualTo('{'))
-                throw NewParserException("expect '{' for while-statement", _current);
-
             var true_branch = ParseBlock();
             var false_branch = ParseFalseBranchStatement();
 
@@ -535,17 +645,12 @@ namespace SimpleScript
             {
                 NextToken();
                 var block = ParseBlock();
-                if (NextToken().m_type != (int)TokenType.END)
-                    throw NewParserException("expect 'end' for else-statement", _current);
                 return block;
             }
-            else if (LookAhead().m_type == (int)TokenType.END)
+            else
             {
-                NextToken();
                 return null;
             }
-            else
-                throw NewParserException("expect 'end' for if-statement", _look_ahead);
         }
         FunctionStatement ParseFunctionStatement()
         {
@@ -575,57 +680,65 @@ namespace SimpleScript
         }
         FunctionBody ParseFunctionBody()
         {
-            if (NextToken().m_type != (int)'(')
-                throw NewParserException("expect '(' to start function-body", _current);
             var statement = new FunctionBody(_current.m_line);
             statement.param_list = ParseParamList();
-            if (NextToken().m_type != (int)')')
-                throw NewParserException("expect ')' after param-list", _current);
             statement.block = ParseBlock();
-            if (NextToken().m_type != (int)TokenType.END)
-                throw NewParserException("expect 'end' after function-body", _current);
 
             return statement;
         }
         ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-            statement.name_list.Add(new Token(OmsConf.MAGIC_THIS));
+            statement.name_list.Add(new Token(Config.MAGIC_THIS));
 
-            // special func(a,b,c,) is OK
-            while (LookAhead().m_type == (int)TokenType.NAME)
-            {
-                statement.name_list.Add(NextToken());
-                if (LookAhead().m_type == (int)',')
-                {
-                    NextToken();
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (LookAhead().m_type == (int)')')
-            {
-                return statement;
-            }
-            else if (LookAhead().m_type == (int)TokenType.DOTS)
+            if (LookAhead().EqualTo('('))
             {
                 NextToken();
-                statement.is_var_arg = true;
+                // special func(a,b,c,) is OK
+                while (LookAhead().m_type == (int)TokenType.NAME)
+                {
+                    statement.name_list.Add(NextToken());
+                    if (LookAhead().m_type == (int)',')
+                    {
+                        NextToken();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                if (LookAhead().m_type == (int)TokenType.DOTS)
+                {
+                    NextToken();
+                    statement.is_var_arg = true;
+                }
+
+                if (NextToken().EqualTo(')') == false)
+                {
+                    throw NewParserException("unexpect token at param-list end", _look_ahead);
+                }
             }
-            else
-                throw NewParserException("unexpect token at param-list end", _look_ahead);
+            else if(LookAhead().EqualTo('{') == false)
+            {
+                throw NewParserException("expect '(' or '{' to start function body", _look_ahead);
+            }
 
             return statement;
         }
         SyntaxTree ParseForStatement()
         {
             NextToken();// skip 'for'
+            if (LookAhead().EqualTo('{'))
+            {
+                var statement = new ForeverStatement(_current.m_line);
+                statement.block = ParseBlock();
+                return statement;
+            }
+            else if (LookAhead().m_type != (int)TokenType.NAME)
+            {
+                throw NewParserException("expect 'id' or '{' after 'for'", _look_ahead);
+            }
 
-            if (LookAhead().m_type != (int)TokenType.NAME)
-                throw NewParserException("expect 'id' after 'for'", _look_ahead);
             if (LookAhead2().m_type == (int)'=')
                 return ParseForNumStatement();
             else
@@ -650,11 +763,7 @@ namespace SimpleScript
                 statement.exp3 = ParseExp();
             }
 
-            if (NextToken().m_type != (int)TokenType.DO)
-                throw NewParserException("expect 'do' to start for-body", _current);
             statement.block = ParseBlock();
-            if (NextToken().m_type != (int)TokenType.END)
-                throw NewParserException("expect 'end' to complete for-body", _current);
 
             return statement;
         }
@@ -664,14 +773,10 @@ namespace SimpleScript
             statement.name_list = ParseNameList();
             if (NextToken().m_type != (int)TokenType.IN)
                 throw NewParserException("expect 'in' in for-in-statement", _current);
-            // 这个结构特殊，返回的是迭代器，
+            // 比较特殊，可能是：1. iter 2. function,first_idx 3. Table or Array
             statement.exp_list = ParseExpList();
 
-            if (NextToken().m_type != (int)TokenType.DO)
-                throw NewParserException("expect 'do' to start for-in-body", _current);
             statement.block = ParseBlock();
-            if (NextToken().m_type != (int)TokenType.END)
-                throw NewParserException("expect 'end' to complete for-in-body", _current);
 
             return statement;
         }
@@ -703,7 +808,7 @@ namespace SimpleScript
         {
             var statement = new LocalNameListStatement(_current.m_line);
             statement.name_list = ParseNameList();
-            if (LookAhead().m_type == (int)'=')
+            if (LookAhead().m_type == '=')
             {
                 NextToken();
                 statement.exp_list = ParseExpList();
@@ -736,7 +841,7 @@ namespace SimpleScript
             _current = null;
             _look_ahead = null;
             _look_ahead2 = null;
-            return ParseChunk();
+            return ParseModule();
         }
     }
 }
