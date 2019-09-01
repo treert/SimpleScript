@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SS.Test
+namespace SimpleScript.Test
 {
     abstract class TestBase
     {

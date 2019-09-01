@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SS
+namespace SimpleScript
 {
     public abstract class SyntaxTree
     {
@@ -14,18 +14,18 @@ namespace SS
         }
     }
 
-    public class Chunk : SyntaxTree
+    public class ModuleTree : SyntaxTree
     {
-        public Chunk()
+        public ModuleTree()
         {
             _line = 0;
         }
-        public Block block;
+        public BlockTree block;
     }
 
-    public class Block : SyntaxTree
+    public class BlockTree : SyntaxTree
     {
-        public Block(int line_)
+        public BlockTree(int line_)
         {
             _line = line_;
         }
@@ -57,15 +57,6 @@ namespace SS
         }
     }
 
-    public class DoStatement : SyntaxTree
-    {
-        public DoStatement(int line_)
-        {
-            _line = line_;
-        }
-        public Block block;
-    }
-
     public class WhileStatement : SyntaxTree
     {
         public WhileStatement(int line_)
@@ -73,7 +64,7 @@ namespace SS
             _line = line_;
         }
         public SyntaxTree exp;
-        public Block block;
+        public BlockTree block;
     }
 
     public class IfStatement : SyntaxTree
@@ -83,7 +74,7 @@ namespace SS
             _line = line_;
         }
         public SyntaxTree exp;
-        public Block true_branch;
+        public BlockTree true_branch;
         public SyntaxTree false_branch;
     }
 
@@ -97,7 +88,7 @@ namespace SS
         public SyntaxTree exp1;
         public SyntaxTree exp2;
         public SyntaxTree exp3;
-        public Block block;
+        public BlockTree block;
     }
 
     public class ForInStatement : SyntaxTree
@@ -108,7 +99,7 @@ namespace SS
         }
         public NameList name_list;
         public ExpressionList exp_list;
-        public Block block;
+        public BlockTree block;
     }
 
 
@@ -222,7 +213,7 @@ namespace SS
             _line = line_;
         }
         public ParamList param_list;
-        public Block block;
+        public BlockTree block;
     }
 
     public class ParamList : SyntaxTree

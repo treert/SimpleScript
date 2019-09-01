@@ -1,14 +1,12 @@
-﻿using SS.Test;
+﻿using SimpleScript.Test;
 using System;
 
-namespace ss
+
+class Program
 {
-    class Program
+    static void Main(string[] args)
     {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Hello World!");
-            TestManager.RunTest();
-        }
+        Console.WriteLine("Hello World!");
+        TestManager.RunTest();
     }
 }

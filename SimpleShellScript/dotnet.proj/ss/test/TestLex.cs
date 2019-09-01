@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SS.Test
+namespace SimpleScript.Test
 {
     class TestLex1 : TestBase
     {
@@ -96,10 +96,9 @@ namespace SS.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"and do else elseif false for def global if in local 
-nil not or return then true while");
+            lex.Init(@"and else elseif false for function global if in local 
+nil not or return true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.AND);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DO);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSEIF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FALSE);
@@ -113,7 +112,6 @@ nil not or return then true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.NOT);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.OR);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.RETURN);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.THEN);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.TRUE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.WHILE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.EOS);

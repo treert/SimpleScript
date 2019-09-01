@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SS
+namespace SimpleScript
 {
     public enum TokenType
     {
@@ -13,12 +13,11 @@ namespace SS
         AND = 257,
         BREAK,
         CONTINUE,// break and continue use exception to implement
-        DO,// do not like lua, not use in do-while
         ELSE,
         ELSEIF,
         FALSE,
         FOR,
-        FUNCTION,// use def like python
+        FUNCTION,
         GLOBAL,
         IF,
         IN,
@@ -26,11 +25,8 @@ namespace SS
         NIL,// use null
         NOT,
         OR,
-        REPEAT,// current not used
         RETURN,
-        THEN,
         TRUE,
-        UNTIL,// current not used
         WHILE,
         // other terminal symbols
         CONCAT,// .. string concat
@@ -119,25 +115,21 @@ namespace SS
                 {"and", TokenType.AND},
                 {"break", TokenType.BREAK},
                 {"continue", TokenType.CONTINUE},
-                {"do", TokenType.DO},
                 {"else", TokenType.ELSE},
                 {"elseif", TokenType.ELSEIF},
                 {"false", TokenType.FALSE},
                 {"for", TokenType.FOR},
                 {"global", TokenType.GLOBAL},
-                {"def", TokenType.FUNCTION},
+                {"function", TokenType.FUNCTION},
                 {"if", TokenType.IF},
                 {"in", TokenType.IN},
                 {"local", TokenType.LOCAL},
                 {"nil", TokenType.NIL},
                 {"not", TokenType.NOT},
                 {"or", TokenType.OR},
-                {"repeat", TokenType.REPEAT},
                 {"return", TokenType.RETURN},
-                {"then", TokenType.THEN},
                 {"true", TokenType.TRUE},
                 {"while", TokenType.WHILE},
-                {"until", TokenType.UNTIL},
             };
         }
 
