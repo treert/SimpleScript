@@ -141,19 +141,25 @@ namespace SimpleScript
         public List<Token> names = new List<Token>();
     }
 
-    public class LocalFunctionStatement : SyntaxTree
+    public abstract class ScopeStatement : SyntaxTree
     {
-        public LocalFunctionStatement(int line_)
+        public bool is_global = false;
+    }
+
+    public class ScopeFunctionStatement : ScopeStatement
+    {
+        public ScopeFunctionStatement(int line_)
         {
             _line = line_;
         }
+        
         public Token name;
         public FunctionBody func_body;
     }
 
-    public class LocalNameListStatement : SyntaxTree
+    public class ScopeNameListStatement : ScopeStatement
     {
-        public LocalNameListStatement(int line_)
+        public ScopeNameListStatement(int line_)
         {
             _line = line_;
         }

@@ -551,7 +551,13 @@ namespace SimpleScript
                     case (int)TokenType.FUNCTION:
                         statement = ParseFunctionStatement(); break;
                     case (int)TokenType.LOCAL:
-                        statement = ParseLocalStatement(); break;
+                    case (int)TokenType.GLOBAL:
+                        {
+                            var state = ParseScopeStatement();
+                            state.is_global = token_ahead.EqualTo(TokenType.GLOBAL);
+                            statement = state;
+                            break;
+                        }
                     case (int)TokenType.RETURN:
                         statement = ParseReturnStatement(); break;
                     case (int)TokenType.BREAK:
@@ -781,21 +787,21 @@ namespace SimpleScript
             return statement;
         }
 
-        SyntaxTree ParseLocalStatement()
+        ScopeStatement ParseScopeStatement()
         {
             NextToken();// skip 'local'
 
             if (LookAhead().m_type == (int)TokenType.FUNCTION)
-                return ParseLocalFunction();
+                return ParseScopeFunction();
             else if (LookAhead().m_type == (int)TokenType.NAME)
-                return ParseLocalNameList();
+                return ParseScopeNameList();
             else
-                throw NewParserException("unexpect token after 'local'", _look_ahead);
+                throw NewParserException("unexpect token after 'local' or 'global'", _look_ahead);
         }
-        LocalFunctionStatement ParseLocalFunction()
+        ScopeFunctionStatement ParseScopeFunction()
         {
             NextToken();// skip 'function'
-            var statement = new LocalFunctionStatement(_current.m_line);
+            var statement = new ScopeFunctionStatement(_current.m_line);
 
             if (NextToken().m_type != (int)TokenType.NAME)
                 throw NewParserException("expect 'id' after 'local function'", _current);
@@ -804,9 +810,9 @@ namespace SimpleScript
             statement.func_body = ParseFunctionBody();
             return statement;
         }
-        LocalNameListStatement ParseLocalNameList()
+        ScopeNameListStatement ParseScopeNameList()
         {
-            var statement = new LocalNameListStatement(_current.m_line);
+            var statement = new ScopeNameListStatement(_current.m_line);
             statement.name_list = ParseNameList();
             if (LookAhead().m_type == '=')
             {
