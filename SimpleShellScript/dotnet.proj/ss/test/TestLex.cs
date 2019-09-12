@@ -96,14 +96,13 @@ namespace SimpleScript.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"and else elseif false for function global if in local 
+            lex.Init(@"and else elseif false for global if in local 
 nil not or return true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.AND);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSEIF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FALSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOR);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FUNCTION);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.GLOBAL);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IN);
@@ -141,30 +140,30 @@ nil not or return true while");
 ..```bash `lalala`
 ```
 } \n \t end""");
-            ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
+            ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
             ExpectTrue(lex.CurStringType == StringBlockType.DoubleQuotation);
             {
-                ExpectTrue(lex.GetNextToken().EqualTo('{'));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.NAME));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
+                ExpectTrue(lex.GetNextToken().Match('{'));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.NAME));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
                 ExpectTrue(lex.CurStringType == StringBlockType.SingleQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "'");
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
                 ExpectTrue(lex.CurStringType == StringBlockType.InverseQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "ls -l");
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.CONCAT));
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING_BEGIN));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
                 ExpectTrue(lex.CurStringType == StringBlockType.InverseThreeQuotation);
-                ExpectTrue(lex.GetNextToken().EqualTo(TokenType.STRING));
-                ExpectTrue(lex.GetNextToken().EqualTo('}'));
+                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING));
+                ExpectTrue(lex.GetNextToken().Match('}'));
             }
             ExpectTrue(lex.GetNextToken().m_string == " \n \t end");
             ExpectTrue(lex.IsStringEnded);
-            ExpectTrue(lex.GetNextToken().EqualTo(TokenType.EOS));
+            ExpectTrue(lex.GetNextToken().Match(TokenType.EOS));
         }
     }
 }

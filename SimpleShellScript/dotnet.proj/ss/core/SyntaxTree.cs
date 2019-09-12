@@ -152,7 +152,7 @@ namespace SimpleScript
         {
             _line = line_;
         }
-        
+
         public Token name;
         public FunctionBody func_body;
     }
@@ -185,7 +185,17 @@ namespace SimpleScript
         }
         public SyntaxTree var;
         public SyntaxTree exp;// ++ or -- when exp is null
-        public bool is_add_op;
+        public TokenType op;
+
+        public static bool NeedWork(TokenType type)
+        {
+            return type > TokenType.SpecialAssignBegin && type < TokenType.SpecialAssignEnd;
+        }
+
+        public static bool IsSelfMode(TokenType type)
+        {
+            return type > TokenType.SpecialAssignBegin && type < TokenType.SpecialAssignSelfEnd;
+        }
     }
 
     public class NameList : SyntaxTree
@@ -248,7 +258,8 @@ namespace SimpleScript
             _line = line_;
         }
         public List<Token> name_list = new List<Token>();
-        public bool is_var_arg = false;
+        public Token kw_name = null;
+        public List<Token> kw_list = new List<Token>();
     }
     public class TableDefine : SyntaxTree
     {
@@ -287,9 +298,24 @@ namespace SimpleScript
             _line = line_;
         }
         public SyntaxTree caller;
-        public ExpressionList args;
+        public ArgsList args;
     }
 
+    public class ArgsList : SyntaxTree
+    {
+        public ArgsList(int line_)
+        {
+            _line = line_;
+        }
+        public class KW
+        {
+            public Token k;
+            public SyntaxTree w;
+        }
+        public List<SyntaxTree> exp_list = new List<SyntaxTree>();
+        public SyntaxTree kw_table = null;
+        public List<KW> kw_exp_list = new List<KW>();
+    }
 
     public class ExpressionList : SyntaxTree
     {
@@ -320,5 +346,16 @@ namespace SimpleScript
         public SyntaxTree exp;
         public int len = 0;
         public string format = null;
+    }
+
+    public class QuestionExp : SyntaxTree
+    {
+        public QuestionExp(int line_)
+        {
+            _line = line_;
+        }
+        public SyntaxTree a;// exp = a ? b : c
+        public SyntaxTree b;
+        public SyntaxTree c;// if c == null then exp = a ? b, 并且这儿 a 只判断是否是nil，专门用于默认值语法的。
     }
 }

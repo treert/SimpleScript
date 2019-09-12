@@ -17,7 +17,7 @@ namespace SimpleScript
         ELSEIF,
         FALSE,
         FOR,
-        FUNCTION,
+        // FUNCTION,// 使用 ? 语法结构替代了。另外，由于?还被用于三目运算符，不能简单把?等价成Function。这个问题，以后想想
         GLOBAL,
         IF,
         IN,
@@ -38,11 +38,14 @@ namespace SimpleScript
         GE,// >=
         LE,// <=
         NE,// !=
+        SpecialAssignBegin,
         ADD_SELF,// +=
         DEC_SELF,// -=
         CONCAT_SELF,// .=
+        SpecialAssignSelfEnd,
         ADD_ONE,// ++
         DEC_ONE,// --
+        SpecialAssignEnd,
         NUMBER,
         STRING_BEGIN,// 方便词法解析代码编写，字符串可能被$语法打断
         STRING,
@@ -108,12 +111,12 @@ namespace SimpleScript
             m_type = (int)char_;
         }
 
-        public bool EqualTo(char char_)
+        public bool Match(char char_)
         {
             return m_type == (int)char_;
         }
 
-        public bool EqualTo(TokenType type_)
+        public bool Match(TokenType type_)
         {
             return m_type == (int)type_;
         }
@@ -140,7 +143,7 @@ namespace SimpleScript
                 {"false", TokenType.FALSE},
                 {"for", TokenType.FOR},
                 {"global", TokenType.GLOBAL},
-                {"function", TokenType.FUNCTION},
+                // {"function", TokenType.FUNCTION},// 使用 ? 语法结构替代了
                 {"if", TokenType.IF},
                 {"in", TokenType.IN},
                 {"local", TokenType.LOCAL},

@@ -22,7 +22,7 @@ namespace SimpleScript
 
         static bool IsVar(SyntaxTree t)
         {
-            return t is TableAccess || t is Terminator;
+            return t is TableAccess || (t is Terminator && (t as Terminator).token.Match(TokenType.NAME));
         }
 
         Lex _lex;
@@ -67,8 +67,8 @@ namespace SimpleScript
                 token_type == (int)TokenType.STRING ||
                 token_type == (int)TokenType.STRING_BEGIN || 
                 token_type == (int)TokenType.DOTS ||
-                token_type == (int)TokenType.FUNCTION ||
                 token_type == (int)TokenType.NAME ||
+                token_type == '?' ||
                 token_type == (int)'(' ||
                 token_type == (int)'{' ||
                 token_type == (int)'-' ||
@@ -106,6 +106,7 @@ namespace SimpleScript
             var exp = ParseMainExp();
             while (true)
             {
+                // 针对二目算符优先文法的算法
                 int right_priority = GetOpPriority(LookAhead());
                 if (left_priority < right_priority || (left_priority == right_priority && IsRightAssociation(LookAhead())))
                 {
@@ -115,14 +116,28 @@ namespace SimpleScript
                 }
                 else
                 {
-                    return exp;
+                    break;
                 }
             }
+            // for a ? b : c, 三目运算符的优先级最低，实际运行结果来看，三目运算符还具有右结合性质
+            if (left_priority == 0 && LookAhead().Match('?'))
+            {
+                NextToken();
+                var qa = new QuestionExp(exp.line);
+                qa.a = exp;
+                qa.b = ParseExp();
+                if (LookAhead().Match(':'))
+                {
+                    qa.c = ParseExp();
+                }
+                exp = qa;
+            }
+            return exp;
         }
 
         SyntaxTree ParseConditionExp()
         {
-            if (LookAhead().EqualTo('{'))
+            if (LookAhead().Match('{'))
             {
                 throw NewParserException("condition exp should not start with '{'", _look_ahead);
             }
@@ -140,17 +155,19 @@ namespace SimpleScript
                 case (int)TokenType.NUMBER:
                 case (int)TokenType.STRING:
                 case (int)TokenType.DOTS:
+                case (int)TokenType.NAME:
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.STRING_BEGIN:
                     exp = ParseComplexString();
                     break;
-                case (int)TokenType.FUNCTION:
+                case '?':
                     exp = ParseFunctionDef();
                     break;
-                case (int)TokenType.NAME:
                 case (int)'(':
-                    exp = ParsePrefixExp();
+                    exp = ParseExp();
+                    if (NextToken().m_type != (int)')')
+                        throw NewParserException("expect ')' to match Main Exp's head '('", _current);
                     break;
                 case (int)'{':
                     exp = ParseTableConstructor();
@@ -166,7 +183,7 @@ namespace SimpleScript
                 default:
                     throw NewParserException("unexpect token for main exp", _look_ahead);
             }
-            return exp;
+            return ParseTailExp(exp);
         }
 
         private ComplexString ParseComplexString()
@@ -178,7 +195,7 @@ namespace SimpleScript
             if(head.m_string_type >= StringBlockType.InverseQuotation)
             {
                 exp.is_shell = true;
-                if (next.EqualTo(TokenType.STRING)
+                if (next.Match(TokenType.STRING)
                     && next.m_string.Length > 3
                     && head.m_string_type == StringBlockType.InverseThreeQuotation)
                 {
@@ -199,12 +216,12 @@ namespace SimpleScript
             do
             {
                 next = NextToken();
-                if (next.EqualTo(TokenType.STRING) || next.EqualTo(TokenType.NAME))
+                if (next.Match(TokenType.STRING) || next.Match(TokenType.NAME))
                 {
                     var term = new Terminator(next);
                     exp.list.Add(term);
                 }
-                else if(next.EqualTo('{'))
+                else if(next.Match('{'))
                 {
                     var term = ParseComplexItem();
                     exp.list.Add(term);
@@ -220,10 +237,10 @@ namespace SimpleScript
             var item = new ComplexStringItem(_current.m_line);
             item.exp = ParseExp();
             var next = NextToken();
-            if(next.EqualTo(','))
+            if(next.Match(','))
             {
                 next = NextToken();
-                if (next.EqualTo(TokenType.NUMBER))
+                if (next.Match(TokenType.NUMBER))
                 {
                     item.len = (int)next.m_number;
                     if(item.len != next.m_number)
@@ -237,10 +254,10 @@ namespace SimpleScript
                 }
                 next = NextToken();
             }
-            if (next.EqualTo('|'))
+            if (next.Match('|'))
             {
                 next = NextToken();
-                if (next.EqualTo(TokenType.NAME))
+                if (next.Match(TokenType.NAME))
                 {
                     item.format = next.m_string;
                 }
@@ -250,7 +267,7 @@ namespace SimpleScript
                 }
                 next = NextToken();
             }
-            if (next.EqualTo('}'))
+            if (next.Match('}'))
             {
                 return item;
             }
@@ -302,59 +319,87 @@ namespace SimpleScript
         }
         FuncCall ParseFunctionCall(SyntaxTree caller)
         {
+            Debug.Assert(LookAhead().Match('('));// 基本的函数调用只支持语法 f(arg,...)，后面可以安排写语法糖什么的。
             var func_call = new FuncCall(LookAhead().m_line);
             func_call.caller = caller;
             func_call.args = ParseArgs();
             return func_call;
         }
-        ExpressionList ParseArgs()
+        ArgsList ParseArgs()
         {
-            ExpressionList exp_list = null;
-            if (LookAhead().m_type == (int)'(')
+            NextToken();// skip '('
+            ArgsList list = new ArgsList(_current.m_line);
+            // arg,arg,*table,name=arg,name=arg,
+            bool has_args = false;
+            while (IsMainExp())
             {
+                if (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('=')) break;
+                has_args = true;
+                list.exp_list.Add(ParseExp());
+                if (LookAhead().Match(','))
+                {
+                    NextToken();
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            if (LookAhead().Match('*'))
+            {
+                if (has_args && !_current.Match(','))
+                {
+                    throw NewParserException("expect ',' to split args and *", _current);
+                }
+                has_args = true;
                 NextToken();
-                if (LookAhead().m_type != (int)')')
-                    exp_list = ParseExpList(true);
+                list.kw_table = ParseMainExp();
+                if (LookAhead().Match(','))
+                {
+                    NextToken();
+                }
+            }
 
-                if (NextToken().m_type != (int)')')
-                    throw NewParserException("expect ')' to end function-args", _current);
-            }
-            else if (LookAhead().m_type == (int)'{')
+            if (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('='))
             {
-                exp_list = new ExpressionList(LookAhead().m_line);
-                exp_list.exp_list.Add(ParseTableConstructor());
+                if (has_args && !_current.Match(','))
+                {
+                    throw NewParserException("expect ',' to split args and name_args", _current);
+                }
+                while (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('='))
+                {
+                    ArgsList.KW kw = new ArgsList.KW();
+                    kw.k = NextToken();
+                    NextToken();
+                    kw.w = ParseExp();
+                    if (LookAhead().Match(','))
+                    {
+                        NextToken();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
-            else
-                throw NewParserException("expect '(' or '{' to start function-args", _look_ahead);
-            return exp_list;
+
+            if (NextToken().m_type != (int)')')
+                throw NewParserException("expect ')' to end function-args", _current);
+
+            return list;
         }
-        SyntaxTree ParsePrefixExp()
-        {
-            NextToken();
-            Debug.Assert(_current.m_type == (int)TokenType.NAME
-                || _current.m_type == (int)'(');
-            SyntaxTree exp;
-            if (_current.m_type == (int)'(')
-            {
-                exp = ParseExp();
-                if (NextToken().m_type != (int)')')
-                    throw NewParserException("expect ')'", _current);
-            }
-            else
-            {
-                exp = new Terminator(_current);
-            }
 
+        SyntaxTree ParseTailExp(SyntaxTree exp)
+        {
             // table index or func call
             for (; ; )
             {
-                if (LookAhead().m_type == (int)'['
-                    || LookAhead().m_type == (int)'.')
+                if (LookAhead().Match('[') || LookAhead().Match('.'))
                 {
                     exp = ParseTableAccessor(exp);
                 }
-                else if (LookAhead().m_type == (int)'('
-                    || LookAhead().m_type == (int)'{')
+                else if (LookAhead().Match('('))
                 {
                     exp = ParseFunctionCall(exp);
                 }
@@ -365,86 +410,54 @@ namespace SimpleScript
             }
             return exp;
         }
+
         SyntaxTree ParseOtherStatement()
         {
-            // lua做了限制，其他语句只有两种，assign statement and func call
+            // 没什么限制，基本可以随意写些MainExp
+            // 重点处理的是一些赋值类语句，赋值类语句的左值必须是var类型的
             // SS还增加几个语法支持，+=，-=，++，--
-            SyntaxTree exp;
-            if (LookAhead().m_type == (int)TokenType.NAME)
-            {
-                exp = ParsePrefixExp();
-                if (IsVar(exp))
-                {
-                    if (LookAhead().m_type == (int)TokenType.ADD_ONE)
-                    {
-                        // ++
-                        NextToken();
-                        var special_statement = new SpecialAssginStatement(_current.m_line);
-                        special_statement.var = exp;
-                        special_statement.is_add_op = true;
-                        return special_statement;
-                    }
-                    else if (LookAhead().m_type == (int)TokenType.ADD_SELF)
-                    {
-                        // +=
-                        NextToken();
-                        var special_statement = new SpecialAssginStatement(_current.m_line);
-                        special_statement.var = exp;
-                        special_statement.exp = ParseExp();
-                        special_statement.is_add_op = true;
-                        return special_statement;
-                    }
-                    else if (LookAhead().m_type == (int)TokenType.DEC_ONE)
-                    {
-                        // --
-                        NextToken();
-                        var special_statement = new SpecialAssginStatement(_current.m_line);
-                        special_statement.var = exp;
-                        special_statement.is_add_op = false;
-                        return special_statement;
-                    }
-                    else if (LookAhead().m_type == (int)TokenType.DEC_SELF)
-                    {
-                        // -=
-                        NextToken();
-                        var special_statement = new SpecialAssginStatement(_current.m_line);
-                        special_statement.var = exp;
-                        special_statement.exp = ParseExp();
-                        special_statement.is_add_op = false;
-                        return special_statement;
-                    }
+            if(IsMainExp() == false) return null;
 
-                    // assign statement
-                    var assign_statement = new AssignStatement(LookAhead().m_line);
+            SyntaxTree exp = ParseMainExp();
+            if (LookAhead().Match('=') || LookAhead().Match(','))
+            {
+                // assign statement
+                if (!IsVar(exp))
+                    throw NewParserException("expect var for assign statement", _current);
+                var assign_statement = new AssignStatement(LookAhead().m_line);
+                assign_statement.var_list.Add(exp);
+                while (LookAhead().m_type != (int)'=')
+                {
+                    if (NextToken().m_type != (int)',')
+                        throw NewParserException("expect ',' to split var-list", _current);
+                    if (LookAhead().m_type != (int)TokenType.NAME)
+                        throw NewParserException("expect 'id' to start var", _look_ahead);
+                    exp = ParseMainExp();
+                    if (!IsVar(exp))
+                        throw NewParserException("expect var for assign statement", _current);
                     assign_statement.var_list.Add(exp);
-                    while (LookAhead().m_type != (int)'=')
-                    {
-                        if (NextToken().m_type != (int)',')
-                            throw NewParserException("expect ',' to split var-list", _current);
-                        if (LookAhead().m_type != (int)TokenType.NAME)
-                            throw NewParserException("expect 'id' to start var", _look_ahead);
-                        exp = ParsePrefixExp();
-                        if (!IsVar(exp))
-                            throw NewParserException("expect var here", _current);
-                        assign_statement.var_list.Add(exp);
-                    }
-                    NextToken();// skip '='
-                    assign_statement.exp_list = ParseExpList();
+                }
+                NextToken();// skip '='
+                assign_statement.exp_list = ParseExpList();
 
-                    return assign_statement;
-                }
-                else
-                {
-                    Debug.Assert(exp is FuncCall);
-                    return exp;
-                }
+                return assign_statement;
             }
-            else
+            var type = (TokenType)LookAhead().m_type;
+            if (SpecialAssginStatement.NeedWork(type))
             {
-                if (IsMainExp())
-                    throw NewParserException("unsupport statement", _look_ahead);
-                return null;
+                if (!IsVar(exp))
+                    throw NewParserException("expect var here", _current);
+                var special_statement = new SpecialAssginStatement(_current.m_line);
+                special_statement.var = exp;
+                special_statement.op = type;
+                if (SpecialAssginStatement.IsSelfMode(type))
+                {
+                    special_statement.exp = ParseExp();
+                }
+                return special_statement;
             }
+
+            return exp;// 不限制了
         }
         TableField ParseTableIndexField()
         {
@@ -521,13 +534,13 @@ namespace SimpleScript
         }
         BlockTree ParseBlock()
         {
-            if (NextToken().EqualTo('{'))
+            if (NextToken().Match('{'))
                 throw NewParserException("expect '{' to begin block", _current);
 
             var block = new BlockTree(_current.m_line);
             ParseStatements(block.statements);
 
-            if (NextToken().EqualTo('}'))
+            if (NextToken().Match('}'))
                 throw NewParserException("expect '}' to end block", _current);
             return block;
         }
@@ -548,13 +561,13 @@ namespace SimpleScript
                         statement = ParseIfStatement(); break;
                     case (int)TokenType.FOR:
                         statement = ParseForStatement(); break;
-                    case (int)TokenType.FUNCTION:
+                    case '?':
                         statement = ParseFunctionStatement(); break;
                     case (int)TokenType.LOCAL:
                     case (int)TokenType.GLOBAL:
                         {
                             var state = ParseScopeStatement();
-                            state.is_global = token_ahead.EqualTo(TokenType.GLOBAL);
+                            state.is_global = token_ahead.Match(TokenType.GLOBAL);
                             statement = state;
                             break;
                         }
@@ -581,10 +594,10 @@ namespace SimpleScript
             NextToken();
             var statement = new TryStatement(_current.m_line);
             statement.block = ParseBlock();
-            if (LookAhead().EqualTo(TokenType.CATCH))
+            if (LookAhead().Match(TokenType.CATCH))
             {
                 NextToken();
-                if (LookAhead().EqualTo(TokenType.NAME))
+                if (LookAhead().Match(TokenType.NAME))
                 {
                     statement.catch_name = NextToken();
                 }
@@ -660,7 +673,7 @@ namespace SimpleScript
         }
         FunctionStatement ParseFunctionStatement()
         {
-            NextToken();// skip 'function'
+            NextToken();
 
             var statement = new FunctionStatement(_current.m_line);
             statement.func_name = ParseFunctionName();
@@ -670,7 +683,7 @@ namespace SimpleScript
         FunctionName ParseFunctionName()
         {
             if (NextToken().m_type != (int)TokenType.NAME)
-                throw NewParserException("expect 'id' after 'function'", _current);
+                throw NewParserException("expect 'id' to name function", _current);
 
             var func_name = new FunctionName(_current.m_line);
             func_name.names.Add(_current);
@@ -695,16 +708,16 @@ namespace SimpleScript
         ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-            statement.name_list.Add(new Token(Config.MAGIC_THIS));
-
-            if (LookAhead().EqualTo('('))
+            statement.kw_list.Add(new Token(Config.MAGIC_THIS));// this 当成命名参数
+            
+            if (LookAhead().Match('('))
             {
                 NextToken();
-                // special func(a,b,c,) is OK
-                while (LookAhead().m_type == (int)TokenType.NAME)
+                // a,b,c,d
+                while (LookAhead().Match(TokenType.NAME))
                 {
                     statement.name_list.Add(NextToken());
-                    if (LookAhead().m_type == (int)',')
+                    if (LookAhead().Match(','))
                     {
                         NextToken();
                     }
@@ -713,20 +726,36 @@ namespace SimpleScript
                         break;
                     }
                 }
-                if (LookAhead().m_type == (int)TokenType.DOTS)
+                if (LookAhead().Match('*'))
                 {
+                    if(_current.Match(',') == false && statement.name_list.Count > 0)
+                    {
+                        throw NewParserException("expect ',' before *", _current);
+                    }
                     NextToken();
-                    statement.is_var_arg = true;
+                    if (LookAhead().Match(TokenType.NAME))
+                    {
+                        statement.kw_name = NextToken();
+                    }
                 }
 
-                if (NextToken().EqualTo(')') == false)
+                while (LookAhead().Match(','))
                 {
-                    throw NewParserException("unexpect token at param-list end", _look_ahead);
+                    NextToken();
+                    if (LookAhead().Match(TokenType.NAME))
+                    {
+                        statement.kw_list.Add(NextToken());
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
-            }
-            else if(LookAhead().EqualTo('{') == false)
-            {
-                throw NewParserException("expect '(' or '{' to start function body", _look_ahead);
+
+                if (NextToken().Match(')') == false)
+                {
+                    throw NewParserException("expect ')' to end param-list", _current);
+                }
             }
 
             return statement;
@@ -734,7 +763,7 @@ namespace SimpleScript
         SyntaxTree ParseForStatement()
         {
             NextToken();// skip 'for'
-            if (LookAhead().EqualTo('{'))
+            if (LookAhead().Match('{'))
             {
                 var statement = new ForeverStatement(_current.m_line);
                 statement.block = ParseBlock();
@@ -789,9 +818,10 @@ namespace SimpleScript
 
         ScopeStatement ParseScopeStatement()
         {
+
             NextToken();// skip 'local'
 
-            if (LookAhead().m_type == (int)TokenType.FUNCTION)
+            if (LookAhead().Match('?'))
                 return ParseScopeFunction();
             else if (LookAhead().m_type == (int)TokenType.NAME)
                 return ParseScopeNameList();
@@ -800,11 +830,11 @@ namespace SimpleScript
         }
         ScopeFunctionStatement ParseScopeFunction()
         {
-            NextToken();// skip 'function'
+            NextToken();
             var statement = new ScopeFunctionStatement(_current.m_line);
 
             if (NextToken().m_type != (int)TokenType.NAME)
-                throw NewParserException("expect 'id' after 'local function'", _current);
+                throw NewParserException("expect 'id' to name scope function", _current);
 
             statement.name = _current;
             statement.func_body = ParseFunctionBody();
