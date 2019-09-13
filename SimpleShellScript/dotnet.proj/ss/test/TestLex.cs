@@ -96,14 +96,15 @@ namespace SimpleScript.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"and else elseif false for global if in local 
+            lex.Init(@"and else elseif global false for fn if in local 
 nil not or return true while");
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.AND);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSEIF);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.GLOBAL);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FALSE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOR);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.GLOBAL);
+            ExpectTrue(lex.GetNextToken().Match(TokenType.FUNCTION));
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IN);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.LOCAL);

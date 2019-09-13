@@ -17,7 +17,9 @@ namespace SimpleScript
         ELSEIF,
         FALSE,
         FOR,
-        // FUNCTION,// 使用 ? 语法结构替代了。另外，由于?还被用于三目运算符，不能简单把?等价成Function。这个问题，以后想想
+        // 像rust一样，使用fn关键字，之前想着用?的，虽然也挺好，但感觉没有fn方便。
+        // 之所以不想用function，一是长，二是function是名词。
+        FUNCTION,
         GLOBAL,
         IF,
         IN,
@@ -140,10 +142,10 @@ namespace SimpleScript
                 {"continue", TokenType.CONTINUE},
                 {"else", TokenType.ELSE},
                 {"elseif", TokenType.ELSEIF},
+                {"global", TokenType.GLOBAL},
                 {"false", TokenType.FALSE},
                 {"for", TokenType.FOR},
-                {"global", TokenType.GLOBAL},
-                // {"function", TokenType.FUNCTION},// 使用 ? 语法结构替代了
+                {"fn", TokenType.FUNCTION},// 使用fn缩写
                 {"if", TokenType.IF},
                 {"in", TokenType.IN},
                 {"local", TokenType.LOCAL},

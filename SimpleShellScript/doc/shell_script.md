@@ -30,8 +30,8 @@ stat ::=
      "foreach" Name ["," Name] "in" exp block |
 	 "for" block |
 	 "try" block ["catch" [Name] block] | 
-     "def" funcname funcbody |
-     ("global"|"local") "def" Name funcbody |
+     "fn" funcname funcbody |
+     ("global"|"local") "fn" Name funcbody |
      ("global"|"local") namelist ["=" explist] |
      "return" [explist] |
      "break" |
@@ -61,17 +61,17 @@ tableconstructor ::= "{" {field ","} "}"
 
 field ::= "[" exp "]" "=" exp | Name "=" exp | exp
 
-exp ::= mainexp | exp binop exp
+exp ::= mainexp | exp binop exp | unop exp| ( exp ) | exp ? exp [: exp]
 
 mainexp ::= nil | false | true | Number | String |
      "..." | function | tableconstructor |
-     prefixexp | unop exp
+     mainexp {tableindex | args }
 
-function ::= "def" funcbody
+function ::= "fn" funcbody
 
 tableindex ::= "[" exp "]" | "." Name
 
-prefixexp ::= (Name | "(" exp ")") {tableindex | args }
+tailexp ::= mainexp {tableindex | args }
 
 var ::= Name [{tableindex | args } tableindex]
 

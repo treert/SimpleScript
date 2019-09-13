@@ -68,7 +68,7 @@ namespace SimpleScript
                 token_type == (int)TokenType.STRING_BEGIN || 
                 token_type == (int)TokenType.DOTS ||
                 token_type == (int)TokenType.NAME ||
-                token_type == '?' ||
+                token_type == (int)TokenType.FUNCTION ||
                 token_type == (int)'(' ||
                 token_type == (int)'{' ||
                 token_type == (int)'-' ||
@@ -161,7 +161,7 @@ namespace SimpleScript
                 case (int)TokenType.STRING_BEGIN:
                     exp = ParseComplexString();
                     break;
-                case '?':
+                case (int)TokenType.FUNCTION:
                     exp = ParseFunctionDef();
                     break;
                 case (int)'(':
@@ -561,7 +561,7 @@ namespace SimpleScript
                         statement = ParseIfStatement(); break;
                     case (int)TokenType.FOR:
                         statement = ParseForStatement(); break;
-                    case '?':
+                    case (int)TokenType.FUNCTION:
                         statement = ParseFunctionStatement(); break;
                     case (int)TokenType.LOCAL:
                     case (int)TokenType.GLOBAL:
@@ -821,7 +821,7 @@ namespace SimpleScript
 
             NextToken();// skip 'local'
 
-            if (LookAhead().Match('?'))
+            if (LookAhead().Match(TokenType.FUNCTION))
                 return ParseScopeFunction();
             else if (LookAhead().m_type == (int)TokenType.NAME)
                 return ParseScopeNameList();
