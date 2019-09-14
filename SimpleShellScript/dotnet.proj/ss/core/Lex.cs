@@ -653,6 +653,11 @@ namespace SimpleScript
                             _buf.Append('.');
                             return _ReadNumber();
                         }
+                        else if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.CONCAT_SELF);
+                        }
                         else
                         {
                             return new Token('.');
