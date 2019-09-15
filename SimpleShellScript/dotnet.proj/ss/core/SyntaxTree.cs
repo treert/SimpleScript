@@ -277,7 +277,7 @@ namespace SimpleScript
         {
             _line = line_;
         }
-        public SyntaxTree index;
+        public SyntaxTree index = null;
         public SyntaxTree value;
     }
 

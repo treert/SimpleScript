@@ -98,6 +98,20 @@ namespace SimpleScript
             m_type = (int)TokenType.STRING;
             m_string = string_;
         }
+
+        public Token ConvertToStringToken()
+        {
+            var ret = new Token();
+            ret.m_type = (int)TokenType.STRING;
+            ret.m_line = m_line;
+            ret.m_column = m_column;
+
+            // todo? 可以考虑把关键字也转变成string。
+            ret.m_string = m_string;
+
+            return ret;
+        }
+
         public Token(TokenType type_, string string_)
         {
             Debug.Assert(type_ == TokenType.NAME);
@@ -121,6 +135,13 @@ namespace SimpleScript
         public bool Match(TokenType type_)
         {
             return m_type == (int)type_;
+        }
+
+        // string有复杂的string
+        public bool IsString()
+        {
+            return m_type == (int)TokenType.STRING_BEGIN
+                || m_type == (int)TokenType.STRING;
         }
 
         public override string ToString()
@@ -585,6 +606,10 @@ namespace SimpleScript
                         _block_stack.Push(StringBlockType.BigBracket);
                         return new Token('{');
                     case '}':
+                        if(_block_stack.Peek() != StringBlockType.BigBracket)
+                        {
+                            throw NewLexException("unexpect '}', miss corresponding '{'");
+                        }
                         _NextChar();
                         _block_stack.Pop();
                         return new Token('}');

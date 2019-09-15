@@ -6,11 +6,6 @@ namespace SimpleScript
 {
     public class ScriptException : Exception
     {
-
-    }
-
-    public class BaseException : ScriptException
-    {
         protected string _info = string.Empty;
         public override string Message
         {
@@ -30,7 +25,8 @@ namespace SimpleScript
             _info = string_build.ToString();
         }
     }
-    public class LexException : BaseException
+
+    public class LexException : ScriptException
     {
         public LexException(string source_, int line_, int column_, string msg)
         {
@@ -38,7 +34,7 @@ namespace SimpleScript
         }
     }
 
-    public class ParserException : BaseException
+    public class ParserException : ScriptException
     {
         public ParserException(string source_, int line_, int column_, string msg)
         {
@@ -46,7 +42,7 @@ namespace SimpleScript
         }
     }
 
-    public class CodeGenerateException : BaseException
+    public class CodeGenerateException : ScriptException
     {
         public CodeGenerateException(string source_, int line_, string msg)
         {
@@ -54,7 +50,7 @@ namespace SimpleScript
         }
     }
 
-    public class RuntimeException : BaseException
+    public class RuntimeException : ScriptException
     {
         public RuntimeException(string source_, int line_, string format, params object[] args)
         {
@@ -69,7 +65,7 @@ namespace SimpleScript
         }
     }
 
-    public class CFunctionException : BaseException
+    public class CFunctionException : ScriptException
     {
         public CFunctionException(string format, params object[] args)
         {
@@ -79,15 +75,6 @@ namespace SimpleScript
 
     class OtherException : ScriptException
     {
-        private string _info = string.Empty;
-        public override string Message
-        {
-            get
-            {
-                return _info;
-            }
-        }
-
         public OtherException(string format, params object[] args)
         {
             _info = string.Format(format, args);

@@ -38,10 +38,12 @@ stat ::=
      "continue" |
      varlist "=" explist |
      funccall |
-     var += exp |
-     var ++ |
-     var -= exp |
-     var --
+     var self_assign exp|
+     var self_op
+
+self_assign ::= "+=" | "-=" | ".="
+
+self_op ::= "++" | "--"
 
 namelist ::= Name {"," Name}
 
@@ -51,7 +53,7 @@ funcname ::= Name {"." Name} [":" Name]
 
 funcbody ::= "(" [parlist] ")" block
 
-parlist ::= Name {"," Name} ["," "..."] | "..."
+parlist ::=  {Name ","} ["*" [Name] ","] {Name ","}
 
 explist ::= {exp ","} exp
 
@@ -77,7 +79,7 @@ var ::= Name [{tableindex | args } tableindex]
 
 funccall ::= Name {tableindex | args} [String]
 
-args ::=  "(" [explist] ")"
+args ::=  "(" {exp ","} {"*" Name ","} {Name ":" exp ","} ")"
 
 binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." |
      "<" | "<=" | ">" | ">=" | "==" | "!=" |

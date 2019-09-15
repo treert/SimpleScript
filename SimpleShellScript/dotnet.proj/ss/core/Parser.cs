@@ -165,6 +165,7 @@ namespace SimpleScript
                     exp = ParseFunctionDef();
                     break;
                 case (int)'(':
+                    NextToken();
                     exp = ParseExp();
                     if (NextToken().m_type != (int)')')
                         throw NewParserException("expect ')' to match Main Exp's head '('", _current);
@@ -226,7 +227,11 @@ namespace SimpleScript
                     var term = ParseComplexItem();
                     exp.list.Add(term);
                 }
-            } while (next.IsStringEnded);
+                else
+                {
+                    throw NewParserException("expect string,name,'{' in complex-string", next);
+                }
+            } while (next.IsStringEnded == false);
 
 
             return exp;
@@ -313,7 +318,7 @@ namespace SimpleScript
             {
                 if (NextToken().m_type != (int)TokenType.NAME)
                     throw NewParserException("expect 'id' after '.'", _current);
-                index_access.index = new Terminator(new Token(_current.m_string));
+                index_access.index = new Terminator(_current.ConvertToStringToken());
             }
             return index_access;
         }
@@ -471,21 +476,7 @@ namespace SimpleScript
             field.value = ParseExp();
             return field;
         }
-        TableField ParseTableNameField()
-        {
-            var field = new TableField(LookAhead().m_line);
-            field.index = new Terminator(new Token(NextToken().m_string));
-            NextToken();// skip '='
-            field.value = ParseExp();
-            return field;
-        }
-        TableField ParseTableArrayField()
-        {
-            var field = new TableField(LookAhead().m_line);
-            field.index = null;// default is null
-            field.value = ParseExp();
-            return field;
-        }
+
         TableDefine ParseTableConstructor()
         {
             NextToken();
@@ -494,12 +485,51 @@ namespace SimpleScript
             while (LookAhead().m_type != '}')
             {
                 if (LookAhead().m_type == (int)'[')
+                {
                     last_field = ParseTableIndexField();
-                else if (LookAhead().m_type == (int)TokenType.NAME
-                    && LookAhead2().m_type == (int)'=')
-                    last_field = ParseTableNameField();
+                }
                 else
-                    last_field = ParseTableArrayField();
+                {
+                    last_field = new TableField(LookAhead().m_line);
+                    if (LookAhead2().Match('='))
+                    {
+                        // must be kv
+                        NextToken();
+                        if (_current.Match(TokenType.NAME))
+                        {
+                            last_field.index = new Terminator(_current.ConvertToStringToken());
+                        }
+                        else if (_current.Match(TokenType.STRING)
+                            || _current.Match(TokenType.NUMBER))
+                        {
+                            last_field.index = new Terminator(_current);
+                        }
+                        else
+                        {
+                            throw NewParserException("expect name,string,number to define table-key", _current);
+                        }
+                        NextToken();
+                        last_field.value = ParseExp();
+                    }
+                    else if (LookAhead().Match(TokenType.STRING_BEGIN))
+                    {
+                        var exp = ParseComplexString();
+                        if (LookAhead().Match('='))
+                        {
+                            last_field.index = exp;
+                            NextToken();
+                            last_field.value = ParseExp();
+                        }
+                        else
+                        {
+                            last_field.value = exp;
+                        }
+                    }
+                    else
+                    {
+                        last_field.value = ParseExp();
+                    }
+                }
 
                 table.fields.Add(last_field);
 
@@ -534,13 +564,13 @@ namespace SimpleScript
         }
         BlockTree ParseBlock()
         {
-            if (NextToken().Match('{'))
+            if (!NextToken().Match('{'))
                 throw NewParserException("expect '{' to begin block", _current);
 
             var block = new BlockTree(_current.m_line);
             ParseStatements(block.statements);
 
-            if (NextToken().Match('}'))
+            if (!NextToken().Match('}'))
                 throw NewParserException("expect '}' to end block", _current);
             return block;
         }
@@ -555,6 +585,8 @@ namespace SimpleScript
                 {
                     case (int)';':
                         NextToken(); continue;
+                    case '{':
+                        statement = ParseBlock(); break;
                     case (int)TokenType.WHILE:
                         statement = ParseWhileStatement(); break;
                     case (int)TokenType.IF:
