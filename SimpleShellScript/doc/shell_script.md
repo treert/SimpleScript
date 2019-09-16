@@ -53,7 +53,7 @@ funcname ::= Name {"." Name} [":" Name]
 
 funcbody ::= "(" [parlist] ")" block
 
-parlist ::=  {Name ","} ["*" [Name] ","] {Name ","}
+parlist ::=  {Name ","} ["*" [Name]]
 
 explist ::= {exp ","} exp
 
@@ -79,7 +79,7 @@ var ::= Name [{tableindex | args } tableindex]
 
 funccall ::= Name {tableindex | args} [String]
 
-args ::=  "(" {exp ","} {"*" Name ","} {Name ":" exp ","} ")"
+args ::=  "(" {exp ","} ["*" Name ","] {Name ":" exp ","} ")"
 
 binop ::= "+" | "-" | "*" | "/" | "^" | "%" | ".." |
      "<" | "<=" | ">" | ">=" | "==" | "!=" |

@@ -740,7 +740,7 @@ namespace SimpleScript
         ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-            statement.kw_list.Add(new Token(Config.MAGIC_THIS));// this 当成命名参数
+            statement.name_list.Add(new Token(Config.MAGIC_THIS));// this 当成命名参数
             
             if (LookAhead().Match('('))
             {
@@ -768,19 +768,6 @@ namespace SimpleScript
                     if (LookAhead().Match(TokenType.NAME))
                     {
                         statement.kw_name = NextToken();
-                    }
-                }
-
-                while (LookAhead().Match(','))
-                {
-                    NextToken();
-                    if (LookAhead().Match(TokenType.NAME))
-                    {
-                        statement.kw_list.Add(NextToken());
-                    }
-                    else
-                    {
-                        break;
                     }
                 }
 

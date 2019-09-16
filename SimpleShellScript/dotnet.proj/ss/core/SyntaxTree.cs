@@ -259,7 +259,6 @@ namespace SimpleScript
         }
         public List<Token> name_list = new List<Token>();
         public Token kw_name = null;
-        public List<Token> kw_list = new List<Token>();
     }
     public class TableDefine : SyntaxTree
     {

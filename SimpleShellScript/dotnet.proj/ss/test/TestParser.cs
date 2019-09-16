@@ -514,4 +514,12 @@ namespace SimpleScript.Test
             catch (ParserException) { }
         }
     }
+
+    class TestParser_fn_call_1 : TestBase
+    {
+        public override void Run()
+        {
+            TestUtils.Parse("t.f(a,b,c,*kw,a=a)");
+        }
+    }
 }
