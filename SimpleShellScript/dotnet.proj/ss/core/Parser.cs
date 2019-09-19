@@ -101,7 +101,7 @@ namespace SimpleScript
             return t.m_type == (int)'^';
         }
 
-        SyntaxTree ParseExp(int left_priority = 0)
+        ExpSyntaxTree ParseExp(int left_priority = 0)
         {
             var exp = ParseMainExp();
             while (true)
@@ -135,7 +135,7 @@ namespace SimpleScript
             return exp;
         }
 
-        SyntaxTree ParseConditionExp()
+        ExpSyntaxTree ParseConditionExp()
         {
             if (LookAhead().Match('{'))
             {
@@ -144,9 +144,9 @@ namespace SimpleScript
             return ParseExp();
         }
 
-        SyntaxTree ParseMainExp()
+        ExpSyntaxTree ParseMainExp()
         {
-            SyntaxTree exp;
+            ExpSyntaxTree exp;
             switch (LookAhead().m_type)
             {
                 case (int)TokenType.NIL:
@@ -302,7 +302,7 @@ namespace SimpleScript
             NextToken();
             return ParseFunctionBody();
         }
-        TableAccess ParseTableAccessor(SyntaxTree table)
+        TableAccess ParseTableAccessor(ExpSyntaxTree table)
         {
             NextToken();// skip '[' or '.'
 
@@ -322,7 +322,7 @@ namespace SimpleScript
             }
             return index_access;
         }
-        FuncCall ParseFunctionCall(SyntaxTree caller)
+        FuncCall ParseFunctionCall(ExpSyntaxTree caller)
         {
             Debug.Assert(LookAhead().Match('('));// 基本的函数调用只支持语法 f(arg,...)，后面可以安排写语法糖什么的。
             var func_call = new FuncCall(LookAhead().m_line);
@@ -395,7 +395,7 @@ namespace SimpleScript
             return list;
         }
 
-        SyntaxTree ParseTailExp(SyntaxTree exp)
+        ExpSyntaxTree ParseTailExp(ExpSyntaxTree exp)
         {
             // table index or func call
             for (; ; )
@@ -543,11 +543,6 @@ namespace SimpleScript
             }
             if (NextToken().m_type != '}')
                 throw NewParserException("expect '}' for table", _current);
-
-            if (last_field != null && last_field.index == null)
-            {
-                table.last_field_append_table = IsExpReturnAnyCountValue(last_field.value);
-            }
 
             return table;
         }

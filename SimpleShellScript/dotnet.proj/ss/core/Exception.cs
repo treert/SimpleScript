@@ -26,6 +26,14 @@ namespace SimpleScript
         }
     }
 
+    public class BreakException : ScriptException
+    {
+
+    }
+
+    public class ContineException : ScriptException { }
+
+
     public class LexException : ScriptException
     {
         public LexException(string source_, int line_, int column_, string msg)

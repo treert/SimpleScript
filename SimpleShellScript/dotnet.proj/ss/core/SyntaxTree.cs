@@ -12,6 +12,24 @@ namespace SimpleScript
             // set { _line = value; }
             get { return _line; }
         }
+
+        public virtual void Exec(Frame frame) { }
+    }
+
+    // 表达式语法结构，可以返回一个或者多个结果。极端情况会返回0个，比如 ...
+    // 性能浪费何其严重，Σ( ° △ °|||)︴
+    public abstract class ExpSyntaxTree : SyntaxTree
+    {
+        public override void Exec(Frame frame)
+        {
+            GetResults(frame);
+        }
+        public object GetOneResult(Frame frame)
+        {
+            var x = GetResults(frame);
+            return x.Count > 0 ? x[0] : null;
+        }
+        public abstract List<object> GetResults(Frame frame);
     }
 
     public class ModuleTree : SyntaxTree
@@ -32,13 +50,18 @@ namespace SimpleScript
         public List<SyntaxTree> statements = new List<SyntaxTree>();
     }
 
-    public class ReturnStatement : SyntaxTree
+    public class ReturnStatement : ExpSyntaxTree
     {
         public ReturnStatement(int line_)
         {
             _line = line_;
         }
         public ExpressionList exp_list;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
     public class BreakStatement : SyntaxTree
@@ -207,7 +230,7 @@ namespace SimpleScript
         public List<Token> names = new List<Token>();
     }
 
-    public class Terminator : SyntaxTree
+    public class Terminator : ExpSyntaxTree
     {
         public Token token;
         public Terminator(Token token_)
@@ -215,33 +238,48 @@ namespace SimpleScript
             token = token_;
             _line = token_.m_line;
         }
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class BinaryExpression : SyntaxTree
+    public class BinaryExpression : ExpSyntaxTree
     {
-        public SyntaxTree left;
+        public ExpSyntaxTree left;
         public Token op;
-        public SyntaxTree right;
-        public BinaryExpression(SyntaxTree left_, Token op_, SyntaxTree right_)
+        public ExpSyntaxTree right;
+        public BinaryExpression(ExpSyntaxTree left_, Token op_, ExpSyntaxTree right_)
         {
             left = left_;
             op = op_;
             right = right_;
             _line = op_.m_line;
         }
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class UnaryExpression : SyntaxTree
+    public class UnaryExpression : ExpSyntaxTree
     {
         public UnaryExpression(int line_)
         {
             _line = line_;
         }
-        public SyntaxTree exp;
+        public ExpSyntaxTree exp;
         public Token op;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class FunctionBody : SyntaxTree
+    public class FunctionBody : ExpSyntaxTree
     {
         public FunctionBody(int line_)
         {
@@ -249,6 +287,11 @@ namespace SimpleScript
         }
         public ParamList param_list;
         public BlockTree block;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
     public class ParamList : SyntaxTree
@@ -260,14 +303,18 @@ namespace SimpleScript
         public List<Token> name_list = new List<Token>();
         public Token kw_name = null;
     }
-    public class TableDefine : SyntaxTree
+    public class TableDefine : ExpSyntaxTree
     {
         public TableDefine(int line_)
         {
             _line = line_;
         }
         public List<TableField> fields = new List<TableField>();
-        public bool last_field_append_table = false;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
     public class TableField : SyntaxTree
@@ -276,28 +323,38 @@ namespace SimpleScript
         {
             _line = line_;
         }
-        public SyntaxTree index = null;
-        public SyntaxTree value;
+        public ExpSyntaxTree index = null;
+        public ExpSyntaxTree value;
     }
 
-    public class TableAccess : SyntaxTree
+    public class TableAccess : ExpSyntaxTree
     {
         public TableAccess(int line_)
         {
             _line = line_;
         }
-        public SyntaxTree table;
-        public SyntaxTree index;
+        public ExpSyntaxTree table;
+        public ExpSyntaxTree index;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class FuncCall : SyntaxTree
+    public class FuncCall : ExpSyntaxTree
     {
         public FuncCall(int line_)
         {
             _line = line_;
         }
-        public SyntaxTree caller;
+        public ExpSyntaxTree caller;
         public ArgsList args;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
     public class ArgsList : SyntaxTree
@@ -309,23 +366,28 @@ namespace SimpleScript
         public class KW
         {
             public Token k;
-            public SyntaxTree w;
+            public ExpSyntaxTree w;
         }
-        public List<SyntaxTree> exp_list = new List<SyntaxTree>();
-        public SyntaxTree kw_table = null;
+        public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
+        public ExpSyntaxTree kw_table = null;
         public List<KW> kw_exp_list = new List<KW>();
     }
 
-    public class ExpressionList : SyntaxTree
+    public class ExpressionList : ExpSyntaxTree
     {
         public ExpressionList(int line_)
         {
             _line = line_;
         }
-        public List<SyntaxTree> exp_list = new List<SyntaxTree>();
+        public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class ComplexString : SyntaxTree
+    public class ComplexString : ExpSyntaxTree
     {
         public ComplexString(int line_)
         {
@@ -333,28 +395,43 @@ namespace SimpleScript
         }
         public bool is_shell = false;// ` and ```
         public string shell_name = null;// 默认空的执行时取 Config.def_shell
-        public List<SyntaxTree> list = new List<SyntaxTree>();
+        public List<ExpSyntaxTree> list = new List<ExpSyntaxTree>();
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class ComplexStringItem : SyntaxTree
+    public class ComplexStringItem : ExpSyntaxTree
     {
         public ComplexStringItem(int line_)
         {
             _line = line_;
         }
-        public SyntaxTree exp;
+        public ExpSyntaxTree exp;
         public int len = 0;
         public string format = null;
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 
-    public class QuestionExp : SyntaxTree
+    public class QuestionExp : ExpSyntaxTree
     {
         public QuestionExp(int line_)
         {
             _line = line_;
         }
-        public SyntaxTree a;// exp = a ? b : c
-        public SyntaxTree b;
-        public SyntaxTree c;// if c == null then exp = a ? b, 并且这儿 a 只判断是否是nil，专门用于默认值语法的。
+        public ExpSyntaxTree a;// exp = a ? b : c
+        public ExpSyntaxTree b;
+        public ExpSyntaxTree c;// if c == null then exp = a ? b, 并且这儿 a 只判断是否是nil，专门用于默认值语法的。
+
+        public override List<object> GetResults(Frame frame)
+        {
+            return null;
+        }
     }
 }
