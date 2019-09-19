@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SimpleScript.Test
+namespace SScript.Test
 {
     class TestLex1 : TestBase
     {

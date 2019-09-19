@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SimpleScript
+namespace SScript
 {
     /// <summary>
     /// 单个执行帧：管理局部变量

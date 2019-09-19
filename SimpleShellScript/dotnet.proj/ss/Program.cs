@@ -1,4 +1,4 @@
-﻿using SimpleScript.Test;
+﻿using SScript.Test;
 using System;
 using System.Collections.Generic;
 

@@ -3,22 +3,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace SimpleScript
+namespace SScript
 {
-    class Parser
+    public class Parser
     {
-        static bool IsExpReturnAnyCountValue(SyntaxTree t)
-        {
-            if (t is Terminator)
-            {
-                return (t as Terminator).token.m_type == (int)TokenType.DOTS;
-            }
-            else if (t is FuncCall)
-            {
-                return true;
-            }
-            return false;
-        }
 
         static bool IsVar(SyntaxTree t)
         {

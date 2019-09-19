@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SimpleScript
+namespace SScript
 {
     public class ScriptException : Exception
     {
