@@ -16,6 +16,16 @@ namespace SScript
         public Table module_table = null;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
         public Dictionary<string, LocalValue> upvalues = new Dictionary<string, LocalValue>();
+
+        public void Call(params object[] objs)
+        {
+
+        }
+
+        public void Call(Dictionary<string, object> name_args, params object[] args)
+        {
+
+        }
     }
 
     public class Table

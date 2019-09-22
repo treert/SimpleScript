@@ -31,5 +31,21 @@ namespace SScript
         {
             return null;
         }
+
+        public ModuleTree Parse(string str)
+        {
+            lex.Init(str);
+            return parser.Parse(lex);
+        }
+
+        public Table InitModule(ModuleTree tree)
+        {
+            Function func = new Function();
+            func.vm = this;
+            func.module_table = new Table();
+            func.code = tree.ConvertToFuncBody();
+            func.Call();
+            return func.module_table;
+        }
     }
 }

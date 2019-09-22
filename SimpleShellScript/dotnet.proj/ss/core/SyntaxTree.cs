@@ -39,6 +39,13 @@ namespace SScript
             _line = 0;
         }
         public BlockTree block;
+
+        public FunctionBody ConvertToFuncBody()
+        {
+            FunctionBody ret = new FunctionBody(line);
+            ret.block = block;
+            return ret;
+        }
     }
 
     public class BlockTree : SyntaxTree

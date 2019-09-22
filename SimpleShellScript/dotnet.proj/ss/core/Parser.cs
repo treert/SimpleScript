@@ -873,7 +873,7 @@ namespace SScript
             return new ParserException(_lex.GetSourceName(), token.m_line, token.m_column, msg);
         }
 
-        public SyntaxTree Parse(Lex lex_)
+        public ModuleTree Parse(Lex lex_)
         {
             _lex = lex_;
             _current = null;
