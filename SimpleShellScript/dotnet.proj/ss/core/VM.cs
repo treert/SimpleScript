@@ -32,18 +32,18 @@ namespace SScript
             return null;
         }
 
-        public ModuleTree Parse(string str)
+        public FunctionBody Parse(string str)
         {
             lex.Init(str);
             return parser.Parse(lex);
         }
 
-        public Table InitModule(ModuleTree tree)
+        public Table InitModule(FunctionBody tree)
         {
             Function func = new Function();
             func.vm = this;
             func.module_table = new Table();
-            func.code = tree.ConvertToFuncBody();
+            func.code = tree;
             func.upvalues = new Dictionary<string, LocalValue>();
             func.Call();
             return func.module_table;

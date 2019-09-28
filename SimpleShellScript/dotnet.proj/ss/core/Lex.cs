@@ -33,6 +33,8 @@ namespace SScript
         // exception handle, not need for finally
         TRY,
         CATCH,
+        // FINALLY,
+        THROW,
         // other terminal symbols
         CONCAT,// .. string concat
         DOTS,// ...
@@ -183,6 +185,7 @@ namespace SScript
                 {"while", TokenType.WHILE},
                 {"try", TokenType.TRY},
                 {"catch", TokenType.CATCH },
+                {"throw", TokenType.THROW},
             };
         }
         

@@ -33,10 +33,29 @@ namespace SScript
 
     public class BreakException : ScriptException
     {
-
+        public int line;
+        public BreakException(int line)
+        {
+            this.line = line;
+        }
     }
 
-    public class ContineException : ScriptException { }
+    public class ContineException : ScriptException
+    {
+        public int line;
+        public ContineException(int line)
+        {
+            this.line = line;
+        }
+    }
+
+    public class RunException : ScriptException
+    {
+        public RunException(string source_, int line_, string msg)
+        {
+            SetInfo(source_, ":", line_, " ", msg);
+        }
+    }
 
 
     public class LexException : ScriptException

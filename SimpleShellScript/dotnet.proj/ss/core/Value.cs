@@ -27,7 +27,7 @@ namespace SScript
 
         }
 
-        public void Call(Args args)
+        public List<object> Call(Args args)
         {
             Frame frame = new Frame(this);
             // 先填充个this
@@ -60,8 +60,24 @@ namespace SScript
             {
                 frame.extra_args.Add(args[i]);
             }
-
-            code.block.Exec(frame);
+            try
+            {
+                code.block.Exec(frame);
+            }
+            catch(ReturnException ep)
+            {
+                return ep.results;
+            }
+            catch(ContineException ep)
+            {
+                throw new RunException(code.source_name, ep.line, "unexpect contine");
+            }
+            catch(BreakException ep)
+            {
+                throw new RunException(code.source_name, ep.line, "unexpect break");
+            }
+            // 其他的异常就透传出去好了。
+            return Config.EmptyResults;
         }
     }
 

@@ -44,7 +44,7 @@ namespace SScript
                 _look_ahead2 = _lex.GetNextToken();
             return _look_ahead2;
         }
-        bool IsMainExp()
+        bool IsMainExpNext()
         {
             int token_type = LookAhead().m_type;
             return
@@ -324,7 +324,7 @@ namespace SScript
             ArgsList list = new ArgsList(_current.m_line);
             // arg,arg,*table,name=arg,name=arg,
             bool has_args = false;
-            while (IsMainExp())
+            while (IsMainExpNext())
             {
                 if (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('=')) break;
                 has_args = true;
@@ -409,7 +409,7 @@ namespace SScript
             // 没什么限制，基本可以随意写些MainExp
             // 重点处理的是一些赋值类语句，赋值类语句的左值必须是var类型的
             // SS还增加几个语法支持，+=，-=，++，--
-            if(IsMainExp() == false) return null;
+            if(IsMainExpNext() == false) return null;
 
             SyntaxTree exp = ParseMainExp();
             if (LookAhead().Match('=') || LookAhead().Match(','))
@@ -534,17 +534,7 @@ namespace SScript
 
             return table;
         }
-        ModuleTree ParseModule()
-        {
-            var block = new BlockTree(LookAhead().m_line);
-            ParseStatements(block.statements);
-            if (NextToken().m_type != (int)TokenType.EOS)
-                throw NewParserException("expect <eof>", _current);
 
-            var tree = new ModuleTree();
-            tree.block = block;
-            return tree;
-        }
         BlockTree ParseBlock()
         {
             if (!NextToken().Match('{'))
@@ -594,6 +584,8 @@ namespace SScript
                         statement = ParseContinueStatement(); break;
                     case (int)TokenType.TRY:
                         statement = ParseTryStatement(); break;
+                    case (int)TokenType.THROW:
+                        statement = ParseThrowStatement(); break;
                     default:
                         statement = ParseOtherStatement();
                         break;
@@ -604,7 +596,18 @@ namespace SScript
             }
         }
 
-        private SyntaxTree ParseTryStatement()
+        ThrowStatement ParseThrowStatement()
+        {
+            NextToken();
+            var statement = new ThrowStatement(_current.m_line);
+            if (IsMainExpNext())
+            {
+                statement.exp = ParseExp();
+            }
+            return statement;
+        }
+
+        private TryStatement ParseTryStatement()
         {
             NextToken();
             var statement = new TryStatement(_current.m_line);
@@ -625,7 +628,7 @@ namespace SScript
         {
             NextToken();
             var statement = new ReturnStatement(_current.m_line);
-            if (IsMainExp())
+            if (IsMainExpNext())
             {
                 statement.exp_list = ParseExpList();
             }
@@ -717,6 +720,7 @@ namespace SScript
             var statement = new FunctionBody(_current.m_line);
             statement.param_list = ParseParamList();
             statement.block = ParseBlock();
+            statement.source_name = _lex.GetSourceName();
 
             return statement;
         }
@@ -872,7 +876,21 @@ namespace SScript
             return new ParserException(_lex.GetSourceName(), token.m_line, token.m_column, msg);
         }
 
-        public ModuleTree Parse(Lex lex_)
+        FunctionBody ParseModule()
+        {
+            var block = new BlockTree(LookAhead().m_line);
+            ParseStatements(block.statements);
+            if (NextToken().m_type != (int)TokenType.EOS)
+                throw NewParserException("expect <eof>", _current);
+
+            FunctionBody fn = new FunctionBody(1);
+            fn.source_name = _lex.GetSourceName();
+            fn.block = block;
+
+            return fn;
+        }
+
+        public FunctionBody Parse(Lex lex_)
         {
             _lex = lex_;
             _current = null;

@@ -37,22 +37,6 @@ namespace SScript
         public abstract List<object> GetResults(Frame frame);
     }
 
-    public class ModuleTree : SyntaxTree
-    {
-        public ModuleTree()
-        {
-            _line = 0;
-        }
-        public BlockTree block;
-
-        public FunctionBody ConvertToFuncBody()
-        {
-            FunctionBody ret = new FunctionBody(line);
-            ret.block = block;
-            return ret;
-        }
-    }
-
     public class BlockTree : SyntaxTree
     {
         public BlockTree(int line_)
@@ -65,7 +49,7 @@ namespace SScript
         {
             frame.EnterBlock();
             {
-                foreach(var it in statements)
+                foreach (var it in statements)
                 {
                     it.Exec(frame);
                 }
@@ -89,7 +73,7 @@ namespace SScript
             {
                 ep.results = exp_list.GetResults(frame);
             }
-            return null;
+            throw ep;
         }
     }
 
@@ -99,6 +83,11 @@ namespace SScript
         {
             _line = line_;
         }
+
+        public override void Exec(Frame frame)
+        {
+            throw new BreakException(_line);
+        }
     }
 
     public class ContinueStatement : SyntaxTree
@@ -106,6 +95,11 @@ namespace SScript
         public ContinueStatement(int line_)
         {
             _line = line_;
+        }
+
+        public override void Exec(Frame frame)
+        {
+            throw new ContineException(_line);
         }
     }
 
@@ -163,6 +157,15 @@ namespace SScript
         public BlockTree block;
     }
 
+    public class ThrowStatement: SyntaxTree
+    {
+        public ThrowStatement(int line)
+        {
+            _line = line;
+        }
+        public ExpSyntaxTree exp;
+    }
+
     public class TryStatement : SyntaxTree
     {
         public TryStatement(int line_)
@@ -172,6 +175,7 @@ namespace SScript
         public BlockTree block;
         public Token catch_name;
         public BlockTree catch_block;
+        // public BlockTree finally_block;感觉finally 存在问题，ss的异常捕捉会捕捉所有异常。
     }
 
     public class FunctionStatement : SyntaxTree
@@ -316,6 +320,7 @@ namespace SScript
         }
         public ParamList param_list;
         public BlockTree block;
+        public string source_name;
 
         public override List<object> GetResults(Frame frame)
         {
