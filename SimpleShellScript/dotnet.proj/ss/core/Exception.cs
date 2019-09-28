@@ -26,6 +26,11 @@ namespace SScript
         }
     }
 
+    public class ReturnException : ScriptException
+    {
+        public List<object> results = Config.EmptyResults;
+    }
+
     public class BreakException : ScriptException
     {
 

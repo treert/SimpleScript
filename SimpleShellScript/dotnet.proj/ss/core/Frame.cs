@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace SScript
@@ -16,6 +17,7 @@ namespace SScript
         }
 
         public Function func;
+        public List<object> extra_args = new List<object>();// for ...
         public GenBlock cur_block;
 
         public Frame(Function func)
@@ -53,7 +55,7 @@ namespace SScript
             return ret;
         }
 
-        public LocalValue WriteLocal(string name, object obj)
+        public LocalValue AddLocalVal(string name, object obj)
         {
             var v = AddLocalName(name);
             v.obj = obj;
@@ -78,6 +80,24 @@ namespace SScript
             }
         }
 
+        public object Read(string name)
+        {
+            bool global;
+            var v = GetName(name, out global);
+            if (global)
+            {
+                return func.vm.global_table.Get(name);
+            }
+            else if (v)
+            {
+                return v.obj;
+            }
+            else
+            {
+                return func.module_table.Get(name);
+            }
+        }
+
         public GenBlock EnterBlock()
         {
             var b = new GenBlock();
@@ -89,6 +109,25 @@ namespace SScript
         public void LeaveBlock()
         {
             this.cur_block = this.cur_block.parent;
+        }
+        
+        public Dictionary<string, LocalValue> GetAllUpvalues()
+        {
+            var dic = new Dictionary<string, LocalValue>();
+            var b = cur_block;
+            while(b != null)
+            {
+                foreach(var it in b.values)
+                {
+                    dic.TryAdd(it.Key, it.Value);
+                }
+                b = b.parent;
+            }
+            foreach(var it in func.upvalues)
+            {
+                dic.TryAdd(it.Key, it.Value);
+            }
+            return dic;
         }
     }
 }

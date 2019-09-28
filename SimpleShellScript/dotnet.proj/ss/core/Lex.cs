@@ -149,6 +149,11 @@ namespace SScript
             return string.Format("token_type:{0},\tstring:{1},\tnumber:{2}",
                 m_type, m_string, m_number);
         }
+
+        public static implicit operator bool(Token exsit)
+        {
+            return exsit != null;
+        }
     }
 
     public class Lex

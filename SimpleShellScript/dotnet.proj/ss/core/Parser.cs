@@ -723,7 +723,6 @@ namespace SScript
         ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-            statement.name_list.Add(new Token(Config.MAGIC_THIS));// this 当成命名参数
             
             if (LookAhead().Match('('))
             {

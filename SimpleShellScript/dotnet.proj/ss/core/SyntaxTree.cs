@@ -13,6 +13,11 @@ namespace SScript
             get { return _line; }
         }
 
+        public static implicit operator bool(SyntaxTree exsit)
+        {
+            return exsit != null;
+        }
+
         public virtual void Exec(Frame frame) { }
     }
 
@@ -55,6 +60,18 @@ namespace SScript
             _line = line_;
         }
         public List<SyntaxTree> statements = new List<SyntaxTree>();
+
+        public override void Exec(Frame frame)
+        {
+            frame.EnterBlock();
+            {
+                foreach(var it in statements)
+                {
+                    it.Exec(frame);
+                }
+            }
+            frame.LeaveBlock();
+        }
     }
 
     public class ReturnStatement : ExpSyntaxTree
@@ -67,6 +84,11 @@ namespace SScript
 
         public override List<object> GetResults(Frame frame)
         {
+            ReturnException ep = new ReturnException();
+            if (exp_list)
+            {
+                ep.results = exp_list.GetResults(frame);
+            }
             return null;
         }
     }
@@ -297,7 +319,12 @@ namespace SScript
 
         public override List<object> GetResults(Frame frame)
         {
-            return null;
+            Function fn = new Function();
+            fn.code = this;
+            fn.vm = frame.func.vm;
+            fn.module_table = frame.func.module_table;
+            fn.upvalues = frame.GetAllUpvalues();
+            return new List<object>(){ fn};
         }
     }
 
@@ -365,7 +392,7 @@ namespace SScript
     }
 
     public class ArgsList : SyntaxTree
-    {
+     {
         public ArgsList(int line_)
         {
             _line = line_;

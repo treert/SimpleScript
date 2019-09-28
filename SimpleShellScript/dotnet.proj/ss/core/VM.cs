@@ -44,6 +44,7 @@ namespace SScript
             func.vm = this;
             func.module_table = new Table();
             func.code = tree.ConvertToFuncBody();
+            func.upvalues = new Dictionary<string, LocalValue>();
             func.Call();
             return func.module_table;
         }
