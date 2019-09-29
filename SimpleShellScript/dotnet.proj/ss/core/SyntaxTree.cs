@@ -109,8 +109,24 @@ namespace SScript
         {
             _line = line_;
         }
-        public SyntaxTree exp;
+        public ExpSyntaxTree exp;
         public BlockTree block;
+
+        public override void Exec(Frame frame)
+        {
+            while (true)
+            {
+                var obj = exp.GetOneResult(frame);
+                if (ValueUtils.ToBool(obj))
+                {
+                    block.Exec(frame);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
     }
 
     public class IfStatement : SyntaxTree
@@ -119,9 +135,22 @@ namespace SScript
         {
             _line = line_;
         }
-        public SyntaxTree exp;
+        public ExpSyntaxTree exp;
         public BlockTree true_branch;
         public SyntaxTree false_branch;
+
+        public override void Exec(Frame frame)
+        {
+            var obj = exp.GetOneResult(frame);
+            if (ValueUtils.ToBool(obj))
+            {
+                true_branch.Exec(frame);
+            }
+            else
+            {
+                false_branch?.Exec(frame);
+            }
+        }
     }
 
     public class ForStatement : SyntaxTree
@@ -164,6 +193,17 @@ namespace SScript
             _line = line;
         }
         public ExpSyntaxTree exp;
+
+        public override void Exec(Frame frame)
+        {
+            ThrowException ep = new ThrowException();
+            ep.line = _line;
+            if (exp)
+            {
+                ep.obj = exp.GetOneResult(frame);
+            }
+            throw ep;
+        }
     }
 
     public class TryStatement : SyntaxTree

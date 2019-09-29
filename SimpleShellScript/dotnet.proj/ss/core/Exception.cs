@@ -49,6 +49,12 @@ namespace SScript
         }
     }
 
+    public class ThrowException : ScriptException
+    {
+        public int line;
+        public object obj;
+    }
+
     public class RunException : ScriptException
     {
         public RunException(string source_, int line_, string msg)

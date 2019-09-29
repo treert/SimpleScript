@@ -128,4 +128,13 @@ namespace SScript
             return exsit != null;
         }
     }
+
+
+    public class ValueUtils
+    {
+        public static bool ToBool(object obj)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
