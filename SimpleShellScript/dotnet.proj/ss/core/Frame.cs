@@ -62,7 +62,7 @@ namespace SScript
             return v;
         }
 
-        public void Write(string name, object obj)
+        public object Write(string name, object obj)
         {
             bool global;
             var v = GetName(name, out global);
@@ -78,6 +78,7 @@ namespace SScript
             {
                 func.module_table.Set(name, obj);
             }
+            return obj;
         }
 
         public object Read(string name)
@@ -128,6 +129,11 @@ namespace SScript
                 dic.TryAdd(it.Key, it.Value);
             }
             return dic;
+        }
+
+        public RunException NewRunException(int line, string msg)
+        {
+            return new RunException(func.code.source_name, line, msg);
         }
     }
 }

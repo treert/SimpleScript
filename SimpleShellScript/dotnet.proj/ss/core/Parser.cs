@@ -411,7 +411,7 @@ namespace SScript
             // SS还增加几个语法支持，+=，-=，++，--
             if(IsMainExpNext() == false) return null;
 
-            SyntaxTree exp = ParseMainExp();
+            ExpSyntaxTree exp = ParseMainExp();
             if (LookAhead().Match('=') || LookAhead().Match(','))
             {
                 // assign statement
@@ -813,8 +813,8 @@ namespace SScript
             statement.name_list = ParseNameList();
             if (NextToken().m_type != (int)TokenType.IN)
                 throw NewParserException("expect 'in' in for-in-statement", _current);
-            // 比较特殊，可能是：1. iter 2. function,first_idx 3. Table or Array
-            statement.exp_list = ParseExpList();
+            // 比较特殊，可能是：1. Table 1-1. iter 2. function
+            statement.exp = ParseExp();
 
             statement.block = ParseBlock();
 

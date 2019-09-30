@@ -5,7 +5,21 @@ using System.Text;
 
 namespace SScript
 {
-    
+    public interface IForIter
+    {
+        bool Next(out object key, out object val);
+    }
+    public interface IForEach
+    {
+        IForIter GetIter();
+    }
+
+    public interface IGetSet
+    {
+        object Get(object name);
+        object Set(object name, object value);
+    }
+
     /// <summary>
     /// 运行时函数
     /// </summary>
@@ -25,6 +39,12 @@ namespace SScript
         public void Call(Dictionary<string, object> name_args, params object[] args)
         {
 
+        }
+
+        public List<object> Call()
+        {
+            Args args = new Args();
+            return Call(args);
         }
 
         public List<object> Call(Args args)
@@ -106,7 +126,7 @@ namespace SScript
         }
     }
 
-    public class Table
+    public class Table : IGetSet
     {
         public object Set(object key, object val)
         {
@@ -136,5 +156,11 @@ namespace SScript
         {
             throw new NotImplementedException();
         }
+
+        public static double ToNumber(object obj)
+        {
+            throw new NotImplementedException();
+        }
+        
     }
 }

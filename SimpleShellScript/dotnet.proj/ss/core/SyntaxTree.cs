@@ -34,6 +34,19 @@ namespace SScript
             var x = GetResults(frame);
             return x.Count > 0 ? x[0] : null;
         }
+
+        public double GetNumber(Frame frame)
+        {
+            var x = GetResults(frame);
+            if(x.Count == 0 || (x[0] is double) == false)
+            {
+                throw frame.NewRunException(line, "expect number result");
+            }
+            return (double)x[0];
+        }
+
+
+
         public abstract List<object> GetResults(Frame frame);
     }
 
@@ -160,10 +173,71 @@ namespace SScript
             _line = line_;
         }
         public Token name;
-        public SyntaxTree exp1;
-        public SyntaxTree exp2;
-        public SyntaxTree exp3;
+        public ExpSyntaxTree exp1;
+        public ExpSyntaxTree exp2;
+        public ExpSyntaxTree exp3;
         public BlockTree block;
+        public override void Exec(Frame frame)
+        {
+            var start = exp1.GetNumber(frame);
+            var end = exp2.GetNumber(frame);
+            if(start <= end)
+            {
+                double step = exp3 ? exp3.GetNumber(frame) : 1;
+                if(step <= 0)
+                {
+                    throw frame.NewRunException(line, $"for step {step} should greater than 0, or will cause forerver loop");
+                }
+                var cur_block = frame.cur_block;
+                for(double it = start; it <= end; it += step)
+                {
+                    frame.cur_block = cur_block;
+                    try
+                    {
+                        var b = frame.EnterBlock();
+                        frame.AddLocalVal(name.m_string, it);
+                        block.Exec(frame);
+                    }
+                    catch(ContineException)
+                    {
+                        continue;
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                }
+                frame.cur_block = cur_block;
+            }
+            else
+            {
+                double step = exp3 ? exp3.GetNumber(frame) : -1;
+                if (step >= 0)
+                {
+                    throw frame.NewRunException(line, $"for step {step} should less than 0, or will cause forerver loop");
+                }
+                var cur_block = frame.cur_block;
+                for (double it = start; it >= end; it += step)
+                {
+                    frame.cur_block = cur_block;
+                    try
+                    {
+                        var b = frame.EnterBlock();
+                        frame.AddLocalVal(name.m_string, it);
+                        block.Exec(frame);
+                    }
+                    catch (ContineException)
+                    {
+                        continue;
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                }
+                frame.cur_block = cur_block;
+            }
+        }
     }
 
     public class ForInStatement : SyntaxTree
@@ -173,8 +247,72 @@ namespace SScript
             _line = line_;
         }
         public NameList name_list;
-        public ExpressionList exp_list;
+        public ExpSyntaxTree exp;
         public BlockTree block;
+
+        public override void Exec(Frame frame)
+        {
+            var obj = exp.GetOneResult(frame);
+            if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
+            IForIter iter = obj as IForIter;
+            if(iter == null && obj is IForEach)
+            {
+                iter = (obj as IForEach).GetIter();
+            }
+            var cur_block = frame.cur_block;
+            if(iter != null)
+            {
+                object k, v;
+                while(iter.Next(out k, out v))
+                {
+                    frame.cur_block = cur_block;
+                    try
+                    {
+                        frame.EnterBlock();
+                        name_list.AddLocals(frame, k, v);
+                        block.Exec(frame);
+                    }
+                    catch (ContineException)
+                    {
+                        continue;
+                    }
+                    catch (BreakException)
+                    {
+                        break;
+                    }
+                }
+            }
+            else if(obj is Function)
+            {
+                for(; ; )
+                {
+                    var results = (obj as Function).Call();
+                    if(results.Count > 0 && results[0] != null)
+                    {
+                        frame.cur_block = cur_block;
+                        try
+                        {
+                            frame.EnterBlock();
+                            name_list.AddLocals(frame, results);
+                            block.Exec(frame);
+                        }
+                        catch (ContineException)
+                        {
+                            continue;
+                        }
+                        catch (BreakException)
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw frame.NewRunException(exp.line, $"for in does not support type {obj.GetType().Name}");
+            }
+            frame.cur_block = cur_block;
+        }
     }
 
     public class ForeverStatement : SyntaxTree
@@ -184,6 +322,34 @@ namespace SScript
             _line = line_;
         }
         public BlockTree block;
+
+        public override void Exec(Frame frame)
+        {
+            var cur_block = frame.cur_block;
+            //int cnt = 0;
+            for (; ; )
+            {
+                //if(cnt++ >= int.MaxValue)
+                //{
+                //    throw frame.NewRunException(line, "forever loop seens can not ended");
+                //}
+                frame.cur_block = cur_block;
+                try
+                {
+                    frame.EnterBlock();
+                    block.Exec(frame);
+                }
+                catch (ContineException)
+                {
+                    continue;
+                }
+                catch (BreakException)
+                {
+                    break;
+                }
+            }
+            frame.cur_block = cur_block;
+        }
     }
 
     public class ThrowStatement: SyntaxTree
@@ -215,7 +381,32 @@ namespace SScript
         public BlockTree block;
         public Token catch_name;
         public BlockTree catch_block;
-        // public BlockTree finally_block;感觉finally 存在问题，ss的异常捕捉会捕捉所有异常。
+
+        public override void Exec(Frame frame)
+        {
+            try
+            {
+                block.Exec(frame);
+            }
+            catch (ContineException)
+            {
+                throw;
+            }
+            catch (BreakException)
+            {
+                throw;
+            }
+            catch(Exception e)
+            {
+                frame.EnterBlock();
+                if (catch_name)
+                {
+                    frame.AddLocalVal(catch_name.m_string, e);
+                }
+                catch_block.Exec(frame);
+                frame.LeaveBlock();
+            }
+        }
     }
 
     public class FunctionStatement : SyntaxTree
@@ -226,6 +417,43 @@ namespace SScript
         }
         public FunctionName func_name;
         public FunctionBody func_body;
+
+        public override void Exec(Frame frame)
+        {
+            var fn = func_body.GetOneResult(frame);
+            if(func_name.names.Count == 1)
+            {
+                frame.Write(func_name.names[0].m_string, fn);
+            }
+            else
+            {
+                var names = func_name.names;
+                var obj = frame.Read(names[0].m_string);
+                if(obj == null)
+                {
+                    obj = frame.Write(names[0].m_string, new Table());
+                }
+                if(obj is Table == false)
+                {
+                    throw frame.NewRunException(line, $"{names[0].m_string} is not Table which expect to be");
+                }
+                IGetSet t = obj as Table;
+                for(int i = 1; i < names.Count-1; i++)
+                {
+                    var tt = t.Get(names[i].m_string);
+                    if(tt == null)
+                    {
+                        tt = t.Set(names[i].m_string, new Table());
+                    }
+                    if(tt is IGetSet == false)
+                    {
+                        throw frame.NewRunException(names[i].m_line, $"expect {names[i].m_string} to be a IGetSet");
+                    }
+                    t = tt as IGetSet;
+                }
+                t.Set(names[names.Count - 1].m_string, fn);
+            }
+        }
     }
 
     public class FunctionName : SyntaxTree
@@ -251,6 +479,19 @@ namespace SScript
 
         public Token name;
         public FunctionBody func_body;
+        public override void Exec(Frame frame)
+        {
+            if (is_global)
+            {
+                frame.AddGlobalName(name.m_string);
+            }
+            else
+            {
+                frame.AddLocalName(name.m_string);
+            }
+            var fn = func_body.GetOneResult(frame);
+            frame.Write(name.m_string, fn);
+        }
     }
 
     public class ScopeNameListStatement : ScopeStatement
@@ -261,6 +502,32 @@ namespace SScript
         }
         public NameList name_list;
         public ExpressionList exp_list;
+
+        public override void Exec(Frame frame)
+        {
+            var results = Config.EmptyResults;
+            if (exp_list)
+            {
+                results = exp_list.GetResults(frame);
+            }
+            for(int i = 0; i < name_list.names.Count; i++)
+            {
+                var name = name_list.names[i];
+                var obj = results.Count > i ? results[i] : null;
+                if (is_global)
+                {
+                    frame.AddGlobalName(name.m_string);
+                    if(results.Count > i)
+                    {
+                        frame.func.vm.global_table.Set(name.m_string, obj);
+                    }
+                }
+                else
+                {
+                    frame.AddLocalVal(name.m_string, obj);
+                }
+            }
+        }
     }
 
     public class AssignStatement : SyntaxTree
@@ -269,8 +536,14 @@ namespace SScript
         {
             _line = line_;
         }
-        public List<SyntaxTree> var_list = new List<SyntaxTree>();
+        public List<ExpSyntaxTree> var_list = new List<ExpSyntaxTree>();
         public ExpressionList exp_list;
+
+        public override void Exec(Frame frame)
+        {
+            var results = exp_list.GetResults(frame);
+
+        }
     }
 
     public class SpecialAssginStatement : SyntaxTree
@@ -301,6 +574,22 @@ namespace SScript
             _line = line_;
         }
         public List<Token> names = new List<Token>();
+
+        public void AddLocals(Frame frame, params object[] objs)
+        {
+            for(int i = 0; i < names.Count; i++)
+            {
+                frame.AddLocalVal(names[i].m_string, objs.Length > i ? objs[i] : null);
+            }
+        }
+
+        public void AddLocals(Frame frame, List<object> objs)
+        {
+            for (int i = 0; i < names.Count; i++)
+            {
+                frame.AddLocalVal(names[i].m_string, objs.Count > i ? objs[i] : null);
+            }
+        }
     }
 
     public class Terminator : ExpSyntaxTree

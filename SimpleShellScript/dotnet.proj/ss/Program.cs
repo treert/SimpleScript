@@ -21,6 +21,6 @@ class Program
         Console.WriteLine($"{oa == ob}");
 
         dic[a] = "12";
-        Console.WriteLine(dic[b]);
+        Console.WriteLine(dic[ob]);
     }
 }
