@@ -95,7 +95,12 @@ namespace SScript
             }
             else
             {
-                return func.module_table.Get(name);
+                var obj = func.module_table.Get(name);
+                if(obj == null)
+                {
+                    obj = func.vm.global_table.Get(name);
+                }
+                return obj;
             }
         }
 

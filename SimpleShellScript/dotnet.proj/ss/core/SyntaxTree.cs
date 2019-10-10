@@ -45,7 +45,15 @@ namespace SScript
             return (double)x[0];
         }
 
-
+        public IGetSet GetTable(Frame frame)
+        {
+            var x = GetResults(frame);
+            if (x.Count == 0 || (x[0] is IGetSet) == false)
+            {
+                throw frame.NewRunException(line, "expect IGetSet(Table) result");
+            }
+            return x[0] as IGetSet;
+        }
 
         public abstract List<object> GetResults(Frame frame);
     }
@@ -542,7 +550,29 @@ namespace SScript
         public override void Exec(Frame frame)
         {
             var results = exp_list.GetResults(frame);
-
+            for(int i = 0; i < var_list.Count; i++)
+            {
+                var it = var_list[i];
+                object val = results.Count > i ? results[i] : null;
+                if (it is TableAccess)
+                {
+                    // TableAccess
+                    var access = it as TableAccess;
+                    var table = access.table.GetTable(frame);
+                    var idx = access.index.GetOneResult(frame);
+                    if(idx == null)
+                    {
+                        throw frame.NewRunException(line, "table index can not be null");
+                    }
+                    table.Set(idx, val);
+                }
+                else
+                {
+                    // Name
+                    var name = (it as Terminator).token.m_string;
+                    frame.Write(name, val);
+                }
+            }
         }
     }
 
