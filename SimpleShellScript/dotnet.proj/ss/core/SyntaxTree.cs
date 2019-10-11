@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 
 namespace SScript
@@ -569,7 +570,9 @@ namespace SScript
                 else
                 {
                     // Name
-                    var name = (it as Terminator).token.m_string;
+                    var ter = it as Terminator;
+                    Debug.Assert(ter.token.Match(TokenType.NAME));
+                    var name = ter.token.m_string;
                     frame.Write(name, val);
                 }
             }
@@ -582,8 +585,8 @@ namespace SScript
         {
             _line = line_;
         }
-        public SyntaxTree var;
-        public SyntaxTree exp;// ++ or -- when exp is null
+        public ExpSyntaxTree var;
+        public ExpSyntaxTree exp;// ++ or -- when exp is null
         public TokenType op;
 
         public static bool NeedWork(TokenType type)
@@ -594,6 +597,49 @@ namespace SScript
         public static bool IsSelfMode(TokenType type)
         {
             return type > TokenType.SpecialAssignBegin && type < TokenType.SpecialAssignSelfEnd;
+        }
+
+        public override void Exec(Frame frame)
+        {
+            double delta = 1;
+            if (exp != null)
+            {
+                delta = exp.GetNumber(frame);
+            }
+            if (var is TableAccess)
+            {
+                var access = var as TableAccess;
+                var table = access.table.GetTable(frame);
+                var idx = access.index.GetOneResult(frame);
+                if (idx == null)
+                {
+                    throw frame.NewRunException(line, "table index can not be null");
+                }
+                var val = table.Get(idx);
+                if (val is double)
+                {
+                    table.Set(idx, delta + (double)val);
+                }
+                else
+                {
+                    throw frame.NewRunException(access.line, $"expect a double");
+                }
+            }
+            else
+            {
+                var ter = var as Terminator;
+                Debug.Assert(ter.token.Match(TokenType.NAME));
+                var name = ter.token.m_string;
+                var val = frame.Read(name);
+                if(val is double)
+                {
+                    frame.Write(name, delta + (double)val);
+                }
+                else
+                {
+                    throw frame.NewRunException(ter.line, $"expect {name}'s value to be a double");
+                }
+            }
         }
     }
 
@@ -633,7 +679,40 @@ namespace SScript
 
         public override List<object> GetResults(Frame frame)
         {
-            return null;
+            if (token.Match(TokenType.DOTS))
+            {
+                return frame.extra_args;
+            }
+
+            object obj = null;
+            if (token.Match(TokenType.NAME))
+            {
+                obj = frame.Read(token.m_string);
+            }
+            else if (token.Match(TokenType.NIL))
+            {
+                obj = null;
+            }
+            else if (token.Match(TokenType.TRUE)){
+                obj = true;
+            }
+            else if (token.Match(TokenType.FALSE))
+            {
+                obj = false;
+            }
+            else if (token.Match(TokenType.NUMBER))
+            {
+                obj = token.m_number;
+            }
+            else if (token.Match(TokenType.STRING))
+            {
+                obj = token.m_string;
+            }
+            else
+            {
+                Debug.Assert(false);
+            }
+            return new List<object>() { obj};
         }
     }
 

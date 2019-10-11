@@ -16,8 +16,8 @@ namespace SScript
 
     public interface IGetSet
     {
-        object Get(object name);
-        object Set(object name, object value);
+        object Get(object key);
+        object Set(object key, object value);
     }
 
     /// <summary>
@@ -128,7 +128,7 @@ namespace SScript
 
     public class Table : IGetSet
     {
-        public object Set(object key, object val)
+        public object Set(object key, object value)
         {
             return null;
         }
