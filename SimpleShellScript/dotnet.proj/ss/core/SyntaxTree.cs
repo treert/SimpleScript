@@ -729,9 +729,122 @@ namespace SScript
             _line = op_.m_line;
         }
 
+        void CheckNumberType(object l, object r, Frame frame, bool check_right_zero = false)
+        {
+            if(l is double == false)
+            {
+                throw frame.NewRunException(left.line, "expect bin_op left to be a number");
+            }
+            if(r is double == false)
+            {
+                throw frame.NewRunException(right.line, "expect bin_op right to be a number");
+            }
+            if (check_right_zero)
+            {
+                var t = (double)r;
+                if(t == 0)
+                {
+                    throw frame.NewRunException(right.line, "bin_op right value is zero");
+                }
+            }
+        }
+
         public override List<object> GetResults(Frame frame)
         {
-            return null;
+            object ret = null,l,r;
+            l = left.GetOneResult(frame);
+            if (op.Match(TokenType.AND))
+            {
+                if (ValueUtils.ToBool(l))
+                {
+                    r = right.GetOneResult(frame);
+                    ret = ValueUtils.ToBool(r);
+                }
+                else
+                {
+                    ret = false;
+                }
+            }
+            else if (op.Match(TokenType.OR))
+            {
+                if (ValueUtils.ToBool(l))
+                {
+                    ret = true;
+                }
+                else
+                {
+                    r = right.GetOneResult(frame);
+                    ret = ValueUtils.ToBool(r);
+                }
+            }
+            else
+            {
+                r = right.GetOneResult(frame);
+                if (op.Match('+'))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l + (double)r;
+                }
+                else if (op.Match('-'))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l - (double)r;
+                }
+                else if (op.Match('*'))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l * (double)r;
+                }
+                else if (op.Match('/'))
+                {
+                    CheckNumberType(l, r, frame, true);
+                    ret = (double)l / (double)r;
+                }
+                else if (op.Match('%'))
+                {
+                    CheckNumberType(l, r, frame, true);
+                    ret = (double)l % (double)r;
+                }
+                else if (op.Match('<'))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l < (double)r;
+                }
+                else if (op.Match('>'))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l > (double)r;
+                }
+                else if (op.Match(TokenType.LE))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l <= (double)r;
+                }
+                else if (op.Match(TokenType.GE))
+                {
+                    CheckNumberType(l, r, frame);
+                    ret = (double)l >= (double)r;
+                }
+                else if (op.Match(TokenType.EQ))
+                {
+                    ret = l == r;
+                }
+                else if (op.Match(TokenType.NE))
+                {
+                    ret = l != r;
+                }
+                else if (op.Match(TokenType.CONCAT))
+                {
+                    ret = ValueUtils.ToString(l) + ValueUtils.ToString(r);
+                }
+                else
+                {
+                    Debug.Assert(false);
+                }
+                
+            }
+
+            return new List<object>() { obj };
         }
     }
 

@@ -161,6 +161,10 @@ namespace SScript
         {
             throw new NotImplementedException();
         }
-        
+
+        public static string ToString(object obj)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
