@@ -4,6 +4,7 @@ using System.Text;
 
 namespace SScript
 {
+
     public class ScriptException : Exception
     {
         protected string _info = string.Empty;
@@ -15,7 +16,12 @@ namespace SScript
             }
         }
 
-        protected void SetInfo(params object[] args)
+        public void SetInfo(string info)
+        {
+            _info = info;
+        }
+
+        public void SetInfo(params object[] args)
         {
             var string_build = new StringBuilder();
             foreach (var obj in args)
@@ -25,6 +31,7 @@ namespace SScript
             _info = string_build.ToString();
         }
     }
+    
 
     public class ReturnException : ScriptException
     {

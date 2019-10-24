@@ -48,5 +48,9 @@ namespace SScript
             func.Call();
             return func.module_table;
         }
+
+        #region 其他的一些SScript提供的接口放在这儿
+
+        #endregion
     }
 }

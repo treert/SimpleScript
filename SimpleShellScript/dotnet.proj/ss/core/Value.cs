@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 
 
+/// <summary>
+/// 人力有穷时，简单化吧，虽然想加好多语法糖。
+/// 1. ss 语言层面只支持非常少的类型：
+/// </summary>
 namespace SScript
 {
     public interface IForIter
@@ -14,16 +18,21 @@ namespace SScript
         IForIter GetIter();
     }
 
-    public interface IGetSet
+    public interface ITable
     {
         object Get(object key);
         object Set(object key, object value);
     }
 
+    public interface ICall
+    {
+        List<object> Call(Args args);
+    }
+
     /// <summary>
     /// 运行时函数
     /// </summary>
-    public class Function
+    public class Function: ICall
     {
         public VM vm;
         public FunctionBody code;
@@ -31,14 +40,16 @@ namespace SScript
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
         public Dictionary<string, LocalValue> upvalues;
 
-        public void Call(params object[] objs)
+        public List<object> Call(params object[] objs)
         {
-
+            Args args = new Args(objs);
+            return Call(args);
         }
 
-        public void Call(Dictionary<string, object> name_args, params object[] args)
+        public List<object> Call(Dictionary<string, object> name_args, params object[] objs)
         {
-
+            Args args = new Args(name_args, objs);
+            return Call(args);
         }
 
         public List<object> Call()
@@ -113,6 +124,18 @@ namespace SScript
             args = new List<object>();
         }
 
+        public Args(params object[] args)
+        {
+            name_args = new Dictionary<string, object>();
+            this.args = new List<object>(args);
+        }
+
+        public Args(Dictionary<string, object> name_args, params object[] args)
+        {
+            this.name_args = name_args;
+            this.args = new List<object>(args);
+        }
+
         public object this[int idx]
         {
             get
@@ -126,7 +149,7 @@ namespace SScript
         }
     }
 
-    public class Table : IGetSet
+    public class Table : ITable
     {
         public object Set(object key, object value)
         {

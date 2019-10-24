@@ -19,21 +19,35 @@ namespace SScript
             return exsit != null;
         }
 
-        public virtual void Exec(Frame frame) { }
+        public void Exec(Frame frame)
+        {
+            //try
+            {
+                _Exec(frame);
+            }
+        }
+
+        protected virtual void _Exec(Frame frame) { }
     }
 
     // 表达式语法结构，可以返回一个或者多个结果。极端情况会返回0个，比如 ...
     // 性能浪费何其严重，Σ( ° △ °|||)︴
     public abstract class ExpSyntaxTree : SyntaxTree
     {
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
-            GetResults(frame);
+            _GetResults(frame);
         }
         public object GetOneResult(Frame frame)
         {
             var x = GetResults(frame);
             return x.Count > 0 ? x[0] : null;
+        }
+
+        public bool GetBool(Frame frame)
+        {
+            var x = GetResults(frame);
+            return x.Count > 0 ? ValueUtils.ToBool(x[0]) : false;
         }
 
         public double GetNumber(Frame frame)
@@ -46,17 +60,22 @@ namespace SScript
             return (double)x[0];
         }
 
-        public IGetSet GetTable(Frame frame)
+        public ITable GetTable(Frame frame)
         {
             var x = GetResults(frame);
-            if (x.Count == 0 || (x[0] is IGetSet) == false)
+            if (x.Count == 0 || (x[0] is ITable) == false)
             {
                 throw frame.NewRunException(line, "expect IGetSet(Table) result");
             }
-            return x[0] as IGetSet;
+            return x[0] as ITable;
         }
 
-        public abstract List<object> GetResults(Frame frame);
+        public List<object> GetResults(Frame frame)
+        {
+            return _GetResults(frame);
+        }
+
+        protected abstract List<object> _GetResults(Frame frame);
     }
 
     public class BlockTree : SyntaxTree
@@ -67,7 +86,7 @@ namespace SScript
         }
         public List<SyntaxTree> statements = new List<SyntaxTree>();
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             frame.EnterBlock();
             {
@@ -88,7 +107,7 @@ namespace SScript
         }
         public ExpressionList exp_list;
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             ReturnException ep = new ReturnException();
             if (exp_list)
@@ -106,7 +125,7 @@ namespace SScript
             _line = line_;
         }
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             throw new BreakException(_line);
         }
@@ -119,7 +138,7 @@ namespace SScript
             _line = line_;
         }
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             throw new ContineException(_line);
         }
@@ -134,7 +153,7 @@ namespace SScript
         public ExpSyntaxTree exp;
         public BlockTree block;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             while (true)
             {
@@ -161,7 +180,7 @@ namespace SScript
         public BlockTree true_branch;
         public SyntaxTree false_branch;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var obj = exp.GetOneResult(frame);
             if (ValueUtils.ToBool(obj))
@@ -186,7 +205,7 @@ namespace SScript
         public ExpSyntaxTree exp2;
         public ExpSyntaxTree exp3;
         public BlockTree block;
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var start = exp1.GetNumber(frame);
             var end = exp2.GetNumber(frame);
@@ -259,7 +278,7 @@ namespace SScript
         public ExpSyntaxTree exp;
         public BlockTree block;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var obj = exp.GetOneResult(frame);
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
@@ -332,7 +351,7 @@ namespace SScript
         }
         public BlockTree block;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var cur_block = frame.cur_block;
             //int cnt = 0;
@@ -369,7 +388,7 @@ namespace SScript
         }
         public ExpSyntaxTree exp;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             ThrowException ep = new ThrowException();
             ep.line = _line;
@@ -391,7 +410,7 @@ namespace SScript
         public Token catch_name;
         public BlockTree catch_block;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             try
             {
@@ -427,7 +446,7 @@ namespace SScript
         public FunctionName func_name;
         public FunctionBody func_body;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var fn = func_body.GetOneResult(frame);
             if(func_name.names.Count == 1)
@@ -446,7 +465,7 @@ namespace SScript
                 {
                     throw frame.NewRunException(line, $"{names[0].m_string} is not Table which expect to be");
                 }
-                IGetSet t = obj as Table;
+                ITable t = obj as Table;
                 for(int i = 1; i < names.Count-1; i++)
                 {
                     var tt = t.Get(names[i].m_string);
@@ -454,11 +473,11 @@ namespace SScript
                     {
                         tt = t.Set(names[i].m_string, new Table());
                     }
-                    if(tt is IGetSet == false)
+                    if(tt is ITable == false)
                     {
                         throw frame.NewRunException(names[i].m_line, $"expect {names[i].m_string} to be a IGetSet");
                     }
-                    t = tt as IGetSet;
+                    t = tt as ITable;
                 }
                 t.Set(names[names.Count - 1].m_string, fn);
             }
@@ -488,7 +507,7 @@ namespace SScript
 
         public Token name;
         public FunctionBody func_body;
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             if (is_global)
             {
@@ -512,7 +531,7 @@ namespace SScript
         public NameList name_list;
         public ExpressionList exp_list;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var results = Config.EmptyResults;
             if (exp_list)
@@ -548,7 +567,7 @@ namespace SScript
         public List<ExpSyntaxTree> var_list = new List<ExpSyntaxTree>();
         public ExpressionList exp_list;
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             var results = exp_list.GetResults(frame);
             for(int i = 0; i < var_list.Count; i++)
@@ -599,7 +618,7 @@ namespace SScript
             return type > TokenType.SpecialAssignBegin && type < TokenType.SpecialAssignSelfEnd;
         }
 
-        public override void Exec(Frame frame)
+        protected override void _Exec(Frame frame)
         {
             double delta = 1;
             if (exp != null)
@@ -677,7 +696,7 @@ namespace SScript
             _line = token_.m_line;
         }
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             if (token.Match(TokenType.DOTS))
             {
@@ -749,7 +768,7 @@ namespace SScript
             }
         }
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             object ret = null,l,r;
             l = left.GetOneResult(frame);
@@ -844,7 +863,7 @@ namespace SScript
                 
             }
 
-            return new List<object>() { obj };
+            return new List<object>() { ret };
         }
     }
 
@@ -857,9 +876,22 @@ namespace SScript
         public ExpSyntaxTree exp;
         public Token op;
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            object ret = null;
+            if (op.Match('-'))
+            {
+                ret = exp.GetNumber(frame);
+            }
+            else if (op.Match(TokenType.NOT))
+            {
+                ret = !exp.GetBool(frame);
+            }
+            else
+            {
+                Debug.Assert(false);
+            }
+            return new List<object>() { ret };
         }
     }
 
@@ -873,7 +905,7 @@ namespace SScript
         public BlockTree block;
         public string source_name;
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             Function fn = new Function();
             fn.code = this;
@@ -901,9 +933,30 @@ namespace SScript
         }
         public List<TableField> fields = new List<TableField>();
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            Table ret = new Table();
+            for (var i = 0; i < fields.Count; i++)
+            {
+                var f = fields[i];
+                if(f.index == null && i == fields.Count - 1)
+                {
+                    var vs = f.value.GetResults(frame);
+                    foreach(var v in vs)
+                    {
+                        ret.Set(++i, v);
+                    }
+                    break;
+                }
+
+                object key = f.index ? f.index.GetOneResult(frame) : i+1;
+                if(key == null)
+                {
+                    throw frame.NewRunException(f.line, "Table key can not be nil");
+                }
+                ret.Set(key, f.value.GetOneResult(frame));
+            }
+            return new List<object>() { ret };
         }
     }
 
@@ -926,9 +979,26 @@ namespace SScript
         public ExpSyntaxTree table;
         public ExpSyntaxTree index;
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            var t = table.GetTable(frame);
+            var idx = index.GetOneResult(frame);
+            if (idx == null)
+            {
+                throw frame.NewRunException(index.line, "table index can not be null");
+            }
+            var ret = t.Get(idx);
+            return new List<object>() { ret };
+        }
+
+        public void Write(Frame frame)
+        {
+            var t = table.GetTable(frame);
+            var idx = index.GetOneResult(frame);
+            if (idx == null)
+            {
+                throw frame.NewRunException(index.line, "table index can not be null");
+            }
         }
     }
 
@@ -941,7 +1011,7 @@ namespace SScript
         public ExpSyntaxTree caller;
         public ArgsList args;
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             return null;
         }
@@ -971,7 +1041,7 @@ namespace SScript
         }
         public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             return null;
         }
@@ -987,7 +1057,7 @@ namespace SScript
         public string shell_name = null;// 默认空的执行时取 Config.def_shell
         public List<ExpSyntaxTree> list = new List<ExpSyntaxTree>();
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             return null;
         }
@@ -1003,7 +1073,7 @@ namespace SScript
         public int len = 0;
         public string format = null;
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             return null;
         }
@@ -1019,7 +1089,7 @@ namespace SScript
         public ExpSyntaxTree b;
         public ExpSyntaxTree c;// if c == null then exp = a ? b, 并且这儿 a 只判断是否是nil，专门用于默认值语法的。
 
-        public override List<object> GetResults(Frame frame)
+        protected override List<object> _GetResults(Frame frame)
         {
             return null;
         }
