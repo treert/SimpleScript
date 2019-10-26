@@ -392,6 +392,7 @@ namespace SScript
         {
             ThrowException ep = new ThrowException();
             ep.line = _line;
+            ep.source_name = frame.func.code.source_name;
             if (exp)
             {
                 ep.obj = exp.GetOneResult(frame);

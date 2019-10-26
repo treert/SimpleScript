@@ -56,10 +56,18 @@ namespace SScript
         }
     }
 
-    public class ThrowException : ScriptException
+    public class ThrowException : Exception
     {
         public int line;
+        public string source_name;
         public object obj;
+        public override string Message
+        {
+            get
+            {
+                return $"{source_name}:{line} throw exception";
+            }
+        }
     }
 
     public class RunException : ScriptException
@@ -84,37 +92,6 @@ namespace SScript
         public ParserException(string source_, int line_, int column_, string msg)
         {
             SetInfo(source_, ":", line_, ":", column_, " ", msg);
-        }
-    }
-
-    public class CodeGenerateException : ScriptException
-    {
-        public CodeGenerateException(string source_, int line_, string msg)
-        {
-            SetInfo(source_, ":", line_, " ", msg);
-        }
-    }
-
-    public class RuntimeException : ScriptException
-    {
-        public RuntimeException(string source_, int line_, string format, params object[] args)
-        {
-            SetInfo(source_, ":", line_, " ", string.Format(format, args));
-        }
-
-        private string[] _trace_back;
-        public void SetTraceBackInfo(params string[] infos)
-        {
-            // todo@om
-            _trace_back = infos;
-        }
-    }
-
-    public class CFunctionException : ScriptException
-    {
-        public CFunctionException(string format, params object[] args)
-        {
-            _info = string.Format(format, args);
         }
     }
 
