@@ -33,11 +33,17 @@ namespace SScript
     }
     
 
-    public class ReturnException : ScriptException
+    /// <summary>
+    /// 利用异常返回结果，不算在异常错误里，多处代码都要特殊处理
+    /// </summary>
+    public class ReturnException : Exception
     {
         public List<object> results = Config.EmptyResults;
     }
 
+    /// <summary>
+    /// 特殊异常，用来实现break，FuncCall需要特殊处理下
+    /// </summary>
     public class BreakException : ScriptException
     {
         public int line;
@@ -47,6 +53,9 @@ namespace SScript
         }
     }
 
+    /// <summary>
+    /// 特殊异常，用来实现contine，FuncCall需要特殊处理下
+    /// </summary>
     public class ContineException : ScriptException
     {
         public int line;
@@ -94,12 +103,5 @@ namespace SScript
             SetInfo(source_, ":", line_, ":", column_, " ", msg);
         }
     }
-
-    class OtherException : ScriptException
-    {
-        public OtherException(string format, params object[] args)
-        {
-            _info = string.Format(format, args);
-        }
-    }
+    
 }
