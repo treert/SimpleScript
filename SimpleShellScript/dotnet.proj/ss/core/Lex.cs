@@ -237,22 +237,14 @@ namespace SScript
                 _NextChar();
             }
 
-            try
-            {
-                double num = 0;
-                if (_buf[0] == '0' && _buf.Length > 2 && _buf[1] != '.')
-                {
-                    num = (double)Convert.ToUInt32(_buf.ToString(), 16);
-                }
-                else
-                {
-                    num = Convert.ToDouble(_buf.ToString());
-                }
-                return new Token(num);
-            }
-            catch
+            double num = ValueUtils.ParseNumber(_buf.ToString());
+            if (double.IsNaN(num))
             {
                 throw NewLexException($"{_buf} is not valid double");
+            }
+            else
+            {
+                return new Token(num);
             }
         }
 

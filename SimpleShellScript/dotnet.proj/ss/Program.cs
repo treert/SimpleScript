@@ -45,5 +45,23 @@ class Program
         Console.WriteLine(dic[ob]);
 
         Console.WriteLine(f()[g()]);
+
+        ulong xx = (1uL<<63)+1;
+        Console.WriteLine(xx);
+        Console.WriteLine((double)xx);
+
+        {
+            double dd = 1.0 / 0.0;
+            Console.WriteLine(dd);
+            Console.WriteLine(double.IsNormal(double.Epsilon*2.0e100));
+            Console.WriteLine(double.IsNegativeInfinity(dd));
+            Console.WriteLine(double.NaN > dd);
+            Console.WriteLine(double.NaN <= dd);
+            Console.WriteLine(SScript.ValueUtils.ToNumber(".1e10"));
+            Console.WriteLine(SScript.ValueUtils.ToNumber("0.23E+3"));
+            Console.WriteLine(SScript.ValueUtils.ToNumber(null));
+            Console.WriteLine(SScript.ValueUtils.ToNumber((byte)3));
+            Console.WriteLine((double)(byte)3);
+        }
     }
 }
