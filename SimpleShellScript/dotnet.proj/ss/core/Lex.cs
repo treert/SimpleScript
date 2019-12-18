@@ -237,7 +237,7 @@ namespace SScript
                 _NextChar();
             }
 
-            double num = ValueUtils.ParseNumber(_buf.ToString());
+            double num = Utils.ParseNumber(_buf.ToString());
             if (double.IsNaN(num))
             {
                 throw NewLexException($"{_buf} is not valid double");

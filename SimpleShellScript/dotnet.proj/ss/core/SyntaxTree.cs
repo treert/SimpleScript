@@ -47,7 +47,7 @@ namespace SScript
         public bool GetBool(Frame frame)
         {
             var x = GetResults(frame);
-            return x.Count > 0 ? ValueUtils.ToBool(x[0]) : false;
+            return x.Count > 0 ? Utils.ToBool(x[0]) : false;
         }
 
         public double GetNumber(Frame frame)
@@ -158,7 +158,7 @@ namespace SScript
             while (true)
             {
                 var obj = exp.GetOneResult(frame);
-                if (ValueUtils.ToBool(obj))
+                if (Utils.ToBool(obj))
                 {
                     block.Exec(frame);
                 }
@@ -183,7 +183,7 @@ namespace SScript
         protected override void _Exec(Frame frame)
         {
             var obj = exp.GetOneResult(frame);
-            if (ValueUtils.ToBool(obj))
+            if (Utils.ToBool(obj))
             {
                 true_branch.Exec(frame);
             }
@@ -775,10 +775,10 @@ namespace SScript
             l = left.GetOneResult(frame);
             if (op.Match(TokenType.AND))
             {
-                if (ValueUtils.ToBool(l))
+                if (Utils.ToBool(l))
                 {
                     r = right.GetOneResult(frame);
-                    ret = ValueUtils.ToBool(r);
+                    ret = Utils.ToBool(r);
                 }
                 else
                 {
@@ -787,14 +787,14 @@ namespace SScript
             }
             else if (op.Match(TokenType.OR))
             {
-                if (ValueUtils.ToBool(l))
+                if (Utils.ToBool(l))
                 {
                     ret = true;
                 }
                 else
                 {
                     r = right.GetOneResult(frame);
-                    ret = ValueUtils.ToBool(r);
+                    ret = Utils.ToBool(r);
                 }
             }
             else
@@ -855,7 +855,7 @@ namespace SScript
                 }
                 else if (op.Match(TokenType.CONCAT))
                 {
-                    ret = ValueUtils.ToString(l) + ValueUtils.ToString(r);
+                    ret = Utils.ToString(l) + Utils.ToString(r);
                 }
                 else
                 {
