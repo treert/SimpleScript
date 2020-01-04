@@ -304,8 +304,8 @@ namespace SScript
             }
             else
             {
-                if (NextToken().m_type != (int)TokenType.NAME)
-                    throw NewParserException("expect 'id' after '.'", _current);
+                if (!NextToken().IsLiteralString())
+                    throw NewParserException("expect <id> after '.'", _current);
                 index_access.index = new Terminator(_current.ConvertToStringToken());
             }
             return index_access;
@@ -366,6 +366,7 @@ namespace SScript
                     kw.k = NextToken();
                     NextToken();
                     kw.w = ParseExp();
+                    list.kw_exp_list.Add(kw);
                     if (LookAhead().Match(','))
                     {
                         NextToken();
@@ -479,27 +480,7 @@ namespace SScript
                 else
                 {
                     last_field = new TableField(LookAhead().m_line);
-                    if (LookAhead2().Match('='))
-                    {
-                        // must be kv
-                        NextToken();
-                        if (_current.Match(TokenType.NAME))
-                        {
-                            last_field.index = new Terminator(_current.ConvertToStringToken());
-                        }
-                        else if (_current.Match(TokenType.STRING)
-                            || _current.Match(TokenType.NUMBER))
-                        {
-                            last_field.index = new Terminator(_current);
-                        }
-                        else
-                        {
-                            throw NewParserException("expect name,string,number to define table-key", _current);
-                        }
-                        NextToken();
-                        last_field.value = ParseExp();
-                    }
-                    else if (LookAhead().Match(TokenType.STRING_BEGIN))
+                    if (LookAhead().Match(TokenType.STRING_BEGIN))
                     {
                         var exp = ParseComplexString();
                         if (LookAhead().Match('='))
@@ -512,6 +493,26 @@ namespace SScript
                         {
                             last_field.value = exp;
                         }
+                    }
+                    else if (LookAhead2().Match('='))
+                    {
+                        // must be kv
+                        NextToken();
+                        if (_current.Match(TokenType.STRING)
+                            || _current.Match(TokenType.NUMBER))
+                        {
+                            last_field.index = new Terminator(_current);
+                        }
+                        else if (_current.IsLiteralString())
+                        {
+                            last_field.index = new Terminator(_current.ConvertToStringToken());
+                        }
+                        else
+                        {
+                            throw NewParserException("expect <name>,<string>,<number> to define table-key before '='", _current);
+                        }
+                        NextToken();// skip =
+                        last_field.value = ParseExp();
                     }
                     else
                     {

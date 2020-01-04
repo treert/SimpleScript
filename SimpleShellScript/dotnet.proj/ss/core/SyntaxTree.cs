@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace SScript
@@ -48,6 +49,12 @@ namespace SScript
         {
             var x = GetResults(frame);
             return x.Count > 0 ? Utils.ToBool(x[0]) : false;
+        }
+
+        public string GetString(Frame frame)
+        {
+            var x = GetResults(frame);
+            return x.Count > 0 ? Utils.ToString(x[0]) : "";
         }
 
         public double GetNumber(Frame frame)
@@ -991,16 +998,6 @@ namespace SScript
             var ret = t.Get(idx);
             return new List<object>() { ret };
         }
-
-        public void Write(Frame frame)
-        {
-            var t = table.GetTable(frame);
-            var idx = index.GetOneResult(frame);
-            if (idx == null)
-            {
-                throw frame.NewRunException(index.line, "table index can not be null");
-            }
-        }
     }
 
     public class FuncCall : ExpSyntaxTree
@@ -1014,7 +1011,20 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            var f = caller.GetOneResult(frame);
+            var args = this.args.GetArgs(frame);
+            // todo 
+
+            if(f is Function)
+            {
+                return (f as Function).Call(args);
+            }
+            else
+            {
+                // todo
+            }
+
+            return Config.EmptyResults;
         }
     }
 
@@ -1032,6 +1042,35 @@ namespace SScript
         public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
         public ExpSyntaxTree kw_table = null;
         public List<KW> kw_exp_list = new List<KW>();
+
+        public Args GetArgs(Frame frame)
+        {
+            Args args = new Args();
+            for(int i = 0; i < exp_list.Count -1; i++)
+            {
+                args.args.Add(exp_list[i].GetOneResult(frame));
+            }
+            if(exp_list.Count > 0)
+            {
+                var rets = exp_list.Last().GetResults(frame);
+                args.args.AddRange(rets);
+            }
+            if(kw_table != null)
+            {
+                Table table = kw_table.GetOneResult(frame) as Table;
+                if(table != null)
+                {
+                    // todo
+                }
+                // 要不要报个错
+            }
+            foreach(var kw in kw_exp_list)
+            {
+                var val = kw.w.GetOneResult(frame);
+                args.name_args[kw.k.m_string] = val;
+            }
+            return args;
+        }
     }
 
     public class ExpressionList : ExpSyntaxTree
@@ -1044,7 +1083,17 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            List<object> list = new List<object>(exp_list.Count);
+            for (int i = 0; i < exp_list.Count - 1; i++)
+            {
+                list.Add(exp_list[i].GetOneResult(frame));
+            }
+            if (exp_list.Count > 0)
+            {
+                var rets = exp_list.Last().GetResults(frame);
+                list.AddRange(rets);
+            }
+            return list;
         }
     }
 
@@ -1060,7 +1109,20 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            StringBuilder sb = new StringBuilder();
+            foreach(var item in list)
+            {
+                sb.Append(item.GetString(frame));
+            }
+            if (is_shell)
+            {
+                // todo
+                throw new NotImplementedException();
+            }
+            else
+            {
+                return new List<object>() { sb.ToString() };
+            }
         }
     }
 
@@ -1076,7 +1138,9 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+            var obj = exp.GetOneResult(frame);
+            string str = Utils.ToString(obj, format, len);
+            return new List<object>() { str};
         }
     }
 
@@ -1092,7 +1156,24 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            return null;
+
+            if(c == null)
+            {
+                var aa = a.GetResults(frame);
+                if(aa.Count == 0 || aa[0] == null)
+                {
+                    return b.GetResults(frame);
+                }
+                else
+                {
+                    return aa;
+                }
+            }
+            else
+            {
+                var aa = a.GetBool(frame);
+                return aa ? b.GetResults(frame) : c.GetResults(frame);
+            }
         }
     }
 }

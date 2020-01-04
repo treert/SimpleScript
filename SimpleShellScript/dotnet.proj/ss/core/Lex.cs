@@ -107,8 +107,7 @@ namespace SScript
             ret.m_type = (int)TokenType.STRING;
             ret.m_line = m_line;
             ret.m_column = m_column;
-
-            // todo? 可以考虑把关键字也转变成string。
+            
             ret.m_string = m_string;
 
             return ret;
@@ -116,7 +115,7 @@ namespace SScript
 
         public Token(TokenType type_, string string_)
         {
-            Debug.Assert(type_ == TokenType.NAME);
+            // Debug.Assert(type_ == TokenType.NAME);
             m_type = (int)type_;
             m_string = string_;
         }
@@ -138,12 +137,10 @@ namespace SScript
         {
             return m_type == (int)type_;
         }
-
-        // string有复杂的string
-        public bool IsString()
+        
+        public bool IsLiteralString()
         {
-            return m_type == (int)TokenType.STRING_BEGIN
-                || m_type == (int)TokenType.STRING;
+            return m_string != null && !Match(TokenType.STRING) ;// name + reserved_key
         }
 
         public override string ToString()
@@ -780,7 +777,7 @@ namespace SScript
                                 TokenType token_type;
                                 if (s_reserve_keys.TryGetValue(name, out token_type))
                                 {
-                                    return new Token(token_type);
+                                    return new Token(token_type, name);
                                 }
                                 else
                                 {

@@ -89,5 +89,11 @@ namespace SScript
         {
             return obj == null ? "" : obj.ToString();
         }
+
+        public static string ToString(object obj, string format, int len)
+        {
+            // todo
+            throw new NotImplementedException();
+        }
     }
 }
