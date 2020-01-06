@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 
 
 /// <summary>
@@ -17,6 +18,12 @@ namespace SScript
     public interface IForEach
     {
         IForIter GetIter();
+    }
+
+    public interface IForKeys
+    {
+        List<object> Keys();
+        object Get(object key);
     }
 
     public interface ITable
@@ -150,17 +157,49 @@ namespace SScript
         }
     }
 
-    public class Table : ITable
+    // 内置Table，
+    // 1. 同时作为 array and set。数组的支持是残次的，不要在其中挖洞
+    // 2. 支持一个接近js原型的结构，不用lua元表那么复杂的结构了
+    public class Table
     {
+        Dictionary<object, object> _items = new Dictionary<object, object>();
+        Table prototype = null;
+
+        public List<object> GetKeys()
+        {
+            List<object> ret = new List<object>();
+            var it = this;
+            do
+            {
+                ret.AddRange(it._items.Keys);
+                it = it.prototype;
+            } while (it != null);
+            ret = ret.Distinct().ToList();
+            ret.Sort();
+            return ret;
+        }
+
+        public int Len => _items.Count;
+
         public object Set(object key, object value)
         {
+            if(key == null)
+            {
+                return null;// @om 就不报错了
+            }
+            
             return null;
         }
 
         public object Get(object key)
         {
+            if (key == null)
+            {
+                return null;// @om 就不报错了
+            }
             return null;
         }
+
     }
 
     public class LocalValue

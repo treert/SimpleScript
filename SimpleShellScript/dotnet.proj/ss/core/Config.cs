@@ -11,5 +11,8 @@ namespace SScript
 
         // 稍微优化下性能，(/ □ \)
         public static readonly List<object> EmptyResults = new List<object>();
+
+        public const long MaxSafeInt = 9007199254740991;
+        public const long MinSafeInt = -9007199254740991;
     }
 }

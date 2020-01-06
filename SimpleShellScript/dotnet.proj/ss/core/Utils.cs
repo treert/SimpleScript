@@ -85,6 +85,67 @@ namespace SScript
             }
         }
 
+        public static double ConvertToPriciseDouble(object obj)
+        {
+            if (obj is double)
+            {
+                return (double)obj;
+            }
+            if (obj is float)
+            {
+                return (float)obj;
+            }
+            if (obj is byte)
+            {
+                return (byte)obj;
+            }
+            if (obj is sbyte)
+            {
+                return (sbyte)obj;
+            }
+            if (obj is short)
+            {
+                return (short)obj;
+            }
+            if (obj is ushort)
+            {
+                return (ushort)obj;
+            }
+            if (obj is int)
+            {
+                return (int)obj;
+            }
+            if (obj is uint)
+            {
+                return (uint)obj;
+            }
+            if (obj is long)
+            {
+                if(Math.Abs((long)obj) > Config.MaxSafeInt)
+                {
+                    return double.NaN;
+                }
+                return (long)obj;
+            }
+            if (obj is ulong)
+            {
+                if (((ulong)obj) > Config.MaxSafeInt)
+                {
+                    return double.NaN;
+                }
+                return (ulong)obj;
+            }
+            if (obj is decimal)
+            {
+                if (Math.Abs((decimal)obj) > Config.MaxSafeInt)
+                {
+                    return double.NaN;
+                }
+                return decimal.ToDouble((decimal)obj);
+            }
+            return double.NaN;
+        }
+
         public static string ToString(object obj)
         {
             return obj == null ? "" : obj.ToString();

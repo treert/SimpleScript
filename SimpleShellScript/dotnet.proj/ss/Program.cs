@@ -88,6 +88,23 @@ class Program
             Console.WriteLine(f.Invoke(null,new object[] { a,2}));
             Console.WriteLine(a);
             Console.WriteLine((int)'✘');
+            Console.WriteLine((int)'9');
+        }
+        {
+            object a = (double)1;
+            object b = (double)1;
+            Dictionary<object, int> d = new Dictionary<object, int>();
+            d[a] = 1;
+            d[b] = 2;
+            Console.WriteLine(a == b);
+            Console.WriteLine(a.Equals(b));
+            Console.WriteLine(d[a]);
+            ulong c = 12345678901234567890L;
+            double e = 12345678901234567891L;
+            Console.WriteLine(e.ToString("f0"));
+            Console.WriteLine(c.ToString("f1"));
+            Console.WriteLine(c == e);
+            Console.WriteLine(double.TryParse("1234567891234567891234",out e));
         }
     }
 }

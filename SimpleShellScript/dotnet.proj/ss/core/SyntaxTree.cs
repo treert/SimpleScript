@@ -289,6 +289,7 @@ namespace SScript
         {
             var obj = exp.GetOneResult(frame);
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
+
             IForIter iter = obj as IForIter;
             if(iter == null && obj is IForEach)
             {
@@ -298,6 +299,8 @@ namespace SScript
             if(iter != null)
             {
                 object k, v;
+
+
                 while(iter.Next(out k, out v))
                 {
                     frame.cur_block = cur_block;
@@ -473,7 +476,7 @@ namespace SScript
                 {
                     throw frame.NewRunException(line, $"{names[0].m_string} is not Table which expect to be");
                 }
-                ITable t = obj as Table;
+                Table t = obj as Table;
                 for(int i = 1; i < names.Count-1; i++)
                 {
                     var tt = t.Get(names[i].m_string);
@@ -481,11 +484,11 @@ namespace SScript
                     {
                         tt = t.Set(names[i].m_string, new Table());
                     }
-                    if(tt is ITable == false)
+                    if(tt is Table == false)
                     {
                         throw frame.NewRunException(names[i].m_line, $"expect {names[i].m_string} to be a IGetSet");
                     }
-                    t = tt as ITable;
+                    t = tt as Table;
                 }
                 t.Set(names[names.Count - 1].m_string, fn);
             }

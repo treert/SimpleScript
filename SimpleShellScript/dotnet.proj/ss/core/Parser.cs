@@ -777,7 +777,7 @@ namespace SScript
             }
             else if (LookAhead().m_type != (int)TokenType.NAME)
             {
-                throw NewParserException("expect 'id' or '{' after 'for'", _look_ahead);
+                throw NewParserException("expect <id> or '{' after 'for'", _look_ahead);
             }
 
             if (LookAhead2().m_type == (int)'=')
