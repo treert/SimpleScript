@@ -68,7 +68,7 @@ namespace SScript
             var v = GetName(name, out global);
             if (global)
             {
-                func.vm.global_table.Set(name, obj);
+                func.vm.global_table[name] = obj;
             }
             else if (v)
             {
@@ -76,7 +76,7 @@ namespace SScript
             }
             else
             {
-                func.module_table.Set(name, obj);
+                func.module_table[name] = obj;
             }
             return obj;
         }
@@ -87,7 +87,7 @@ namespace SScript
             var v = GetName(name, out global);
             if (global)
             {
-                return func.vm.global_table.Get(name);
+                return func.vm.global_table.GetValueOrDefault(name);
             }
             else if (v)
             {
@@ -95,10 +95,10 @@ namespace SScript
             }
             else
             {
-                var obj = func.module_table.Get(name);
+                var obj = func.module_table.GetValueOrDefault(name);
                 if(obj == null)
                 {
-                    obj = func.vm.global_table.Get(name);
+                    obj = func.vm.global_table.GetValueOrDefault(name);
                 }
                 return obj;
             }

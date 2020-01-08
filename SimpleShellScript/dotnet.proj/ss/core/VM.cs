@@ -12,8 +12,8 @@ namespace SScript
     /// </summary>
     public class VM
     {
-        public readonly Table global_table = new Table();
-        public readonly Dictionary<string, Table> modules = new Dictionary<string, Table>();
+        public readonly Dictionary<string,object> global_table = new Dictionary<string, object>();
+        public readonly Dictionary<string, Dictionary<string, object>> modules = new Dictionary<string, Dictionary<string, object>>();
         public readonly Lex lex = new Lex();
         public readonly Parser parser = new Parser();
 
@@ -38,19 +38,15 @@ namespace SScript
             return parser.Parse(lex);
         }
 
-        public Table InitModule(FunctionBody tree)
+        public Dictionary<string, object> InitModule(FunctionBody tree)
         {
             Function func = new Function();
             func.vm = this;
-            func.module_table = new Table();
+            func.module_table = new Dictionary<string, object>();
             func.code = tree;
             func.upvalues = new Dictionary<string, LocalValue>();
             func.Call();
             return func.module_table;
         }
-
-        #region 其他的一些SScript提供的接口放在这儿
-
-        #endregion
     }
 }

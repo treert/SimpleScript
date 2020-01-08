@@ -106,5 +106,25 @@ class Program
             Console.WriteLine(c == e);
             Console.WriteLine(double.TryParse("1234567891234567891234",out e));
         }
+        {
+            var d = new Dictionary<int, int>();
+            d[1] = 2;
+            d[2] = 3;
+            object a = 1;
+            System.Collections.IDictionary c = d;
+            Console.WriteLine(c[a]);
+            a = 3;
+            Console.WriteLine(c[a]);
+            double h = double.NaN;
+            int j = (int)h;
+            Console.WriteLine((int)h);
+            Console.WriteLine(j == h);
+
+            int[,] aa = new int[1,1];
+            Array arr = (Array)aa;
+            Console.WriteLine(aa.GetType());
+            Console.WriteLine(arr.GetType());
+            Console.WriteLine(aa is Array);
+        }
     }
 }

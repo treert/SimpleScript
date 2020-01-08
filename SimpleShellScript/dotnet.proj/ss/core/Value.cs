@@ -44,7 +44,7 @@ namespace SScript
     {
         public VM vm;
         public FunctionBody code;
-        public Table module_table = null;
+        public Dictionary<string, object> module_table = null;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
         public Dictionary<string, LocalValue> upvalues;
 
@@ -181,14 +181,28 @@ namespace SScript
 
         public int Len => _items.Count;
 
-        public object Set(object key, object value)
+        public bool Set(object key, object value)
         {
             if(key == null)
             {
-                return null;// @om 就不报错了
+                return false;// @om 就不报错了
             }
-            
-            return null;
+            double f = Utils.ConvertToPriciseDouble(key);
+            if (double.IsNaN(f) == false)
+            {
+                key = f;
+            }
+            if(value != null)
+            {
+                this._items[key] = value;
+            }
+            else
+            {
+                // @om 只删自己的，不删原型继承来的。可能出现逻辑不一致的情况。
+                this._items.Remove(key);
+            }
+
+            return true;
         }
 
         public object Get(object key)
@@ -197,6 +211,22 @@ namespace SScript
             {
                 return null;// @om 就不报错了
             }
+            double f = Utils.ConvertToPriciseDouble(key);
+            if (double.IsNaN(f) == false)
+            {
+                key = f;
+            }
+            var it = this;
+            object val;
+            do
+            {
+                if (it._items.TryGetValue(key, out val))
+                {
+                    return val;
+                }
+                it = it.prototype;
+            } while (it != null);
+
             return null;
         }
 

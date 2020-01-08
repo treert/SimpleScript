@@ -13,7 +13,12 @@
 	- 不打算用字节码虚拟机了，直接执行SyntaxTree。
 		- 产生的问题时，栈依赖C#，不能实现协程之类。
 	- 基本值类型，还是继续使用成c#的Object，不追求性能啥的。
-	
+
+## 一些记录
+### 2020-01-08
+本来打算使用赋值null，来当成删除的。然而发觉有些儿问题，有的时候就是要设置成null，比如module级变量初始值null。
+提供个函数好了`delete(table, key) or delete(name)`
+
 ## BNF
 ```
 module ::= stats

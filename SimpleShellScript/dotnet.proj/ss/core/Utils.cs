@@ -87,6 +87,10 @@ namespace SScript
 
         public static double ConvertToPriciseDouble(object obj)
         {
+            if(obj == null || obj is string || (obj.GetType().IsPrimitive == false && !(obj is decimal)))
+            {
+                return double.NaN;// 这个最常用，算是一点点优化了。
+            }
             if (obj is double)
             {
                 return (double)obj;

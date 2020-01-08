@@ -558,7 +558,7 @@ namespace SScript
                     frame.AddGlobalName(name.m_string);
                     if(results.Count > i)
                     {
-                        frame.func.vm.global_table.Set(name.m_string, obj);
+                        frame.func.vm.global_table[name.m_string] = obj;
                     }
                 }
                 else
