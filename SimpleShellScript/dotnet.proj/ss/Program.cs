@@ -82,6 +82,7 @@ class Program
             Console.WriteLine((int) -2.5);
         }
         {
+            Console.WriteLine("22222222222222222");
             var f = typeof(ExtClass).GetMethod("ExF");
             int a = 1;
             a.ExF(2);
@@ -107,11 +108,15 @@ class Program
             Console.WriteLine(double.TryParse("1234567891234567891234",out e));
         }
         {
+            Console.WriteLine("1111111111111111");
             var d = new Dictionary<int, int>();
             d[1] = 2;
             d[2] = 3;
             object a = 1;
             System.Collections.IDictionary c = d;
+            c[a] = 11;
+            object eee = 1.2;
+            c[eee] = 333;
             Console.WriteLine(c[a]);
             a = 3;
             Console.WriteLine(c[a]);

@@ -187,22 +187,20 @@ namespace SScript
             {
                 return false;// @om 就不报错了
             }
-            double f = Utils.ConvertToPriciseDouble(key);
-            if (double.IsNaN(f) == false)
-            {
-                key = f;
-            }
-            if(value != null)
-            {
-                this._items[key] = value;
-            }
-            else
-            {
-                // @om 只删自己的，不删原型继承来的。可能出现逻辑不一致的情况。
-                this._items.Remove(key);
-            }
+            key = PreConvertKey(key);
+            this._items[key] = value;
 
             return true;
+        }
+
+        public bool Delete(object key)
+        {
+            if (key == null)
+            {
+                return false;// @om 就不报错了
+            }
+            key = PreConvertKey(key);
+            return this._items.Remove(key);
         }
 
         public object Get(object key)
@@ -211,11 +209,8 @@ namespace SScript
             {
                 return null;// @om 就不报错了
             }
-            double f = Utils.ConvertToPriciseDouble(key);
-            if (double.IsNaN(f) == false)
-            {
-                key = f;
-            }
+            key = PreConvertKey(key);
+
             var it = this;
             object val;
             do
@@ -230,6 +225,15 @@ namespace SScript
             return null;
         }
 
+        public static object PreConvertKey(object key)
+        {
+            double f = Utils.ConvertToPriciseDouble(key);
+            if (double.IsNaN(f) == false)
+            {
+                key = f;
+            }
+            return key;
+        }
     }
 
     public class LocalValue

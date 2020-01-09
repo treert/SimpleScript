@@ -25,7 +25,7 @@ namespace SScript
             }
             else if (obj is char)
             {
-                return (char)obj;// Convert.ToDouble 不支持
+                return (char)obj;// Convert.ToDouble 不支持,大概是因为char转int有歧义，比如 '0'
             }
             else if (obj == null)
             {
