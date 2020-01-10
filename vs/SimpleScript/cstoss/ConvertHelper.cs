@@ -29,7 +29,8 @@ namespace SimpleScript
 
             if (target_type.IsPrimitive && obj is double && _number_types.Contains(target_type))
             {
-                return Convert.ChangeType(obj, target_type);
+                throw new Exception();
+                // return Convert.ChangeType(obj, target_type);// todo error
             }
 
             // todo convert closure to delegate
@@ -58,7 +59,7 @@ namespace SimpleScript
                     throw new CFunctionException("{0} is ValueType, can not assign from null", target_type);
                 }
             }
-            if (target_type.IsAssignableFrom(obj.GetType()) == false)
+            else if (target_type.IsAssignableFrom(obj.GetType()) == false)
             {
                 throw new CFunctionException("{0} can not assign from {1}", target_type, obj.GetType());
             }

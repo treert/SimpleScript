@@ -155,6 +155,16 @@ namespace SScript
                 return null;
             }
         }
+
+        public object this[string name]
+        {
+            get
+            {
+                object ret;
+                name_args.TryGetValue(name, out ret);
+                return ret;
+            }
+        }
     }
 
     // 内置Table，
