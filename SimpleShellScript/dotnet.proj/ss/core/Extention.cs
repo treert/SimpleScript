@@ -198,20 +198,17 @@ namespace SScript
     /// </summary>
     public class ExtContain
     {
-        string name;
         Type type;
         Dictionary<string, ExtWrap> wraps = new Dictionary<string, ExtWrap>();
-        bool is_static;
 
         public object Get(object obj,object key)
         {
             Debug.Assert(key != null);
-            Debug.Assert((obj != null) ^ is_static);
+            // @om 这儿做些特殊处理，支持类似 __index 之类的操作。2.0再看看吧。
 
             string name = key as string;
             if(name == null)
             {
-                // @om 这儿做些特殊处理，支持类似 __index 之类的操作。
                 throw new Exception("wrap only support string key now");
             }
             ExtWrap wrap;
@@ -262,7 +259,7 @@ namespace SScript
         public virtual bool Set(object obj, object value)
         {
             // 只有属性支持这个
-            throw new Exception("I am not a function, can not be call.");
+            throw new Exception("I am not a field, can not be set.");
         }
 
         // 方法被调用
@@ -270,6 +267,9 @@ namespace SScript
         {
             throw new Exception("I am not a function, can not be call.");
         }
+
+        public string name;// 用途：错误提示，文档生成。如果是全局函数，name的格式可以是 {Name.}*Name
+        public string tip;// 用途：文档生成
 
         public static object CheckAndConvertFromSSToSS(object obj, Type target_type)
         {
@@ -335,18 +335,19 @@ namespace SScript
 
             throw new Exception($"{obj.GetType()} can not assgin to {target_type}");
         }
-
-
-        public string name;
-        FieldInfo field_info;
-        PropertyInfo property_info;
+        
     }
 
+    /// <summary>
+    /// 扩展C#方法，支持对象方法和静态方法,对应ss里也有两种形式：对象方法，全局方法。
+    /// 2对2，总共4中情况
+    /// </summary>
     public class ExtFuncWrap: ExtWrap
     {
-        MethodInfo method_info;
+        MethodInfo method;
         ExtFuncAttribute attr;
 
+        Type that_type;// ss 对象方法要用
         ParameterInfo[] param_arr;
 
         public ExtFuncWrap(MethodInfo method, ExtFuncAttribute attr)
@@ -356,7 +357,7 @@ namespace SScript
                 throw new Exception($"{method.DeclaringType}.{method.Name} contain generic parameter");
             }
 
-            this.method_info = method;
+            this.method = method;
             this.attr = attr;
             param_arr = method.GetParameters();
             if (method.IsStatic)
@@ -371,53 +372,50 @@ namespace SScript
             }
         }
 
-        // 情况梳理
-        // 1. 对象方法调用 a.f(xx)
-        // 2. 对象方法对象 f(xx,this=a)
-        // 3. 静态方法调用 A.f(xx) or f(xx)
-        // 4. 对象静态扩展方法调用 a.f(xx)，反射函数的调用方式略特殊一些
         public override List<object> Call(Args args)
         {
-            // 支持下命名参数
             object that = null;
             object[] target_args = new object[param_arr.Length];
-            int sp_base = 0;
-            if (method_info.IsStatic)
+            int target_base = 0;
+            int arg_base = 0;
+            if (that_type != null)
             {
-                if (attr.is_extension_func)
+                // ss 对象方法
+                that = args[Config.MAGIC_THIS] ?? args.that;
+                if (!that_type.IsInstanceOfType(that))
                 {
-                    var t = args.that;
-                    if (args.name_args.ContainsKey(Config.MAGIC_THIS))
-                    {
-                        t = args.name_args[Config.MAGIC_THIS];
-                    }
-                    if (!param_arr[0].ParameterType.IsInstanceOfType(t))
-                    {
-                        throw new Exception("this can not be null when call object.method");
-                    }
-                    target_args[sp_base++] = t;
+                    throw new Exception($"this does not match, expect {that_type} got {that?.GetType()}. ExtFunc:{method.DeclaringType}.{method.Name} is_static:{method.IsStatic}");
+                }
+                // 静态方法 to ss对象方法需要特殊处理，将this放到第一个参数的位置
+                if (method.IsStatic)
+                {
+                    target_args[target_base++] = that;
+                    that = null;
                 }
             }
             else
             {
-                // 对象方法
-                that = args.that;
-                if (args.name_args.ContainsKey(Config.MAGIC_THIS))
+                // ss 全局方法
+                // c#对象方法 to ss全局方法需要特殊处理，从参数列表里提取this
+                if (!method.IsStatic)
                 {
-                    that = args.name_args[Config.MAGIC_THIS];
-                }
-                if(!method_info.DeclaringType.IsInstanceOfType(that))
-                {
-                    throw new Exception("this can not be null when call object.method");
+                    that = args[Config.MAGIC_THIS] ?? args[0];
+                    arg_base = 1;// 不管怎么样，第一个参数都当成this，被吃掉
+                    if (!method.DeclaringType.IsInstanceOfType(that))
+                    {
+                        throw new Exception($"fisrt arg does not match, expect {method.DeclaringType} got {that?.GetType()}. ExtFunc:{method.DeclaringType}.{method.Name} is_static:False");
+                    }
                 }
             }
-            for(int idx = sp_base; idx < param_arr.Length; idx++)
+            
+            for(int idx = target_base; idx < param_arr.Length; idx++)
             {
                 var param = param_arr[idx];
                 object arg;
                 if (!args.name_args.TryGetValue(param.Name, out arg))
                 {
-                    if(idx - sp_base >= args.args.Count)
+
+                    if(idx - target_base + arg_base>= args.args.Count)
                     {
                         if (param.HasDefaultValue)
                         {
@@ -425,18 +423,18 @@ namespace SScript
                         }
                         else
                         {
-                            throw new Exception($"{method_info.DeclaringType}.{method_info.Name} miss {idx - sp_base} arg");
+                            throw new Exception($"miss {idx - target_base + arg_base} arg. ExtFunc:{method.DeclaringType}.{method.Name} is_static:{method.IsStatic}");
                         }
                     }
                     else
                     {
-                        arg = args.args[idx - sp_base];
+                        arg = args.args[idx - target_base + arg_base];
                     }
                 }
                 target_args[idx] = ExtWrap.CheckAndConvertFromSSToSS(arg, param.ParameterType);
             }
 
-            var ret = method_info.Invoke(args.that, target_args);
+            var ret = method.Invoke(that, target_args);
             List<object> ls = new List<object>() { ret };
             for(int idx = 0; idx < param_arr.Length; idx++)
             {
@@ -451,11 +449,91 @@ namespace SScript
         }
     }
 
-    public class ExtFieldWrap
+    public class ExtConstructorWrap : ExtWrap
+    {
+        ConstructorInfo ctor;
+        ParameterInfo[] param_arr;
+        public override List<object> Call(Args args)
+        {
+            object[] target_args = new object[param_arr.Length];
+            for (int idx = 0; idx < param_arr.Length; idx++)
+            {
+                var param = param_arr[idx];
+                object arg;
+                if (!args.name_args.TryGetValue(param.Name, out arg))
+                {
+                    if (idx >= args.args.Count)
+                    {
+                        if (param.HasDefaultValue)
+                        {
+                            arg = param.DefaultValue;
+                        }
+                        else
+                        {
+                            throw new Exception($"{ctor.DeclaringType}.ctor miss {idx} arg");
+                        }
+                    }
+                    else
+                    {
+                        arg = args.args[idx];
+                    }
+                }
+                target_args[idx] = ExtWrap.CheckAndConvertFromSSToSS(arg, param.ParameterType);
+            }
+
+            var ret = ctor.Invoke(target_args);
+            return new List<object>(){ ret};
+        }
+    }
+
+    public class ExtFieldWrap: ExtWrap
     {
         FieldInfo field_info;
+        bool only_read = false;
 
-        
+        public override bool Set(object obj, object value)
+        {
+            if (only_read)
+            {
+                throw new Exception($"field {name} is readonly, type={field_info.DeclaringType} is_static={field_info.IsStatic}");
+            }
+            value = CheckAndConvertFromSSToSS(value, field_info.FieldType);
+            field_info.SetValue(obj, value);
+            return true;
+        }
+
+        public override object Get(object obj)
+        {
+            return field_info.GetValue(obj);
+        }
+    }
+
+    public class ExtPropertyWrap : ExtWrap
+    {
+        PropertyInfo property_info;
+        bool only_read = false;
+
+        public override bool Set(object obj, object value)
+        {
+            if (only_read)
+            {
+                throw new Exception($"property {name} is readonly, type={property_info.DeclaringType}");
+            }
+            value = CheckAndConvertFromSSToSS(value, property_info.PropertyType);
+            property_info.SetValue(obj, value);
+            return true;
+        }
+
+        public override object Get(object obj)
+        {
+            return property_info.GetValue(obj);
+        }
+    }
+
+    // @om 2.0 再考虑吧
+    public class ExtIndexPropertyWrap : ExtWrap
+    {
+
     }
 
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
@@ -466,12 +544,20 @@ namespace SScript
         public bool is_extension_func = false;// static extension 函数标记，类似c#的this扩展方法
     }
 
+    // 增加这个的原因是，一个函数可以即导出成
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
+    public class ExtGlobalFuncAttribute : Attribute
+    {
+        public string name;
+        public string tip;// 帮助文档
+    }
+
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public class ExtFieldAttribute : Attribute
     {
         public string name;
         public string tip;// 帮助文档
-        public bool onlyread = false;
+        public bool only_read = false;
     }
 
     // 注册到全局表中，可以用于公开一些静态字段或者函数

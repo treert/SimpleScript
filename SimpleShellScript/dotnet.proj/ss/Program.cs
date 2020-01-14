@@ -1,6 +1,7 @@
 ﻿using SScript.Test;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 static class ExtClass
 {
@@ -8,6 +9,24 @@ static class ExtClass
     {
         a += 1;
         return a + b;
+    }
+}
+
+class TestA
+{
+    public int a;
+    public TestA(int a)
+    {
+        this.a = a;
+    }
+
+    [SScript.ExtField]
+    public int this[int idx,string x1, bool x2]
+    {
+        get
+        {
+            return idx + a;
+        }
     }
 }
 
@@ -169,6 +188,14 @@ class Program
             Console.WriteLine(Enum.IsDefined(type,1));
             Console.WriteLine(Enum.IsDefined(type, "0"));
             Console.WriteLine(Enum.IsDefined(type, 0));
+        }
+        {
+            var type = typeof(TestA);
+            var ctors = type.GetConstructors();
+            Console.WriteLine(ctors.Length);
+            var a = (TestA)ctors[0].Invoke(new object[] { 2});
+            Console.WriteLine(a.a);
+            Console.WriteLine($"null={null}.");
         }
     }
     enum ETest
