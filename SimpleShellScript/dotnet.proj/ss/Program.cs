@@ -1,4 +1,5 @@
 ﻿using SScript.Test;
+using SScript;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -122,6 +123,7 @@ class Program
             d[a] = 1;
             d[b] = 2;
             Console.WriteLine(a == bb);
+            Console.WriteLine(a.Equals(bb));
             d[bb] = 3;
             Console.WriteLine(a == b);
             Console.WriteLine(a.Equals(b));
@@ -196,6 +198,17 @@ class Program
             var a = (TestA)ctors[0].Invoke(new object[] { 2});
             Console.WriteLine(a.a);
             Console.WriteLine($"null={null}.");
+        }
+        {
+            List<object> a = new List<object>() { 1, 2, 3 };
+            Console.WriteLine($"={a.GetValueOrDefault(1)}");
+            a = null;
+            Console.WriteLine($"={a.GetValueOrDefault(1)}");
+        }
+        {
+            Console.WriteLine(Utils.Compare(1, 1.0));
+            Console.WriteLine(Utils.CheckEquals(1, 1.0));
+            Console.WriteLine(Utils.CheckEquals(1f, 1.0));
         }
     }
     enum ETest

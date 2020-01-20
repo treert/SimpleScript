@@ -19,6 +19,9 @@
 本来打算使用赋值null，来当成删除的。然而发觉有些儿问题，有的时候就是要设置成null，比如module级变量初始值null。
 提供个函数好了`delete(table, key) or delete(name)`
 
+### 2020-01-17
+想了想，还是要支持一套反射系统，总不至于对Dictionary,List之类一直特判。
+
 ## BNF
 ```
 module ::= stats

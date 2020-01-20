@@ -6,6 +6,55 @@ namespace SScript
 {
     public class Utils
     {
+        public static int Compare(object a, object b)
+        {
+            if (a == b) return 0;
+            if (a == null) return -1;
+            if (b == null) return 1;
+
+            // 需要对数字类型的特殊处理下
+            var fa = Utils.ConvertToPriciseDouble(a);
+            var fb = Utils.ConvertToPriciseDouble(b);
+
+            if (double.IsNaN(fa) || double.IsNaN(fb))
+            {
+                // 尝试用 IComparable 来比较
+                var ta = a as IComparable;
+                var tb = b as IComparable;
+                if (ta != null && tb != null)
+                {
+                    return ta.CompareTo(tb);
+                }
+                else
+                {
+                    throw new Exception($"Can not compare, one obj has not implement IComparable");
+                }
+            }
+            else
+            {
+                return fa.CompareTo(fb);
+            }
+        }
+
+        public static bool CheckEquals(object a, object b)
+        {
+            if (a == b) return true;
+            if (a == null || b == null) return false;
+
+            // 需要对数字类型的特殊处理下
+            var fa = Utils.ConvertToPriciseDouble(a);
+            var fb = Utils.ConvertToPriciseDouble(b);
+
+            if(double.IsNaN(fa) || double.IsNaN(fb))
+            {
+                return a.Equals(b);
+            }
+            else
+            {
+                return fa == fb;
+            }
+        }
+
         public static bool ToBool(object obj)
         {
             if (obj == null) return false;
@@ -13,7 +62,11 @@ namespace SScript
             {
                 return (bool)obj;
             }
-            // todo 要不要对NaN或者0，"" 做些特殊处理
+            if(obj is double)
+            {
+                return !double.IsNaN((double)obj);// 对NaN特殊处理下，NaN 不能用于常见的一些运算
+            }
+            // todo 要不要对0，"" 做些特殊处理
             return true;
         }
 

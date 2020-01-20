@@ -2,8 +2,8 @@
  * 支持扩展
  * 1. 往 SS 里注入Api
  * 
- * 实现的一些细节
- * 1. 如果没有设置name，会
+ * 一些实现细节：
+ * 注意的api的名字最好不要用 __ 开头，__ 开头的预留特殊用途，现有的在ExtConfig 里看。
  */
 using System;
 using System.Collections;
@@ -14,9 +14,46 @@ using System.Text;
 
 namespace SScript
 {
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class ExtFuncAttribute : Attribute
+    {
+        public string name;
+        public string tip;// 帮助文档
+        public bool is_extension_func = false;// static extension 函数标记，类似c#的this扩展方法
+    }
+
+    // 增加这个的原因是，一个函数可以即导出成
+    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
+    public class ExtGlobalFuncAttribute : Attribute
+    {
+        public string name;
+        public string tip;// 帮助文档
+    }
+
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
+    public class ExtFieldAttribute : Attribute
+    {
+        public string name;
+        public string tip;// 帮助文档
+        public bool only_read = false;
+    }
+    
+    public static class ExtConfig
+    {
+        public const string key_tostring = "__tostring";// 格式化成字符串，带一个字符串参数
+    }
+
 
     public static class ExtSomeApi
     {
+        public static T GetValueOrDefault<T>(this List<T> ls, int idx)
+        {
+            if(ls != null && idx < ls.Count)
+            {
+                return ls[idx];
+            }
+            return default(T);
+        }
         public static V GetValueOrDefault<K,V>(this Dictionary<K,V> dict, K key)
         {
             V val;
@@ -77,7 +114,7 @@ namespace SScript
     {
         static Dictionary<Type, ExtContain> ext_types = new Dictionary<Type, ExtContain>();
 
-        public static object Get(object obj, string key)
+        public static object Get(object obj, object key)
         {
             if (obj == null || key == null) return null;
 
@@ -136,7 +173,7 @@ namespace SScript
             return null;
         }
 
-        public static void Set(object obj, string key, object val)
+        public static void Set(object obj, object key, object val)
         {
             if (obj == null || key == null) return;
 
@@ -342,7 +379,7 @@ namespace SScript
     /// 扩展C#方法，支持对象方法和静态方法,对应ss里也有两种形式：对象方法，全局方法。
     /// 2对2，总共4中情况
     /// </summary>
-    public class ExtFuncWrap: ExtWrap
+    public class ExtFuncWrap: ExtWrap, ICall
     {
         MethodInfo method;
         ExtFuncAttribute attr;
@@ -449,7 +486,7 @@ namespace SScript
         }
     }
 
-    public class ExtConstructorWrap : ExtWrap
+    public class ExtConstructorWrap : ExtWrap, ICall
     {
         ConstructorInfo ctor;
         ParameterInfo[] param_arr;
@@ -536,35 +573,5 @@ namespace SScript
 
     }
 
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class ExtFuncAttribute : Attribute
-    {
-        public string name;
-        public string tip;// 帮助文档
-        public bool is_extension_func = false;// static extension 函数标记，类似c#的this扩展方法
-    }
 
-    // 增加这个的原因是，一个函数可以即导出成
-    [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class ExtGlobalFuncAttribute : Attribute
-    {
-        public string name;
-        public string tip;// 帮助文档
-    }
-
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public class ExtFieldAttribute : Attribute
-    {
-        public string name;
-        public string tip;// 帮助文档
-        public bool only_read = false;
-    }
-
-    // 注册到全局表中，可以用于公开一些静态字段或者函数
-    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-    public class ExtClassAttribute : Attribute
-    {
-        public string name;
-        public string tip;// 帮助文档
-    }
 }

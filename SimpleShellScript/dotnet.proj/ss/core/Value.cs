@@ -10,26 +10,11 @@ using System.Linq;
 /// </summary>
 namespace SScript
 {
-    public interface IForIter
-    {
-        bool Next(out object key, out object val);
-    }
-
-    public interface IForEach
-    {
-        IForIter GetIter();
-    }
-
+    // 设计成这样的考虑是，避免在遍历的时候修改集合，导致遍历过程难预测
     public interface IForKeys
     {
-        List<object> Keys();
+        List<object> GetKeys();
         object Get(object key);
-    }
-
-    public interface ITable
-    {
-        object Get(object key);
-        object Set(object key, object value);
     }
 
     public interface ICall
@@ -170,7 +155,7 @@ namespace SScript
     // 内置Table，
     // 1. 同时作为 array and set。数组的支持是残次的，不要在其中挖洞
     // 2. 支持一个接近js原型的结构，不用lua元表那么复杂的结构了
-    public class Table
+    public class Table: IForKeys
     {
         Dictionary<object, object> _items = new Dictionary<object, object>();
         Table prototype = null;

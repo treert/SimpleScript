@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -57,28 +58,28 @@ namespace SScript
             return x.Count > 0 ? Utils.ToString(x[0]) : "";
         }
 
+        public double GetValidNumber(Frame frame)
+        {
+            var x = GetResults(frame);
+            double f = Utils.ToNumber(x.GetValueOrDefault(0));
+            // @om 这个接口做下double有效性判断
+            if (double.IsNaN(f))
+            {
+                throw frame.NewRunException(line, "exp can not convert to valid double");
+            }
+            return f;
+        }
+
         public double GetNumber(Frame frame)
         {
             var x = GetResults(frame);
-            if(x.Count == 0 || (x[0] is double) == false)
-            {
-                throw frame.NewRunException(line, "expect number result");
-            }
-            return (double)x[0];
-        }
-
-        public ITable GetTable(Frame frame)
-        {
-            var x = GetResults(frame);
-            if (x.Count == 0 || (x[0] is ITable) == false)
-            {
-                throw frame.NewRunException(line, "expect IGetSet(Table) result");
-            }
-            return x[0] as ITable;
+            double f = Utils.ToNumber(x.GetValueOrDefault(0));
+            return f;
         }
 
         public List<object> GetResults(Frame frame)
         {
+            // @om 要不要做异常行号计算？
             return _GetResults(frame);
         }
 
@@ -214,11 +215,11 @@ namespace SScript
         public BlockTree block;
         protected override void _Exec(Frame frame)
         {
-            var start = exp1.GetNumber(frame);
-            var end = exp2.GetNumber(frame);
+            var start = exp1.GetValidNumber(frame);
+            var end = exp2.GetValidNumber(frame);
             if(start <= end)
             {
-                double step = exp3 ? exp3.GetNumber(frame) : 1;
+                double step = exp3 ? exp3.GetValidNumber(frame) : 1;
                 if(step <= 0)
                 {
                     throw frame.NewRunException(line, $"for step {step} should greater than 0, or will cause forerver loop");
@@ -246,7 +247,7 @@ namespace SScript
             }
             else
             {
-                double step = exp3 ? exp3.GetNumber(frame) : -1;
+                double step = exp3 ? exp3.GetValidNumber(frame) : -1;
                 if (step >= 0)
                 {
                     throw frame.NewRunException(line, $"for step {step} should less than 0, or will cause forerver loop");
@@ -290,24 +291,18 @@ namespace SScript
             var obj = exp.GetOneResult(frame);
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
 
-            IForIter iter = obj as IForIter;
-            if(iter == null && obj is IForEach)
-            {
-                iter = (obj as IForEach).GetIter();
-            }
             var cur_block = frame.cur_block;
-            if(iter != null)
+            if(obj is IForKeys)
             {
-                object k, v;
-
-
-                while(iter.Next(out k, out v))
+                var iter = obj as IForKeys;
+                var keys = iter.GetKeys();
+                foreach(var k in keys)
                 {
                     frame.cur_block = cur_block;
                     try
                     {
                         frame.EnterBlock();
-                        name_list.AddLocals(frame, k, v);
+                        name_list.AddLocals(frame, k, iter.Get(k));
                         block.Exec(frame);
                     }
                     catch (ContineException)
@@ -325,7 +320,7 @@ namespace SScript
                 for(; ; )
                 {
                     var results = (obj as Function).Call();
-                    if(results.Count > 0 && results[0] != null)
+                    if(results.GetValueOrDefault(0) != null)
                     {
                         frame.cur_block = cur_block;
                         try
@@ -342,6 +337,28 @@ namespace SScript
                         {
                             break;
                         }
+                    }
+                }
+            }
+            // 想了想，统一支持下 IEnumerate
+            else if(obj is IEnumerable)
+            {
+                foreach (var a in (obj as IEnumerable))
+                {
+                    frame.cur_block = cur_block;
+                    try
+                    {
+                        frame.EnterBlock();
+                        name_list.AddLocals(frame, a);
+                        block.Exec(frame);
+                    }
+                    catch (ContineException)
+                    {
+                        continue;
+                    }
+                    catch (BreakException)
+                    {
+                        break;
                     }
                 }
             }
@@ -589,13 +606,14 @@ namespace SScript
                 {
                     // TableAccess
                     var access = it as TableAccess;
-                    var table = access.table.GetTable(frame);
+                    var table = access.table.GetOneResult(frame);
                     var idx = access.index.GetOneResult(frame);
                     if(idx == null)
                     {
                         throw frame.NewRunException(line, "table index can not be null");
                     }
-                    table.Set(idx, val);
+
+                    ExtUtils.Set(table, idx, val);
                 }
                 else
                 {
@@ -631,44 +649,62 @@ namespace SScript
 
         protected override void _Exec(Frame frame)
         {
-            double delta = 1;
-            if (exp != null)
-            {
-                delta = exp.GetNumber(frame);
-            }
+            object table = null, idx = null, val;
+            string name = null;
+            // 读
             if (var is TableAccess)
             {
                 var access = var as TableAccess;
-                var table = access.table.GetTable(frame);
-                var idx = access.index.GetOneResult(frame);
+                table = access.table.GetOneResult(frame);
+                if (table == null)
+                {
+                    throw frame.NewRunException(access.table.line, "table can not be null when run TableAccess");
+                }
+                idx = access.index.GetOneResult(frame);
                 if (idx == null)
                 {
-                    throw frame.NewRunException(line, "table index can not be null");
+                    throw frame.NewRunException(access.index.line, "index can not be null when run TableAccess");
                 }
-                var val = table.Get(idx);
-                if (val is double)
-                {
-                    table.Set(idx, delta + (double)val);
-                }
-                else
-                {
-                    throw frame.NewRunException(access.line, $"expect a double");
-                }
+                val = ExtUtils.Get(table, idx);
             }
             else
             {
                 var ter = var as Terminator;
                 Debug.Assert(ter.token.Match(TokenType.NAME));
-                var name = ter.token.m_string;
-                var val = frame.Read(name);
-                if(val is double)
+                name = ter.token.m_string;
+                val = frame.Read(name);
+            }
+
+            // 运算
+            if (op == TokenType.CONCAT_SELF)
+            {
+                // .=
+                string str = exp.GetString(frame);
+                val = Utils.ToString(val) + str;
+            }
+            else
+            {
+                double delta = 1;
+                if (exp != null)
                 {
-                    frame.Write(name, delta + (double)val);
+                    delta = exp.GetValidNumber(frame);
                 }
-                else
+                if (op == TokenType.DEC_ONE || op == TokenType.DEC_SELF)
                 {
-                    throw frame.NewRunException(ter.line, $"expect {name}'s value to be a double");
+                    delta *= -1;
                 }
+                // @om 要不要检查下NaN
+                val = Utils.ToNumber(val) + delta;
+            }
+
+            // 写
+            if(var is TableAccess)
+            {
+                ExtUtils.Set(table, idx, val);
+            }
+            else
+            {
+                frame.Write(name, val);
             }
         }
     }
@@ -778,94 +814,79 @@ namespace SScript
                 }
             }
         }
-
+        
         protected override List<object> _GetResults(Frame frame)
         {
-            object ret = null,l,r;
-            l = left.GetOneResult(frame);
+            object ret = null;
             if (op.Match(TokenType.AND))
             {
-                if (Utils.ToBool(l))
-                {
-                    r = right.GetOneResult(frame);
-                    ret = Utils.ToBool(r);
-                }
-                else
-                {
-                    ret = false;
-                }
+                ret = left.GetBool(frame) && right.GetBool(frame);
             }
             else if (op.Match(TokenType.OR))
             {
-                if (Utils.ToBool(l))
-                {
-                    ret = true;
-                }
-                else
-                {
-                    r = right.GetOneResult(frame);
-                    ret = Utils.ToBool(r);
-                }
+                ret = left.GetBool(frame) || right.GetBool(frame);
             }
             else
             {
-                r = right.GetOneResult(frame);
                 if (op.Match('+'))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l + (double)r;
+                    ret = left.GetValidNumber(frame) + right.GetValidNumber(frame);
                 }
                 else if (op.Match('-'))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l - (double)r;
+                    ret = left.GetValidNumber(frame) - right.GetValidNumber(frame);
                 }
                 else if (op.Match('*'))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l * (double)r;
+                    ret = left.GetValidNumber(frame) * right.GetValidNumber(frame);
                 }
                 else if (op.Match('/'))
                 {
-                    CheckNumberType(l, r, frame, true);
-                    ret = (double)l / (double)r;
+                    ret = left.GetValidNumber(frame) / right.GetValidNumber(frame);
                 }
                 else if (op.Match('%'))
                 {
-                    CheckNumberType(l, r, frame, true);
-                    ret = (double)l % (double)r;
+                    ret = left.GetValidNumber(frame) % right.GetValidNumber(frame);
                 }
                 else if (op.Match('<'))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l < (double)r;
+                    var l = left.GetOneResult(frame);
+                    var r = right.GetOneResult(frame);
+                    ret = Utils.Compare(l,r) < 0;
                 }
                 else if (op.Match('>'))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l > (double)r;
+                    var l = left.GetOneResult(frame);
+                    var r = right.GetOneResult(frame);
+                    ret = Utils.Compare(l, r) > 0;
                 }
                 else if (op.Match(TokenType.LE))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l <= (double)r;
+                    var l = left.GetOneResult(frame);
+                    var r = right.GetOneResult(frame);
+                    ret = Utils.Compare(l, r) <= 0;
                 }
                 else if (op.Match(TokenType.GE))
                 {
-                    CheckNumberType(l, r, frame);
-                    ret = (double)l >= (double)r;
+                    var l = left.GetOneResult(frame);
+                    var r = right.GetOneResult(frame);
+                    ret = Utils.Compare(l, r) >= 0;
                 }
                 else if (op.Match(TokenType.EQ))
                 {
-                    ret = l == r;
+                    var l = left.GetOneResult(frame);
+                    var r = right.GetOneResult(frame);
+                    ret = Utils.CheckEquals(l, r);
                 }
                 else if (op.Match(TokenType.NE))
                 {
-                    ret = l != r;
+                    var l = left.GetOneResult(frame);
+                    var r = right.GetOneResult(frame);
+                    ret = !Utils.CheckEquals(l, r);
                 }
                 else if (op.Match(TokenType.CONCAT))
                 {
-                    ret = Utils.ToString(l) + Utils.ToString(r);
+                    ret = left.GetString(frame) + right.GetString(frame);
                 }
                 else
                 {
@@ -892,7 +913,7 @@ namespace SScript
             object ret = null;
             if (op.Match('-'))
             {
-                ret = exp.GetNumber(frame);
+                ret = exp.GetValidNumber(frame);
             }
             else if (op.Match(TokenType.NOT))
             {
@@ -981,6 +1002,7 @@ namespace SScript
         public ExpSyntaxTree value;
     }
 
+    // todo 这儿可以做一个优化: a.b.c.d = 1，连着创建2个Table。实际使用时，可能很方便。
     public class TableAccess : ExpSyntaxTree
     {
         public TableAccess(int line_)
@@ -992,13 +1014,13 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            var t = table.GetTable(frame);
+            var t = table.GetOneResult(frame);
             var idx = index.GetOneResult(frame);
             if (idx == null)
             {
                 throw frame.NewRunException(index.line, "table index can not be null");
             }
-            var ret = t.Get(idx);
+            var ret = ExtUtils.Get(t,idx);
             return new List<object>() { ret };
         }
     }
