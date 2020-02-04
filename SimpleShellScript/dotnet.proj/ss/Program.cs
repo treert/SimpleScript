@@ -210,6 +210,25 @@ class Program
             Console.WriteLine(Utils.CheckEquals(1, 1.0));
             Console.WriteLine(Utils.CheckEquals(1f, 1.0));
         }
+        {
+            Console.WriteLine($"{"abc",4}#{"abe",-4}#");
+        }
+        {
+            Console.WriteLine("Start Test SS 1.0");
+            VM vm = new VM();
+            // 注入基础扩展
+            ExtUtils.Import(typeof(BaseExt), vm);
+            // 执行测试文件
+            try
+            {
+                vm.DoFile("test.ss");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error Happen\n{e.Message}");
+            }
+            Console.WriteLine("End");
+        }
     }
     enum ETest
     {

@@ -1036,20 +1036,16 @@ namespace SScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            var f = caller.GetOneResult(frame);
+            ICall func = caller.GetOneResult(frame) as ICall;
+            if(func == null)
+            {
+                throw frame.NewRunException(caller.line, "expect fn or ext_fn to call");
+            }
+
             var args = this.args.GetArgs(frame);
-            // todo 
+            object that = caller is TableAccess? (caller as TableAccess).table : null;
 
-            if(f is Function)
-            {
-                return (f as Function).Call(args);
-            }
-            else
-            {
-                // todo
-            }
-
-            return Config.EmptyResults;
+            return func.Call(args);
         }
     }
 

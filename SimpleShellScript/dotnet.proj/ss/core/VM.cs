@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Text;
 
@@ -17,14 +18,16 @@ namespace SScript
         public readonly Lex lex = new Lex();
         public readonly Parser parser = new Parser();
 
-        public Table DoString(string str)
+        public Dictionary<string, object> DoString(string str)
         {
-            return null;
+            var f = Parse(str);
+            var ret = InitModule(f);
+            return ret;
         }
 
-        public Table DoFile(string file_name)
+        public Dictionary<string, object> DoFile(string file)
         {
-            return null;
+            return DoString(File.ReadAllText(file));
         }
 
         public Table Import(string module_name)

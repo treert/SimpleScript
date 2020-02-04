@@ -19,15 +19,14 @@ namespace SScript
     {
         public string name;
         public string tip;// 帮助文档
-        public bool is_extension_func = false;// static extension 函数标记，类似c#的this扩展方法
     }
 
     // 增加这个的原因是，一个函数可以即导出成
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = true)]
-    public class ExtGlobalFuncAttribute : Attribute
+    public class ExtGlobalFuncAttribute : ExtFuncAttribute
     {
-        public string name;
-        public string tip;// 帮助文档
+        //public string name;
+        //public string tip;// 帮助文档
     }
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, Inherited = true, AllowMultiple = true)]
@@ -108,11 +107,103 @@ namespace SScript
             idx = ((idx % str.Length) + str.Length) % str.Length;
             return str[idx];
         }
+
+        public static object CallWithThisAndReturnOne(this ICall func, object that, params object[] objs)
+        {
+            Args args = new Args(objs);
+            args.that = that;
+            var ret = func.Call(args);
+            return ret.GetValueOrDefault(0);
+        }
     }
 
+    // todo 这个大概要做VM级别的隔离
     public static class ExtUtils
     {
         static Dictionary<Type, ExtContain> ext_types = new Dictionary<Type, ExtContain>();
+
+        public static void Register(ExtFuncWrap func_wrap, VM vm)
+        {
+            var that_type = func_wrap.that_type;
+            if(that_type == null)
+            {
+                // global, todo split name
+                vm.global_table[func_wrap.name] = func_wrap;
+            }
+            else
+            {
+                ExtContain contain;
+                if (ext_types.TryGetValue(func_wrap.that_type, out contain) == false)
+                {
+                    contain = new ExtContain(func_wrap.that_type);
+                    ext_types.Add(func_wrap.that_type, contain);
+                }
+                contain.Register(func_wrap.name, func_wrap);
+            }
+
+
+        }
+
+        // 注册类里面的函数
+        public static void Import(Type type, VM vm)
+        {
+            var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
+            foreach(var method in methods)
+            {
+                foreach(var attr in method.GetCustomAttributes<ExtFuncAttribute>())
+                {
+                    var f = new ExtFuncWrap(method, attr);
+                    Register(f, vm);
+                }
+            }
+            // todo 
+        }
+
+        public static string ToString(object obj, string format, int len)
+        {
+            string ret;
+            if(obj == null)
+            {
+                ret = "";
+            }
+            if(obj is string)
+            {
+                ret = obj as string;// string 保持不变
+            }
+            else
+            {
+                // 尝试调用扩展的tostring
+                ExtContain ext;
+                if(ext_types.TryGetValue(obj.GetType(), out ext))
+                {
+                    var func = ext.Get(obj, ExtConfig.key_tostring) as ExtFuncWrap;
+                    if(func != null)
+                    {
+                        ret = func.CallWithThisAndReturnOne(obj) as string;
+                        // @om 不做检查，如果返回null，下面会挂掉，不要那么搞。
+                    }
+                    else
+                    {
+                        ret = obj.ToString();
+                    }
+                }
+                else
+                {
+                    ret = obj.ToString();
+                }
+            }
+
+            // padding
+            if(len > ret.Length)
+            {
+                ret = ret.PadLeft(len - ret.Length);
+            }
+            else if(len < -ret.Length)
+            {
+                ret = ret.PadRight(-len - ret.Length);
+            }
+            return ret;
+        }
 
         public static object Get(object obj, object key)
         {
@@ -237,6 +328,17 @@ namespace SScript
     {
         Type type;
         Dictionary<string, ExtWrap> wraps = new Dictionary<string, ExtWrap>();
+
+        public ExtContain(Type type)
+        {
+            this.type = type;
+        }
+
+        public void Register(string name, ExtWrap wrap)
+        {
+            // todo check name
+            wraps[name] = wrap;
+        }
 
         public object Get(object obj,object key)
         {
@@ -382,29 +484,37 @@ namespace SScript
     public class ExtFuncWrap: ExtWrap, ICall
     {
         MethodInfo method;
-        ExtFuncAttribute attr;
 
-        Type that_type;// ss 对象方法要用
+        public Type that_type;// ss 对象方法要用
         ParameterInfo[] param_arr;
 
         public ExtFuncWrap(MethodInfo method, ExtFuncAttribute attr)
         {
+            this.name = attr.name ?? method.Name;
+            this.tip = attr.tip ?? "";
+
             if (method.ContainsGenericParameters)
             {
                 throw new Exception($"{method.DeclaringType}.{method.Name} contain generic parameter");
             }
 
             this.method = method;
-            this.attr = attr;
             param_arr = method.GetParameters();
-            if (method.IsStatic)
+
+            that_type = null;
+            if (attr is ExtGlobalFuncAttribute == false)
             {
-                if (attr.is_extension_func)
+                if (method.IsStatic)
                 {
-                    if(param_arr.Length == 0)
+                    if (param_arr.Length == 0)
                     {
-                        throw new Exception($"{method.DeclaringType}.{method.Name} has no param, can not be export as object func");
+                        throw new Exception($"{method.DeclaringType}.{method.Name} is static and has no param, can not be export as object func");
                     }
+                    that_type = param_arr[0].ParameterType;
+                }
+                else
+                {
+                    that_type = method.DeclaringType;
                 }
             }
         }
