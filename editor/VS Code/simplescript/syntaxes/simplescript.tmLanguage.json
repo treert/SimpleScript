@@ -209,7 +209,7 @@
 			"name": "constant.other.placeholder.simplescript"
 		},
 		{
-			"match": "\\b(break|continue|do|echo|else|for|foreach|if|elseif|goto|return|then|repeat|while|until|end|function|local|in)\\b",
+			"match": "\\b(break|continue|do|echo|else|for|foreach|if|elseif|goto|return|then|repeat|while|until|end|function|local|in|async)\\b",
 			"name": "keyword.control.simplescript"
 		},
 		{

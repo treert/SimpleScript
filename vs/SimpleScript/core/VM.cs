@@ -23,6 +23,7 @@ namespace SimpleScript
     /// </summary>
     public class VM
     {
+        public static string Version = "0.0.7";
         //**************** do ********************************/
         public void DoString(string s, String file_name = "")
         {

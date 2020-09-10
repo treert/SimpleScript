@@ -79,6 +79,7 @@ namespace SimpleScriptConsole
         static void DebugFile(string file_name, VM vm, int port)
         {
             //Console.WriteLine(Environment.CurrentDirectory);
+            Console.WriteLine($"Simple Script {VM.Version}");
             try
             {
                 var func = vm.Parse(File.ReadAllText(file_name), file_name);
@@ -99,6 +100,13 @@ namespace SimpleScriptConsole
                             vm.m_hooker.SetPipeServer(pipe);
                             vm.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
                             vm.CallFunction(func);
+                            // 测试协程，当成是事件循环也行
+                            Console.WriteLine("Loop update for coroutine, You can close program to Exit!!");
+                            while (true)
+                            {
+                                CoroutineMgr.Update();
+                                System.Threading.Thread.Sleep(10);
+                            }
                         }
                     }
                 }
@@ -110,6 +118,7 @@ namespace SimpleScriptConsole
                     vm.CallFunction(func);
 
                     // 测试协程，当成是事件循环也行
+                    Console.WriteLine("Loop update for coroutine, You can close program to Exit!!");
                     while (true)
                     {
                         CoroutineMgr.Update();
@@ -122,7 +131,7 @@ namespace SimpleScriptConsole
                 Console.WriteLine(e.Message);
             }
             Console.WriteLine("Press Any Key To Exit");
-            Console.ReadKey();
+            Console.ReadKey(true);
         }
 
         static void ShowHelpThenExit()
@@ -132,7 +141,7 @@ namespace SimpleScriptConsole
             {
                 exe_file = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
             }
-            string help_str = @"Simple Script 1.0 Copyright (C) 2017
+            string help_str = @"
 use way:
     {0}                          // run terminal
     {0} xx.ss or xx.ssc          // run source file or binary file
@@ -140,6 +149,7 @@ use way:
     {0} -d xx.ss [-p port]       // debug port range is [1025,9999]    
     {0} -b xx.ss [-o xx.ssb]     // show bin code
 ";
+            Console.Write($"Simple Script {VM.Version} Copyright (C) 2017");
             Console.WriteLine(help_str, exe_file);
         }
         
