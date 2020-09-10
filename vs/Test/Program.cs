@@ -56,6 +56,32 @@ namespace Test
                 vm.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
 
                 vm.DoFile("test.ssc");
+
+                // 测试协程，当成是事件循环也行
+                Console.Write("Start update coroutine!");
+                if (Console.IsInputRedirected == false)
+                {
+                    Console.WriteLine(" Press Esc to end.");
+                }
+                else
+                {
+                    Console.WriteLine();
+                }
+                
+                while (true)
+                {
+                    if (Console.IsInputRedirected == false && Console.KeyAvailable)
+                    {
+                        var key = Console.ReadKey(true);
+                        if (key.Key == ConsoleKey.Escape)
+                        {
+                            break;
+                        }
+                    }
+                    CoroutineMgr.Update();
+                    System.Threading.Thread.Sleep(10);
+                }
+
                 return;
             }
         }

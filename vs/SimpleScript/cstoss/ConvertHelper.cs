@@ -29,8 +29,8 @@ namespace SimpleScript
 
             if (target_type.IsPrimitive && obj is double && _number_types.Contains(target_type))
             {
-                throw new Exception();
-                // return Convert.ChangeType(obj, target_type);// todo error
+                // todo@om 有错误，需要修改
+                return Convert.ChangeType(obj, target_type);
             }
 
             // todo convert closure to delegate
