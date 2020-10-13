@@ -49,13 +49,13 @@ namespace Test
                 LibBase.Register(vm);
                 LibCoroutine.Register(vm);
 
-                vm.ComileFile("test.ss", "test.ssc");
+                vm.ComileFile("test.oms", "test.omsc");
 
                 var pipe = new IOPipe();
                 vm.m_hooker.SetPipeServer(pipe);
                 vm.m_hooker.SetBreakMode(SimpleScript.DebugProtocol.BreakMode.StopForOnce);
 
-                vm.DoFile("test.ssc");
+                vm.DoFile("test.omsc");
 
                 // 测试协程，当成是事件循环也行
                 Console.Write("Start update coroutine!");

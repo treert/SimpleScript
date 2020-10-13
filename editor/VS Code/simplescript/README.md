@@ -5,7 +5,7 @@ SimpleScript是自己写的类似lua的脚本语言，简称ss。有些不同的
 
 ## 调试功能
 
-根目录下建`test.ss`。
+根目录下建`test.oms`。
 F5使用vs的调试功能，里面找名字里带`SimpleScript`的，根据提示添加launch.json配置。
 
 一个内容例子

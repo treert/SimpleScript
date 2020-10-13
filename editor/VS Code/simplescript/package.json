@@ -2,7 +2,7 @@
     "name": "simplescript",
     "displayName": "simplescript",
     "description": "simplescript language support",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "publisher": "onemore",
     "repository": {
         "type": "git",
@@ -24,7 +24,7 @@
                     "simplescript"
                 ],
                 "extensions": [
-                    ".ss"
+                    ".oms"
                 ],
                 "configuration": "./language-configuration.json"
             }
@@ -45,7 +45,7 @@
                         "name": "SimpleScript Launch",
                         "type": "simplescript",
                         "request": "launch",
-                        "program": "${workspaceRoot}/test.ss"
+                        "program": "${workspaceRoot}/test.oms"
                     }
                 ],
                 "configurationSnippets": [
@@ -56,7 +56,7 @@
                             "name": "SimpleScript Launch",
                             "type": "simplescript",
                             "request": "launch",
-                            "program": "^\"\\${workspaceRoot}/${1:test.ss}\""
+                            "program": "^\"\\${workspaceRoot}/${1:test.oms}\""
                         }
                     }
                 ],
@@ -68,7 +68,7 @@
                         "properties": {
                             "program": {
                                 "type": "string",
-                                "description": "the first run ss file"
+                                "description": "the first run oms file"
                             },
                             "args": {
                                 "type": "array",

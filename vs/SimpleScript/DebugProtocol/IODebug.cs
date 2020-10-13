@@ -54,7 +54,7 @@ namespace SimpleScript
         string[] _help_cmd_list = new string[]
         {
             @"h                 # help                                     ",
-            @"b $file $line     # breakpoint set --file main.ss --line 12  ",
+            @"b $file $line     # breakpoint set --file main.oms --line 12  ",
             @"br delete $index  # breakpoint delete 1 2 3                  ",
             @"br clear          # breakpoint deleteall                     ",
             @"br list           # breakpoint list                          ",

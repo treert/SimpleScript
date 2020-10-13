@@ -93,11 +93,11 @@ namespace VSCodeDebugAdapter
                 int port = Utilities.FindFreePort(0);
                 if(port <= 0)
                 {
-                    SendErrorResponse(response, 3003, "Can not launch ss.exe with a port", null);
+                    SendErrorResponse(response, 3003, "Can not launch oms.exe with a port", null);
                     return;
                 }
                 ProcessStartInfo info = new ProcessStartInfo();
-                info.FileName = Utilities.FindExeDirectory() + "\\ss.exe";
+                info.FileName = Utilities.FindExeDirectory() + "\\oms.exe";
                 //info.Arguments = string.Format("-d {0}", Path.GetFileName(_t_main_file), port);
                 info.Arguments = string.Format("-d {0} -p {1}", Path.GetFileName(_t_main_file), port);
                 info.WorkingDirectory = _t_work_dir;
@@ -113,7 +113,7 @@ namespace VSCodeDebugAdapter
                 }
                 catch
                 {
-                    SendErrorResponse(response, 3004, "Can not connect to ss.exe");
+                    SendErrorResponse(response, 3004, "Can not connect to oms.exe");
                     ClearNetConnect();
                     return;
                 }
@@ -384,14 +384,20 @@ namespace VSCodeDebugAdapter
                 if(res != null)
                 {
                     SendResponse(response, new EvaluateResponseBody(res.ToResString(), 0));
+                    return;
                 }
                 else
                 {
                     error = "can not ecaluate, network seems break";
                 }
             }
-
-            SendErrorResponse(response, 3014, "Evaluate request failed ({_reason}).", new { _reason = error });
+            // 2020-10-13 这个逻辑有抛异常，但是还是没定位到为啥vscode调试卡死。
+            //            并且回忆不起来这个调试器代码的原始参考了，也没找到
+            //            只找到官方文档：https://microsoft.github.io/debug-adapter-protocol/overview
+            //if(error != null)
+            {
+                SendErrorResponse(response, 3014, "Evaluate request failed ({_reason}).", new { _reason = error });
+            }
         }
 
         // some static util func

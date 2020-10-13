@@ -136,7 +136,7 @@ namespace SimpleScriptConsole
 
         static void ShowHelpThenExit()
         {
-            string exe_file = "ss.exe";
+            string exe_file = "oms.exe";
             if(Environment.GetCommandLineArgs().Length > 0)
             {
                 exe_file = Path.GetFileName(Environment.GetCommandLineArgs()[0]);
@@ -144,10 +144,10 @@ namespace SimpleScriptConsole
             string help_str = @"
 use way:
     {0}                          // run terminal
-    {0} xx.ss or xx.ssc          // run source file or binary file
-    {0} -c xx.ss [-o xx.ssc]     // compile
-    {0} -d xx.ss [-p port]       // debug port range is [1025,9999]    
-    {0} -b xx.ss [-o xx.ssb]     // show bin code
+    {0} xx.oms or xx.omsc          // run source file or binary file
+    {0} -c xx.oms [-o xx.omsc]     // compile
+    {0} -d xx.oms [-p port]       // debug port range is [1025,9999]    
+    {0} -b xx.oms [-o xx.omsb]     // show bin code
 ";
             Console.Write($"Simple Script {VM.Version} Copyright (C) 2017");
             Console.WriteLine(help_str, exe_file);
