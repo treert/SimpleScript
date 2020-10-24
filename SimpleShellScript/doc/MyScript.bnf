@@ -1,0 +1,74 @@
+﻿module ::= stats
+
+stats ::= {stat [';']}
+
+block ::= '{' stats '}'
+
+stat ::= block |
+        'while' exp block | 'do' block 'while' exp |
+        'if' exp block {'elseif' exp block} ['else' block]|
+        'for' Name '=' exp ',' exp [',' exp] block |
+        'for' Name [',' Name] 'in' exp block |
+        'for' block |
+        'break' | 'continue' | 
+        'try' block ['catch' [Name] block] ['finally' block] |
+        'throw' [explist] |
+        'fn' funcname funcbody |
+        'return' [explist] |
+        ('global'|'local') 'fn' Name funcbody |
+        ('global'|'local') namelist ['=' explist] |
+        varlist '=' explist |
+        var self_assign exp|
+        exp_stat |
+        # var self_op |
+        funccall
+
+exp_stat ::= 'throw' [exp] | 'break' | 'continue' | 'return' [explist] |
+
+self_assign ::= '+=' | '-=' | '.='
+
+# self_op ::= '++' | '--'
+
+namelist ::= Name {',' Name}
+
+varlist ::= var {',' var}
+
+funcname ::= Name {'.' Name} [':' Name]
+
+funcbody ::= '(' [parlist] ')' block
+
+parlist ::=  {Name ','} ['*' [Name]]
+
+explist ::= {exp ','} exp
+
+arrayconstructor ::= '[' {exp ','} ']'
+
+tableconstructor ::= '{' {field ','} '}'
+
+field ::= '[' exp ']' '=' exp | Name '=' exp | exp
+
+exp ::= mainexp | exp binop exp | unop exp| exp ? exp : exp | exp ?? (exp | exp_stat) | exp ?: (exp | exp_stat)
+
+mainexp ::= nil | false | true | Number | String | '(' exp ')' |
+     '...' | function | tableconstructor | arrayconstructor |
+     mainexp {tableindex | args }
+
+function ::= 'fn' funcbody
+
+tableindex ::= '[' exp ']' | '.' Name
+
+tailexp ::= mainexp {tableindex | args }
+
+var ::= Name [{tableindex | args } tableindex]
+
+funccall ::= Name {tableindex | args} [String]
+
+args ::=  '(' {exp ','} ['*' Name ','] {Name ':' exp ','} ')'
+
+binop ::= '+' | '-' | '*' | '/' | 'div' | 'mod' |
+    '^' | '&' | '|' | '~' |
+    '<' | '<=' | '>' | '>=' | '==' | '!=' |
+    'and' | 'or' |
+    '..'
+
+unop ::= '-' | 'not' | '~'
