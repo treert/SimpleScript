@@ -1,74 +1,88 @@
-﻿module ::= stats
+﻿(*
+some choose：
+1. does not support ++ and -- operator, and use -- to begin comment, like lua.
+2. integral division use 'div', modular division use 'mod'
+    BTW, 'div' and 'mod' can also use as nomal, for example 'math.div'
+
+ *)
+
+module ::= stats
 
 stats ::= {stat [';']}
 
 block ::= '{' stats '}'
 
-stat ::= block |
-        'while' exp block | 'do' block 'while' exp |
-        'if' exp block {'elseif' exp block} ['else' block]|
-        'for' Name '=' exp ',' exp [',' exp] block |
-        'for' Name [',' Name] 'in' exp block |
-        'for' block |
-        'break' | 'continue' | 
-        'try' block ['catch' [Name] block] ['finally' block] |
-        'throw' [explist] |
-        'fn' funcname funcbody |
-        'return' [explist] |
-        ('global'|'local') 'fn' Name funcbody |
-        ('global'|'local') namelist ['=' explist] |
-        varlist '=' explist |
-        var self_assign exp|
-        exp_stat |
-        # var self_op |
-        funccall
+stat ::= block
+      |  'if' exp block {'elseif' exp block} ['else' block]
+      |  'while' exp block 
+      |  'do' block 'while' exp 
+      |  'for' Name '=' exp ',' exp [',' exp] block 
+      |  'for' Name [',' Name] 'in' exp block 
+      |  'for' block 
+      |  'break' 
+      |  'continue' 
+      |  'try' block ['catch' [Name] block] ['finally' block] 
+      |  'throw' [explist] 
+      |  scope_head+ block 
+      |  'fn' funcname funcbody 
+      |  'return' [explist] 
+      |  ('global'|'local') namelist ['=' explist] 
+      |  ('global'|'local') 'fn' Name funcbody 
+      |  varlist '=' explist 
+      |  var self_assign exp
+      |  funccall
 
-exp_stat ::= 'throw' [exp] | 'break' | 'continue' | 'return' [explist] |
+scope_head ::= 'scope' '(' (namelist '=' explist | explist) ')'
 
-self_assign ::= '+=' | '-=' | '.='
-
-# self_op ::= '++' | '--'
+# 语法糖，支持一部分吧
+self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '.='
 
 namelist ::= Name {',' Name}
 
 varlist ::= var {',' var}
 
-funcname ::= Name {'.' Name} [':' Name]
+var ::= Name [{index | args } index]
 
-funcbody ::= '(' [parlist] ')' block
+funccall ::= Name {index | args} args [String]
 
-parlist ::=  {Name ','} ['*' [Name]]
+funcname ::= Name {'.' Name}
+
+funcbody ::= ['(' paramlist ')'] block
+
+paramlist ::= [Name {',' Name }] ['*' Name]
 
 explist ::= {exp ','} exp
 
-arrayconstructor ::= '[' {exp ','} ']'
+array_def ::= '[' [exp {',' exp} [',']] ']'
 
-tableconstructor ::= '{' {field ','} '}'
+table_def ::= '{' [field {',' field} [',']] '}'
 
-field ::= '[' exp ']' '=' exp | Name '=' exp | exp
+field ::= '[' exp ']' '=' exp | Name '=' exp
 
-exp ::= mainexp | exp binop exp | unop exp| exp ? exp : exp | exp ?? (exp | exp_stat) | exp ?: (exp | exp_stat)
+exp_or_stat ::= exp | 'throw' [explist] | 'break' | 'continue' | 'return' [explist] |
 
-mainexp ::= nil | false | true | Number | String | '(' exp ')' |
-     '...' | function | tableconstructor | arrayconstructor |
-     mainexp {tableindex | args }
+exp ::= mainexp| exp binop exp | unop exp |
+    exp '?' exp ':' exp_or_stat | exp '?:' exp_or_stat | exp '??' exp_or_stat # recommend to use individual
+
+mainexp ::= 'nil' | 'false' | 'true' | Number | String | '(' exp ')'
+    | function | table_def | array_def
+    | Name {index | args} [String]
 
 function ::= 'fn' funcbody
 
-tableindex ::= '[' exp ']' | '.' Name
+index ::= '[' exp ']' | '.' Name
 
-tailexp ::= mainexp {tableindex | args }
+args ::=  '(' [args_one | args_two | args_three ] ')'
 
-var ::= Name [{tableindex | args } tableindex]
+args_one ::= exp {',' exp}
+args_two ::= [args_one ','] '*' exp
+args_three ::= [args_two ','] Name ':' exp {',' Name ':' exp }
 
-funccall ::= Name {tableindex | args} [String]
-
-args ::=  '(' {exp ','} ['*' Name ','] {Name ':' exp ','} ')'
-
-binop ::= '+' | '-' | '*' | '/' | 'div' | 'mod' |
-    '^' | '&' | '|' | '~' |
-    '<' | '<=' | '>' | '>=' | '==' | '!=' |
-    'and' | 'or' |
-    '..'
+binop ::= '+' | '-' | '*' | '/'
+    | 'div' | 'mod' | '**'
+    | '^' | '&' | '|' | '<<' | '>>' | '>>>'
+    | '<' | '<=' | '>' | '>=' | '==' | '!='
+    | 'and' | 'or'
+    | '..'
 
 unop ::= '-' | 'not' | '~'
