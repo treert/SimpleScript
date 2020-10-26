@@ -47,9 +47,9 @@ funccall ::= Name {index | args} args [String]
 
 funcname ::= Name {'.' Name}
 
-funcbody ::= ['(' paramlist ')'] block
+funcbody ::= ['(' [paramlist [',']] ')'] block
 
-paramlist ::= [Name {',' Name }] ['*' Name]
+paramlist ::= Name (',' Name )* [',' '*' Name] | '*' Name
 
 explist ::= {exp ','} exp
 
@@ -72,7 +72,7 @@ function ::= 'fn' funcbody
 
 index ::= '[' exp ']' | '.' Name
 
-args ::=  '(' [args_one | args_two | args_three ] ')'
+args ::=  '(' [(args_three | args_two | args_one) [','] ] ')'
 
 args_one ::= exp {',' exp}
 args_two ::= [args_one ','] '*' exp
