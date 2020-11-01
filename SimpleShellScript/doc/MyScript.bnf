@@ -59,14 +59,19 @@ table_def ::= '{' [field {',' field} [',']] '}'
 
 field ::= '[' exp ']' '=' exp | Name '=' exp
 
-exp_or_stat ::= exp | 'throw' [explist] | 'break' | 'continue' | 'return' [explist] |
+exp_or_stat ::= exp | 'throw' [explist] | 'break' | 'continue' | 'return' [explist]
 
-exp ::= mainexp| exp binop exp | unop exp |
-    exp '?' exp ':' exp_or_stat | exp '?:' exp_or_stat | exp '??' exp_or_stat # recommend to use individual
+exp ::= q_exp | exp binop exp | unop exp | main_exp
 
-mainexp ::= 'nil' | 'false' | 'true' | Number | String | '(' exp ')'
-    | function | table_def | array_def
-    | Name {index | args} [String]
+primary_exp ::= 'nil' | 'false' | 'true' | Number | String
+    | fn funcbody | table_def | array_def
+    | '(' exp ')'
+    | Name
+
+main_exp ::= primary_exp {index | args} [String]
+
+q_exp ::= exp '?' exp ':' exp_or_stat
+    | exp '?:' exp_or_stat | exp '??' exp_or_stat
 
 function ::= 'fn' funcbody
 
@@ -78,11 +83,12 @@ args_one ::= exp {',' exp}
 args_two ::= [args_one ','] '*' exp
 args_three ::= [args_two ','] Name ':' exp {',' Name ':' exp }
 
-binop ::= '+' | '-' | '*' | '/'
-    | 'div' | 'mod' | '**'
-    | '^' | '&' | '|' | '<<' | '>>' | '>>>'
+binop ::= 'or' | 'and'
     | '<' | '<=' | '>' | '>=' | '==' | '!='
-    | 'and' | 'or'
     | '..'
+    | '|' | '~' | '&' | '<<' | '>>' | '>>>'
+    | '+' | '-' 
+    | '*' | '/' | 'div' | 'mod'
+    | '^'
 
 unop ::= '-' | 'not' | '~'
