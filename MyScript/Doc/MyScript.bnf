@@ -1,0 +1,94 @@
+(*
+some choose：
+1. does not support ++ and -- operator, and use -- to begin comment, like lua.
+2. integral division use 'div', modular division use 'mod'
+    BTW, 'div' and 'mod' can also use as nomal, for example 'math.div'
+
+ *)
+
+module ::= stats
+
+stats ::= {stat [';']}
+
+block ::= '{' stats '}'
+
+stat ::= block
+      |  'if' exp block {'elseif' exp block} ['else' block]
+      |  'while' exp block 
+      |  'do' block 'while' exp 
+      |  'for' Name '=' exp ',' exp [',' exp] block 
+      |  'for' Name [',' Name] 'in' exp block 
+      |  'for' block 
+      |  'break' 
+      |  'continue' 
+      |  'try' block ['catch' [Name] block] ['finally' block] 
+      |  'throw' [explist] 
+      |  scope_head+ block 
+      |  'fn' funcname funcbody 
+      |  'return' [explist] 
+      |  ('global'|'local') namelist ['=' explist] 
+      |  ('global'|'local') 'fn' Name funcbody 
+      |  varlist '=' explist 
+      |  var self_assign exp
+      |  funccall
+
+scope_head ::= 'scope' '(' (namelist '=' explist | explist) ')'
+
+# 语法糖，支持一部分吧
+self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '.='
+
+namelist ::= Name {',' Name}
+
+varlist ::= var {',' var}
+
+var ::= Name [{index | args } index]
+
+funccall ::= Name {index | args} args [String]
+
+funcname ::= Name {'.' Name}
+
+funcbody ::= ['(' [paramlist [',']] ')'] block
+
+paramlist ::= Name (',' Name )* [',' '*' Name] | '*' Name
+
+explist ::= {exp ','} exp
+
+array_def ::= '[' [exp {',' exp} [',']] ']'
+
+table_def ::= '{' [field {',' field} [',']] '}'
+
+field ::= '[' exp ']' '=' exp | Name '=' exp
+
+exp_or_stat ::= exp | 'throw' [explist] | 'break' | 'continue' | 'return' [explist]
+
+exp ::= q_exp | exp binop exp | unop exp | main_exp
+
+primary_exp ::= 'nil' | 'false' | 'true' | Number | String
+    | fn funcbody | table_def | array_def
+    | '(' exp ')'
+    | Name
+
+main_exp ::= primary_exp {index | args} [String]
+
+q_exp ::= exp '?' exp ':' exp_or_stat
+    | exp '?:' exp_or_stat | exp '??' exp_or_stat
+
+function ::= 'fn' funcbody
+
+index ::= '[' exp ']' | '.' Name
+
+args ::=  '(' [(args_three | args_two | args_one) [','] ] ')'
+
+args_one ::= exp {',' exp}
+args_two ::= [args_one ','] '*' exp
+args_three ::= [args_two ','] Name ':' exp {',' Name ':' exp }
+
+binop ::= 'or' | 'and'
+    | '<' | '<=' | '>' | '>=' | '==' | '!='
+    | '..'
+    | '|' | '~' | '&' | '<<' | '>>' | '>>>'
+    | '+' | '-' 
+    | '*' | '/' | 'div' | 'mod'
+    | '^'
+
+unop ::= '-' | 'not' | '~'
