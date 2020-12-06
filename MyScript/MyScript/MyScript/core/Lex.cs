@@ -17,14 +17,17 @@ namespace MyScript
         AND = TokenType.NAME + 1,// 搞不懂了，一方面不支持enum隐式转换成int，一方面又允许这种语法
         BREAK,
         CONTINUE,// break and continue use exception to implement
+        DO,
         ELSE,
         ELSEIF,
         FALSE,
+        FINNALY,
         FOR,
         // 像rust一样，使用fn关键字，之前想着用?的，虽然也挺好，但感觉没有fn方便。
         // 之所以不想用function，一是长，二是function是名词。
         FN,
         GLOBAL,
+        SCOPE,// like c# using(var st = FileStream(path)){ ... }
         IF,
         IN,
         LOCAL,
@@ -43,7 +46,7 @@ namespace MyScript
     public enum TokenType
     {
         EOS = 256,
-        // other terminal symbols
+
         CONCAT,// .. string concat
         DOTS,// ...
         EQ,// ==
@@ -55,8 +58,7 @@ namespace MyScript
         DEC_SELF,// -=
         CONCAT_SELF,// .=
         SpecialAssignSelfEnd,
-        ADD_ONE,// ++
-        DEC_ONE,// --
+        //ADD_ONE,// ++
         SpecialAssignEnd,
         NUMBER,
         STRING_BEGIN,// 方便词法解析代码编写，字符串可能被$语法打断
@@ -145,6 +147,16 @@ namespace MyScript
         public bool Match(char char_)
         {
             return m_type == (int)char_;
+        }
+
+        public bool Match(char ch1, char ch2)
+        {
+            return m_type == (int)ch1 || m_type == (int)ch2;
+        }
+
+        public bool Match(char ch1, char ch2, char ch3)
+        {
+            return m_type == (int)ch1 || m_type == (int)ch2 || m_type == (int)ch3;
         }
 
         public bool Match(TokenType type_)
@@ -617,7 +629,8 @@ namespace MyScript
                         if (_current == '-')
                         {
                             _NextChar();
-                            return new Token(TokenType.DEC_ONE);
+                            // todo@om
+                            throw NewLexException("do not support '--' forever");
                         }
                         else if (_current == '=')
                         {
@@ -633,7 +646,7 @@ namespace MyScript
                         if (_current == '+')
                         {
                             _NextChar();
-                            return new Token(TokenType.ADD_ONE);
+                            throw NewLexException("do not support '++' yet");
                         }
                         else if (_current == '=')
                         {

@@ -57,7 +57,7 @@ namespace MyScript.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init("+ - * / % ^ == ~= <= >= < > = ( ) { } [ ] ; : , . .. ... += ++ -= -- .=");
+            lex.Init("+ - * / % ^ == ~= <= >= < > = ( ) { } [ ] ; : , . .. ... += -= .=");
             ExpectTrue(lex.GetNextToken().m_type == (int)'+');
             ExpectTrue(lex.GetNextToken().m_type == (int)'-');
             ExpectTrue(lex.GetNextToken().m_type == (int)'*');
@@ -84,9 +84,7 @@ namespace MyScript.Test
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.CONCAT);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DOTS);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ADD_SELF);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ADD_ONE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DEC_SELF);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DEC_ONE);
             ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT_SELF));
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.EOS);
         }

@@ -347,6 +347,19 @@ namespace MyScript.Test
             catch (ParserException) { }
         }
     }
+
+    class TestParser_parser245 : TestBase
+    {
+        public override void Run()
+        {
+            //try
+            {
+                TestUtils.Parse("do {} while true");
+                //Error("no exception");
+            }
+            //catch (ParserException) { }
+        }
+    }
     class TestParser_parser25 : TestBase
     {
         public override void Run()
@@ -378,7 +391,7 @@ namespace MyScript.Test
         {
             try
             {
-                TestUtils.Parse("if true {} elseif false {} else");
+                TestUtils.Parse("if true {} else if false {} else");
                 Error("no exception");
             }
             catch (ParserException) { }
@@ -520,6 +533,48 @@ namespace MyScript.Test
         public override void Run()
         {
             TestUtils.Parse("t.f(a,b,c,*kw,a=a)");
+        }
+    }
+
+    class TestParser_scope_1 : TestBase
+    {
+        public override void Run()
+        {
+            TestUtils.Parse("scope xx.yy.zz(){ }");
+        }
+    }
+
+    class TestParser_scope_11 : TestBase
+    {
+        public override void Run()
+        {
+            TestUtils.Parse("scope xx,yy = xx,yy.zz(){ }");
+        }
+    }
+
+    class TestParser_scope_2 : TestBase
+    {
+        public override void Run()
+        {
+            try
+            {
+                TestUtils.Parse("scope{ }");
+                Error("no exception");
+            }
+            catch (ParserException) { }
+        }
+    }
+
+    class TestParser_scope_22 : TestBase
+    {
+        public override void Run()
+        {
+            try
+            {
+                TestUtils.Parse("scope xx = { }");
+                Error("no exception");
+            }
+            catch (ParserException) { }
         }
     }
 }

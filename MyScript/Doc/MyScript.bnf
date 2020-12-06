@@ -13,7 +13,7 @@ stats ::= {stat [';']}
 block ::= '{' stats '}'
 
 stat ::= block
-      |  'if' exp block {'elseif' exp block} ['else' block]
+      |  'if' exp block {('elseif' | 'else' 'if') exp block} ['else' block]
       |  'while' exp block 
       |  'do' block 'while' exp 
       |  'for' Name '=' exp ',' exp [',' exp] block 
@@ -32,7 +32,7 @@ stat ::= block
       |  var self_assign exp
       |  funccall
 
-scope_head ::= 'scope' '(' (namelist '=' explist | explist) ')'
+scope_head ::= 'scope' (namelist '=' explist | explist)
 
 # 语法糖，支持一部分吧
 self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '.='
@@ -71,8 +71,9 @@ primary_exp ::= 'nil' | 'false' | 'true' | Number | String
 
 main_exp ::= primary_exp {index | args} [String]
 
-q_exp ::= exp '?' exp ':' exp_or_stat
-    | exp '?:' exp_or_stat | exp '??' exp_or_stat
+# q_exp ::= exp '?' exp ':' exp_or_stat | exp '?:' exp_or_stat | exp '??' exp_or_stat
+# 方便编码，似乎没什么不妥
+q_exp ::= exp '?' [exp] (':'|'?') exp_or_stat
 
 function ::= 'fn' funcbody
 

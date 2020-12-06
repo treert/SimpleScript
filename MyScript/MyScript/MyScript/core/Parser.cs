@@ -5,6 +5,11 @@ using System.Text;
 
 namespace MyScript
 {
+    /// <summary>
+    /// MyScript 语法解析。
+    /// 
+    /// PS：有打算把各个前缀关键词语句的解析提取到各个Syntax.XXX.cs里的，想想了又没这么做，似乎好处不够明显。
+    /// </summary>
     public class Parser
     {
 
@@ -17,7 +22,14 @@ namespace MyScript
         Token _current;
         Token _look_ahead;
         Token _look_ahead2;
-        Token NextToken()
+        public Token CurrentToken
+        {
+            get
+            {
+                return _current;
+            }
+        }
+        public Token NextToken()
         {
             if (_look_ahead != null)
             {
@@ -31,20 +43,20 @@ namespace MyScript
             }
             return _current;
         }
-        Token LookAhead()
+        public Token LookAhead()
         {
             if (_look_ahead == null)
                 _look_ahead = _lex.GetNextToken();
             return _look_ahead;
         }
-        Token LookAhead2()
+        public Token LookAhead2()
         {
             LookAhead();
             if (_look_ahead2 == null)
                 _look_ahead2 = _lex.GetNextToken();
             return _look_ahead2;
         }
-        bool IsMainExpNext()
+        public bool IsMainExpNext()
         {
             int token_type = LookAhead().m_type;
             return
@@ -110,17 +122,49 @@ namespace MyScript
             // for a ? b : c, 三目运算符的优先级最低，实际运行结果来看，三目运算符还具有右结合性质
             if (left_priority == 0 && LookAhead().Match('?'))
             {
-                NextToken();
-                var qa = new QuestionExp(exp.line);
-                qa.a = exp;
-                qa.b = ParseExp();
-                if (LookAhead().Match(':'))
-                {
-                    qa.c = ParseExp();
-                }
-                exp = qa;
+                exp = TryParseQuestionExp(exp);
             }
             return exp;
+        }
+
+        QuestionExp TryParseQuestionExp(ExpSyntaxTree exp)
+        {
+            NextToken();// skip ?
+            var qa = new QuestionExp(exp.line);
+            qa.a = exp;
+            if (LookAhead().Match(':', '?') == false)
+            {
+                qa.b = ParseExp();
+            }
+
+            if (LookAhead().Match(':'))
+            {
+                qa.isqq = false;
+            }
+            else if (LookAhead().Match('?'))
+            {
+                qa.isqq = true;
+            }
+            else
+            {
+                throw NewParserException("expect second '?' or ':' for ? exp", LookAhead());
+            }
+            NextToken();
+
+            switch (LookAhead().m_type)
+            {
+                case (int)Keyword.THROW:
+                    qa.c = ParseThrowStatement(); break;
+                case (int)Keyword.BREAK:
+                    qa.c = ParseBreakStatement(); break;
+                case (int)Keyword.CONTINUE:
+                    qa.c = ParseContinueStatement(); break;
+                case (int)Keyword.RETURN:
+                    qa.c = ParseReturnStatement(); break;
+                default:
+                    qa.c = ParseExp();break;
+            }
+            return qa;
         }
 
         ExpSyntaxTree ParseConditionExp()
@@ -563,6 +607,8 @@ namespace MyScript
                         statement = ParseBlock(); break;
                     case (int)Keyword.WHILE:
                         statement = ParseWhileStatement(); break;
+                    case (int)Keyword.DO:
+                        statement = ParseDoStatement(); break;
                     case (int)Keyword.IF:
                         statement = ParseIfStatement(); break;
                     case (int)Keyword.FOR:
@@ -572,11 +618,13 @@ namespace MyScript
                     case (int)Keyword.LOCAL:
                     case (int)Keyword.GLOBAL:
                         {
-                            var state = ParseScopeStatement();
+                            var state = ParseDefineStatement();
                             state.is_global = token_ahead.Match(Keyword.GLOBAL);
                             statement = state;
                             break;
                         }
+                    case (int)Keyword.SCOPE:
+                        statement = ParseScopeStatement(); break;
                     case (int)Keyword.RETURN:
                         statement = ParseReturnStatement(); break;
                     case (int)Keyword.BREAK:
@@ -622,6 +670,11 @@ namespace MyScript
                 }
                 statement.catch_block = ParseBlock();
             }
+            if (LookAhead().Match(Keyword.FINNALY))
+            {
+                NextToken();
+                statement.finally_block = ParseBlock();
+            }
             return statement;
         }
 
@@ -658,6 +711,20 @@ namespace MyScript
             statement.block = block;
             return statement;
         }
+
+        DoWhileStatement ParseDoStatement()
+        {
+            NextToken();// skip 'do'
+            var statement = new DoWhileStatement(_current.m_line);
+            statement.block = ParseBlock();
+            if(NextToken().Match(Keyword.WHILE) == false)
+            {
+                throw NewParserException("expect 'while' for 'do { ... } while exp'", _current);
+            }
+            statement.exp = ParseConditionExp();
+            return statement;
+        }
+
         IfStatement ParseIfStatement()
         {
             NextToken();// skip 'if' or 'elseif'
@@ -682,6 +749,10 @@ namespace MyScript
             else if (LookAhead().Match(Keyword.ELSE))
             {
                 NextToken();
+                if (LookAhead().Match(Keyword.IF))
+                {
+                    return ParseIfStatement();// else if 
+                }
                 var block = ParseBlock();
                 return block;
             }
@@ -796,7 +867,7 @@ namespace MyScript
             statement.name = name;
             statement.exp1 = ParseExp();
             if (NextToken().m_type != (int)',')
-                throw NewParserException("expect ',' in for-statement", _current);
+                throw NewParserException("expect ',' in for-num-range-statement", _current);
             statement.exp2 = ParseExp();
             if (LookAhead().m_type == ',')
             {
@@ -822,33 +893,92 @@ namespace MyScript
             return statement;
         }
 
+        /// <summary>
+        /// 这个语法LL(2)是不能支持的。
+        /// </summary>
+        /// <returns></returns>
         ScopeStatement ParseScopeStatement()
         {
+            NextToken();
+            var statement = new ScopeStatement(_current.m_line);
+            List<Token> names = new List<Token>();
+            List<ExpSyntaxTree> exps = new List<ExpSyntaxTree>();
+            bool can_be_name_list = true;
+            while (LookAhead().IsName())
+            {
+                var exp = ParseExp();
+                exps.Add(exp);
+                if (can_be_name_list && exp is Terminator ter)
+                {
+                    names.Add(ter.token);
+                }
+                else
+                {
+                    can_be_name_list = false;
+                }
+                if (LookAhead().Match(',')){
+                    NextToken();
+                }
+                else if (LookAhead().Match('='))
+                {
+                    if (can_be_name_list)
+                    {
+                        statement.name_list = new NameList(names[0].m_line);
+                        statement.name_list.names = names;
+                        can_be_name_list = false;
+                        exps.Clear();
+                        NextToken();
+                    }
+                    else
+                    {
+                        throw NewParserException("unexpect '=' in scope statement", LookAhead());
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if(exps.Count == 0)
+            {
+                throw NewParserException("there must be some valid <id> start exp in scope statement", LookAhead());
+            }
+            if(LookAhead().Match('{') == false)
+            {
+                throw NewParserException("expect '{' to start scope block", LookAhead());
+            }
+            statement.exp_list = new ExpressionList(exps[0].line);
+            statement.exp_list.exp_list = exps;
+            statement.block = ParseBlock();
+            return statement;
+        }
 
-            NextToken();// skip 'local'
+        DefineStatement ParseDefineStatement()
+        {
+            NextToken();// skip 'local' or 'global'
 
             if (LookAhead().Match(Keyword.FN))
-                return ParseScopeFunction();
+                return ParseDefineFunction();
             else if (LookAhead().m_type == (int)TokenType.NAME)
-                return ParseScopeNameList();
+                return ParseDefineNameList();
             else
                 throw NewParserException("unexpect token after 'local' or 'global'", _look_ahead);
         }
-        ScopeFunctionStatement ParseScopeFunction()
+        DefineFunctionStatement ParseDefineFunction()
         {
             NextToken();
-            var statement = new ScopeFunctionStatement(_current.m_line);
+            var statement = new DefineFunctionStatement(_current.m_line);
 
             if (NextToken().m_type != (int)TokenType.NAME)
-                throw NewParserException("expect 'id' to name scope function", _current);
+                throw NewParserException("expect 'id' to name function", _current);
 
             statement.name = _current;
             statement.func_body = ParseFunctionBody();
             return statement;
         }
-        ScopeNameListStatement ParseScopeNameList()
+        DefineNameListStatement ParseDefineNameList()
         {
-            var statement = new ScopeNameListStatement(_current.m_line);
+            var statement = new DefineNameListStatement(_current.m_line);
             statement.name_list = ParseNameList();
             if (LookAhead().m_type == '=')
             {

@@ -39,6 +39,27 @@ class Program
     {
         Console.WriteLine("Hello World!");
         TestManager.RunTest();
+
+        {
+            Console.WriteLine("Start Test MS 1.0");
+            VM vm = new VM();
+            // 注入基础扩展
+            ExtUtils.Import(typeof(BaseExt), vm);
+            // 执行测试文件
+            try
+            {
+                vm.DoFile("test.ss");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error Happen\n{e.Message}");
+            }
+            Console.WriteLine("End");
+        }
+    }
+
+    static void OtherTest()
+    {
         {
             Func<List<int>> f = () =>
             {
@@ -212,22 +233,6 @@ class Program
         }
         {
             Console.WriteLine($"{"abc",4}#{"abe",-4}#");
-        }
-        {
-            Console.WriteLine("Start Test SS 1.0");
-            VM vm = new VM();
-            // 注入基础扩展
-            ExtUtils.Import(typeof(BaseExt), vm);
-            // 执行测试文件
-            try
-            {
-                vm.DoFile("test.ss");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error Happen\n{e.Message}");
-            }
-            Console.WriteLine("End");
         }
     }
     enum ETest
