@@ -48,19 +48,19 @@ namespace MyScript
         {
             int token_type = LookAhead().m_type;
             return
-                token_type == (int)TokenType.NIL ||
-                token_type == (int)TokenType.FALSE ||
-                token_type == (int)TokenType.TRUE ||
+                token_type == (int)Keyword.NIL ||
+                token_type == (int)Keyword.FALSE ||
+                token_type == (int)Keyword.TRUE ||
                 token_type == (int)TokenType.NUMBER ||
                 token_type == (int)TokenType.STRING ||
                 token_type == (int)TokenType.STRING_BEGIN ||
                 token_type == (int)TokenType.DOTS ||
                 token_type == (int)TokenType.NAME ||
-                token_type == (int)TokenType.FUNCTION ||
+                token_type == (int)Keyword.FN ||
                 token_type == (int)'(' ||
                 token_type == (int)'{' ||
                 token_type == (int)'-' ||
-                token_type == (int)TokenType.NOT;
+                token_type == (int)Keyword.NOT;
         }
         int GetOpPriority(Token t)
         {
@@ -79,8 +79,8 @@ namespace MyScript
                 case (int)TokenType.LE:
                 case (int)TokenType.NE:
                 case (int)TokenType.EQ: return 50;
-                case (int)TokenType.AND: return 40;
-                case (int)TokenType.OR: return 30;
+                case (int)Keyword.AND: return 40;
+                case (int)Keyword.OR: return 30;
                 default: return 0;
             }
         }
@@ -137,9 +137,9 @@ namespace MyScript
             ExpSyntaxTree exp;
             switch (LookAhead().m_type)
             {
-                case (int)TokenType.NIL:
-                case (int)TokenType.FALSE:
-                case (int)TokenType.TRUE:
+                case (int)Keyword.NIL:
+                case (int)Keyword.FALSE:
+                case (int)Keyword.TRUE:
                 case (int)TokenType.NUMBER:
                 case (int)TokenType.STRING:
                 case (int)TokenType.DOTS:
@@ -149,7 +149,7 @@ namespace MyScript
                 case (int)TokenType.STRING_BEGIN:
                     exp = ParseComplexString();
                     break;
-                case (int)TokenType.FUNCTION:
+                case (int)Keyword.FN:
                     exp = ParseFunctionDef();
                     break;
                 case (int)'(':
@@ -163,7 +163,7 @@ namespace MyScript
                     break;
                 // unop exp priority is 90 less then ^
                 case (int)'-':
-                case (int)TokenType.NOT:
+                case (int)Keyword.NOT:
                     var unexp = new UnaryExpression(LookAhead().m_line);
                     unexp.op = NextToken();
                     unexp.exp = ParseExp(90);
@@ -304,7 +304,7 @@ namespace MyScript
             }
             else
             {
-                if (!NextToken().IsLiteralString())
+                if (!NextToken().IsName())
                     throw NewParserException("expect <id> after '.'", _current);
                 index_access.index = new Terminator(_current.ConvertToStringToken());
             }
@@ -503,7 +503,7 @@ namespace MyScript
                         {
                             last_field.index = new Terminator(_current);
                         }
-                        else if (_current.IsLiteralString())
+                        else if (_current.IsName())
                         {
                             last_field.index = new Terminator(_current.ConvertToStringToken());
                         }
@@ -561,31 +561,31 @@ namespace MyScript
                         NextToken(); continue;
                     case '{':
                         statement = ParseBlock(); break;
-                    case (int)TokenType.WHILE:
+                    case (int)Keyword.WHILE:
                         statement = ParseWhileStatement(); break;
-                    case (int)TokenType.IF:
+                    case (int)Keyword.IF:
                         statement = ParseIfStatement(); break;
-                    case (int)TokenType.FOR:
+                    case (int)Keyword.FOR:
                         statement = ParseForStatement(); break;
-                    case (int)TokenType.FUNCTION:
+                    case (int)Keyword.FN:
                         statement = ParseFunctionStatement(); break;
-                    case (int)TokenType.LOCAL:
-                    case (int)TokenType.GLOBAL:
+                    case (int)Keyword.LOCAL:
+                    case (int)Keyword.GLOBAL:
                         {
                             var state = ParseScopeStatement();
-                            state.is_global = token_ahead.Match(TokenType.GLOBAL);
+                            state.is_global = token_ahead.Match(Keyword.GLOBAL);
                             statement = state;
                             break;
                         }
-                    case (int)TokenType.RETURN:
+                    case (int)Keyword.RETURN:
                         statement = ParseReturnStatement(); break;
-                    case (int)TokenType.BREAK:
+                    case (int)Keyword.BREAK:
                         statement = ParseBreakStatement(); break;
-                    case (int)TokenType.CONTINUE:
+                    case (int)Keyword.CONTINUE:
                         statement = ParseContinueStatement(); break;
-                    case (int)TokenType.TRY:
+                    case (int)Keyword.TRY:
                         statement = ParseTryStatement(); break;
-                    case (int)TokenType.THROW:
+                    case (int)Keyword.THROW:
                         statement = ParseThrowStatement(); break;
                     default:
                         statement = ParseOtherStatement();
@@ -613,7 +613,7 @@ namespace MyScript
             NextToken();
             var statement = new TryStatement(_current.m_line);
             statement.block = ParseBlock();
-            if (LookAhead().Match(TokenType.CATCH))
+            if (LookAhead().Match(Keyword.CATCH))
             {
                 NextToken();
                 if (LookAhead().Match(TokenType.NAME))
@@ -674,12 +674,12 @@ namespace MyScript
         }
         SyntaxTree ParseFalseBranchStatement()
         {
-            if (LookAhead().m_type == (int)TokenType.ELSEIF)
+            if (LookAhead().Match(Keyword.ELSEIF))
             {
                 // syntax sugar for elseif
                 return ParseIfStatement();
             }
-            else if (LookAhead().m_type == (int)TokenType.ELSE)
+            else if (LookAhead().Match(Keyword.ELSE))
             {
                 NextToken();
                 var block = ParseBlock();
@@ -812,7 +812,7 @@ namespace MyScript
         {
             var statement = new ForInStatement(_current.m_line);
             statement.name_list = ParseNameList();
-            if (NextToken().m_type != (int)TokenType.IN)
+            if (NextToken().Match(Keyword.IN) == false)
                 throw NewParserException("expect 'in' in for-in-statement", _current);
             // 比较特殊，可能是：1. Table 1-1. iter 2. function
             statement.exp = ParseExp();
@@ -827,7 +827,7 @@ namespace MyScript
 
             NextToken();// skip 'local'
 
-            if (LookAhead().Match(TokenType.FUNCTION))
+            if (LookAhead().Match(Keyword.FN))
                 return ParseScopeFunction();
             else if (LookAhead().m_type == (int)TokenType.NAME)
                 return ParseScopeNameList();

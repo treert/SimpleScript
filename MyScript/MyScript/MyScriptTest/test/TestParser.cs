@@ -95,7 +95,7 @@ namespace MyScript.Test
             var exp_list = ASTFinder.Find<ExpressionList>(root);
             ExpectTrue(exp_list.exp_list.Count == 1);
             var bin_exp = exp_list.exp_list[0] as BinaryExpression;
-            ExpectTrue(bin_exp.op.m_type == (int)TokenType.AND);
+            ExpectTrue(bin_exp.op.Match(Keyword.AND));
 
             // 2+2*2*2 
             bin_exp = bin_exp.left as BinaryExpression;
@@ -118,12 +118,12 @@ namespace MyScript.Test
 
             // or
             var bin_exp = exp_list.exp_list[0] as BinaryExpression;
-            ExpectTrue(bin_exp.op.m_type == (int)TokenType.OR);
+            ExpectTrue(bin_exp.op.Match(Keyword.OR));
             ExpectTrue(bin_exp.right is Terminator);
 
             // and
             bin_exp = bin_exp.left as BinaryExpression;
-            ExpectTrue(bin_exp.op.m_type == (int)TokenType.AND);
+            ExpectTrue(bin_exp.op.Match(Keyword.AND));
 
             // ((-1 + 1) * 2) / (1 ^ 2)
             bin_exp = bin_exp.left as BinaryExpression;

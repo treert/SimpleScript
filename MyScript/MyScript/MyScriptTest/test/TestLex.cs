@@ -99,23 +99,23 @@ namespace MyScript.Test
             var lex = new Lex();
             lex.Init(@"and else elseif global false for fn if in local 
 nil not or return true while");
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.AND);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSE);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ELSEIF);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.GLOBAL);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FALSE);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.FOR);
-            ExpectTrue(lex.GetNextToken().Match(TokenType.FUNCTION));
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IF);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.IN);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.LOCAL);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.NIL);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.NOT);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.OR);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.RETURN);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.TRUE);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.WHILE);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.EOS);
+            ExpectTrue(lex.GetNextToken().Match(Keyword.AND));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.ELSE));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.ELSEIF));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.GLOBAL));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.FALSE));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.FOR));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.FN));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.IF));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.IN));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.LOCAL));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.NIL));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.NOT));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.OR));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.RETURN));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.TRUE));
+            ExpectTrue(lex.GetNextToken().Match(Keyword.WHILE));
+            ExpectTrue(lex.GetNextToken().Match(TokenType.EOS));
         }
     }
 

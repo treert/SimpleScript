@@ -755,15 +755,15 @@ namespace MyScript
             {
                 obj = frame.Read(token.m_string);
             }
-            else if (token.Match(TokenType.NIL))
+            else if (token.Match(Keyword.NIL))
             {
                 obj = null;
             }
-            else if (token.Match(TokenType.TRUE))
+            else if (token.Match(Keyword.TRUE))
             {
                 obj = true;
             }
-            else if (token.Match(TokenType.FALSE))
+            else if (token.Match(Keyword.FALSE))
             {
                 obj = false;
             }
@@ -819,11 +819,11 @@ namespace MyScript
         protected override List<object> _GetResults(Frame frame)
         {
             object ret = null;
-            if (op.Match(TokenType.AND))
+            if (op.Match(Keyword.AND))
             {
                 ret = left.GetBool(frame) && right.GetBool(frame);
             }
-            else if (op.Match(TokenType.OR))
+            else if (op.Match(Keyword.OR))
             {
                 ret = left.GetBool(frame) || right.GetBool(frame);
             }
@@ -916,7 +916,7 @@ namespace MyScript
             {
                 ret = exp.GetValidNumber(frame);
             }
-            else if (op.Match(TokenType.NOT))
+            else if (op.Match(Keyword.NOT))
             {
                 ret = !exp.GetBool(frame);
             }

@@ -57,7 +57,8 @@ array_def ::= '[' [exp {',' exp} [',']] ']'
 
 table_def ::= '{' [field {',' field} [',']] '}'
 
-field ::= '[' exp ']' '=' exp | Name '=' exp
+# 顺带兼容下json
+field ::= '[' exp ']' '=' exp | Name '=' exp | String ('='|':') exp
 
 exp_or_stat ::= exp | 'throw' [explist] | 'break' | 'continue' | 'return' [explist]
 

@@ -5,10 +5,16 @@ using System.Text;
 
 namespace MyScript
 {
-    public enum TokenType
+    /// <summary>
+    /// MyScript 里用到关键字单词，和实际单词匹配。
+    /// 用途：提升点性能+方便编码重构。
+    /// 语言设计理念：MyScript的关键词和Name不做区分，语法解析时确定是语法关键字还是普通变量名。（语法关键字优先）
+    /// 
+    /// PS：本来想直接用小写字母，和关键词精确匹配的，奈何c#不支持把break当做枚举名。所以约定关键词全部是小写字母。
+    /// </summary>
+    public enum Keyword
     {
-        // reserved words
-        AND = 257,
+        AND = TokenType.NAME + 1,// 搞不懂了，一方面不支持enum隐式转换成int，一方面又允许这种语法
         BREAK,
         CONTINUE,// break and continue use exception to implement
         ELSE,
@@ -17,7 +23,7 @@ namespace MyScript
         FOR,
         // 像rust一样，使用fn关键字，之前想着用?的，虽然也挺好，但感觉没有fn方便。
         // 之所以不想用function，一是长，二是function是名词。
-        FUNCTION,
+        FN,
         GLOBAL,
         IF,
         IN,
@@ -33,6 +39,10 @@ namespace MyScript
         CATCH,
         // FINALLY,
         THROW,
+    }
+    public enum TokenType
+    {
+        EOS = 256,
         // other terminal symbols
         CONCAT,// .. string concat
         DOTS,// ...
@@ -51,9 +61,9 @@ namespace MyScript
         NUMBER,
         STRING_BEGIN,// 方便词法解析代码编写，字符串可能被$语法打断
         STRING,
-        NAME,
-        // End
-        EOS,
+
+        // Name，Must place at last
+        NAME = 0xFFFF,
     }
 
     // 块类型。字符串会被 ${a} 这种语法打断，需要一个栈维护打断的字符串
@@ -93,10 +103,33 @@ namespace MyScript
             m_type = (int)TokenType.NUMBER;
             m_number = number_;
         }
-        public Token(string string_)
+        public Token(TokenType type_)
         {
-            m_type = (int)TokenType.STRING;
+            m_type = (int)type_;
+        }
+        public Token(char char_)
+        {
+            m_type = (int)char_;
+        }
+        public Token(string string_, bool is_string = true)
+        {
             m_string = string_;
+            if (is_string)
+            {
+                m_type = (int)TokenType.STRING;
+            }
+            else
+            {
+                Keyword key;
+                if(Enum.TryParse<Keyword>(string_, true, out key))
+                {
+                    m_type = (int)key;
+                }
+                else
+                {
+                    m_type = (int)TokenType.NAME;
+                }
+            }
         }
 
         public Token ConvertToStringToken()
@@ -107,25 +140,8 @@ namespace MyScript
             ret.m_column = m_column;
 
             ret.m_string = m_string;
-
             return ret;
         }
-
-        public Token(TokenType type_, string string_)
-        {
-            // Debug.Assert(type_ == TokenType.NAME);
-            m_type = (int)type_;
-            m_string = string_;
-        }
-        public Token(TokenType type_)
-        {
-            m_type = (int)type_;
-        }
-        public Token(char char_)
-        {
-            m_type = (int)char_;
-        }
-
         public bool Match(char char_)
         {
             return m_type == (int)char_;
@@ -136,9 +152,14 @@ namespace MyScript
             return m_type == (int)type_;
         }
 
-        public bool IsLiteralString()
+        public bool Match(Keyword key)
         {
-            return m_string != null && !Match(TokenType.STRING);// name + reserved_key
+            return m_type == (int)key;
+        }
+
+        public bool IsName()
+        {
+            return m_type >= (int)TokenType.NAME;// name + keyword
         }
 
         public override string ToString()
@@ -155,35 +176,6 @@ namespace MyScript
 
     public class Lex
     {
-        static Dictionary<string, TokenType> s_reserve_keys;
-        static Lex()
-        {
-            s_reserve_keys = new Dictionary<string, TokenType>()
-            {
-                {"and", TokenType.AND},
-                {"break", TokenType.BREAK},
-                {"continue", TokenType.CONTINUE},
-                {"else", TokenType.ELSE},
-                {"elseif", TokenType.ELSEIF},
-                {"global", TokenType.GLOBAL},
-                {"false", TokenType.FALSE},
-                {"for", TokenType.FOR},
-                {"fn", TokenType.FUNCTION},// 使用fn缩写
-                {"if", TokenType.IF},
-                {"in", TokenType.IN},
-                {"local", TokenType.LOCAL},
-                {"nil", TokenType.NIL},
-                {"not", TokenType.NOT},
-                {"or", TokenType.OR},
-                {"return", TokenType.RETURN},
-                {"true", TokenType.TRUE},
-                {"while", TokenType.WHILE},
-                {"try", TokenType.TRY},
-                {"catch", TokenType.CATCH },
-                {"throw", TokenType.THROW},
-            };
-        }
-
         Stack<StringBlockType> _block_stack = new Stack<StringBlockType>();
 
         StringBuilder _buf = new StringBuilder();
@@ -353,10 +345,10 @@ namespace MyScript
                     column++;
                     return new Token('{');
                 }
-                else if (_GetName() != null)
+                else if (_GetName() is string tmp)
                 {
                     column++;
-                    return new Token(TokenType.NAME, _buf.ToString());
+                    return new Token(tmp, false);
                 }
                 else if (_current == '$')
                 {
@@ -772,15 +764,7 @@ namespace MyScript
                             var name = _GetName();
                             if (name != null)
                             {
-                                TokenType token_type;
-                                if (s_reserve_keys.TryGetValue(name, out token_type))
-                                {
-                                    return new Token(token_type, name);
-                                }
-                                else
-                                {
-                                    return new Token(TokenType.NAME, name);
-                                }
+                                return new Token(name, false);
                             }
                             else
                             {
