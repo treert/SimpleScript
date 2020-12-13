@@ -179,6 +179,7 @@ namespace MyScript
         ExpSyntaxTree ParseMainExp()
         {
             ExpSyntaxTree exp;
+            bool str_call_valid = false;
             switch (LookAhead().m_type)
             {
                 case (int)Keyword.NIL:
@@ -187,7 +188,10 @@ namespace MyScript
                 case (int)TokenType.NUMBER:
                 case (int)TokenType.STRING:
                 case (int)TokenType.DOTS:
+                    exp = new Terminator(NextToken());
+                    break;
                 case (int)TokenType.NAME:
+                    str_call_valid = true;
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.STRING_BEGIN:
@@ -216,7 +220,7 @@ namespace MyScript
                 default:
                     throw NewParserException("unexpect token for main exp", _look_ahead);
             }
-            return ParseTailExp(exp);
+            return ParseTailExp(exp, str_call_valid);
         }
 
         private ComplexString ParseComplexString()
