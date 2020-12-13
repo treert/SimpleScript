@@ -336,7 +336,7 @@ namespace MyScript
         }
         TableAccess ParseTableAccessor(ExpSyntaxTree table)
         {
-            NextToken();// skip '[' or '.'
+            NextToken();// skip '['
 
             var index_access = new TableAccess(_current.m_line);
             index_access.table = table;
@@ -348,20 +348,95 @@ namespace MyScript
             }
             else
             {
-                if (!NextToken().IsName())
+                if (!NextToken().CanBeName())
                     throw NewParserException("expect <id> after '.'", _current);
                 index_access.index = new Terminator(_current.ConvertToStringToken());
             }
             return index_access;
         }
-        FuncCall ParseFunctionCall(ExpSyntaxTree caller)
+
+        public (ExpSyntaxTree,bool stop) ParseDotTailExp(ExpSyntaxTree exp)
         {
-            Debug.Assert(LookAhead().Match('('));// 基本的函数调用只支持语法 f(arg,...)，后面可以安排写语法糖什么的。
-            var func_call = new FuncCall(LookAhead().m_line);
-            func_call.caller = caller;
-            func_call.args = ParseArgs();
-            return func_call;
+            NextToken();// skip "."
+            int line_dot = _current.m_line;
+            ExpSyntaxTree idx = null;
+            var tok = LookAhead();
+            if (tok.CanBeName())
+            {
+                idx = new Terminator(NextToken().ConvertToStringToken());
+            }
+            else if(tok.Match(TokenType.STRING))
+            {
+                idx = new Terminator(NextToken());
+            }
+            else if (tok.Match(TokenType.STRING_BEGIN))
+            {
+                idx = ParseComplexString();
+            }
+            else
+            {
+                throw NewParserException("expect Name or String after '.'", tok);
+            }
+            var (call, is_str_call) = TryGetFuncCallExp(exp, idx, str_call_valid:true);
+            if (call)
+            {
+                return (call, is_str_call);
+            }
+            var index_access = new TableAccess(line_dot);
+            index_access.table = exp;
+            index_access.index = idx;
+            return (index_access,false);
+
         }
+        (FuncCall,bool is_str_call) TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree idx = null, bool str_call_valid = true)
+        {
+            if (LookAhead().Match('('))
+            {
+                var func_call = new FuncCall(LookAhead().m_line);
+                func_call.caller = caller;
+                func_call.idx = idx;
+                func_call.args = ParseArgs();
+                return (func_call,false);
+            }
+            else if(str_call_valid)
+            {
+                var str = TryGetStringExp();
+                if (str)
+                {
+                    var func_call = new FuncCall(str.line);
+                    func_call.caller = caller;
+                    func_call.idx = idx;
+                    ArgsList args = new ArgsList(str.line);
+                    args.exp_list.Add(str);
+                    func_call.args = args;
+                    return (func_call,true);
+                }
+            }
+            return (null,false);
+        }
+
+        ExpSyntaxTree TryGetStringExp()
+        {
+            if (LookAhead().Match(TokenType.STRING))
+            {
+                return new Terminator(NextToken());
+            }
+            else if (LookAhead().Match(TokenType.STRING_BEGIN))
+            {
+                return ParseComplexString();
+            }
+            return null;
+        }
+
+        // 基本的函数调用只支持语法 f(...)
+        //FuncCall ParseFunctionCall(ExpSyntaxTree caller, ExpSyntaxTree idx = null)
+        //{
+        //    Debug.Assert(LookAhead().Match('('));
+        //    var func_call = new FuncCall(LookAhead().m_line);
+        //    func_call.caller = caller;
+        //    func_call.args = ParseArgs();
+        //    return func_call;
+        //}
         ArgsList ParseArgs()
         {
             NextToken();// skip '('
@@ -428,21 +503,32 @@ namespace MyScript
             return list;
         }
 
-        ExpSyntaxTree ParseTailExp(ExpSyntaxTree exp)
+        ExpSyntaxTree ParseTailExp(ExpSyntaxTree exp, bool str_call_valid = false)
         {
             // table index or func call
             for (; ; )
             {
-                if (LookAhead().Match('[') || LookAhead().Match('.'))
+                if (LookAhead().Match('.'))
+                {
+                    bool stop;
+                    (exp,stop) = ParseDotTailExp(exp);
+                    if (stop) break;
+                }
+                else if (LookAhead().Match('['))
                 {
                     exp = ParseTableAccessor(exp);
                 }
-                else if (LookAhead().Match('('))
-                {
-                    exp = ParseFunctionCall(exp);
-                }
                 else
                 {
+                    var (call, is_str_call) = TryGetFuncCallExp(exp, null, str_call_valid);
+                    if (call)
+                    {
+                        exp = call;
+                        if (!is_str_call)
+                        {
+                            continue;
+                        }
+                    }
                     break;
                 }
             }
@@ -547,7 +633,7 @@ namespace MyScript
                         {
                             last_field.index = new Terminator(_current);
                         }
-                        else if (_current.IsName())
+                        else if (_current.CanBeName())
                         {
                             last_field.index = new Terminator(_current.ConvertToStringToken());
                         }
@@ -904,7 +990,7 @@ namespace MyScript
             List<Token> names = new List<Token>();
             List<ExpSyntaxTree> exps = new List<ExpSyntaxTree>();
             bool can_be_name_list = true;
-            while (LookAhead().IsName())
+            while (LookAhead().CanBeName())
             {
                 var exp = ParseExp();
                 exps.Add(exp);

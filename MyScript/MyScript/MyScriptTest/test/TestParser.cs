@@ -258,7 +258,7 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("fn f() { return (nil ? dosomething) }");
+            TestUtils.Parse("fn f() { return (nil ?? dosomething) }");
         }
     }
     class TestParser_parser16 : TestBase

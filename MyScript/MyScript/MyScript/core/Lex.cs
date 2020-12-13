@@ -169,7 +169,7 @@ namespace MyScript
             return m_type == (int)key;
         }
 
-        public bool IsName()
+        public bool CanBeName()
         {
             return m_type >= (int)TokenType.NAME;// name + keyword
         }
