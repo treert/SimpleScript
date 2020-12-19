@@ -179,7 +179,6 @@ namespace MyScript
         ExpSyntaxTree ParseMainExp()
         {
             ExpSyntaxTree exp;
-            bool str_call_valid = false;
             switch (LookAhead().m_type)
             {
                 case (int)Keyword.NIL:
@@ -191,7 +190,6 @@ namespace MyScript
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.NAME:
-                    str_call_valid = true;
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.STRING_BEGIN:
@@ -220,7 +218,7 @@ namespace MyScript
                 default:
                     throw NewParserException("unexpect token for main exp", _look_ahead);
             }
-            return ParseTailExp(exp, str_call_valid);
+            return ParseTailExp(exp);
         }
 
         private ComplexString ParseComplexString()
@@ -359,7 +357,7 @@ namespace MyScript
             return index_access;
         }
 
-        public (ExpSyntaxTree,bool stop) ParseDotTailExp(ExpSyntaxTree exp)
+        public ExpSyntaxTree ParseDotTailExp(ExpSyntaxTree exp)
         {
             NextToken();// skip "."
             int line_dot = _current.m_line;
@@ -367,6 +365,7 @@ namespace MyScript
             var tok = LookAhead();
             if (tok.CanBeName())
             {
+                // 当成字符串来用
                 idx = new Terminator(NextToken().ConvertToStringToken());
             }
             else if(tok.Match(TokenType.STRING))
@@ -381,18 +380,18 @@ namespace MyScript
             {
                 throw NewParserException("expect Name or String after '.'", tok);
             }
-            var (call, is_str_call) = TryGetFuncCallExp(exp, idx, str_call_valid:true);
+            var call = TryGetFuncCallExp(exp, idx);
             if (call)
             {
-                return (call, is_str_call);
+                return call;
             }
             var index_access = new TableAccess(line_dot);
             index_access.table = exp;
             index_access.index = idx;
-            return (index_access,false);
+            return index_access;
 
         }
-        (FuncCall,bool is_str_call) TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree idx = null, bool str_call_valid = true)
+        FuncCall TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree idx = null)
         {
             if (LookAhead().Match('('))
             {
@@ -400,10 +399,11 @@ namespace MyScript
                 func_call.caller = caller;
                 func_call.idx = idx;
                 func_call.args = ParseArgs();
-                return (func_call,false);
+                return func_call;
             }
-            else if(str_call_valid)
+            else
             {
+                // 这个语法糖想了想，在这儿支持吧，和lua一样，写出的代码可能会很诡异。
                 var str = TryGetStringExp();
                 if (str)
                 {
@@ -413,10 +413,10 @@ namespace MyScript
                     ArgsList args = new ArgsList(str.line);
                     args.exp_list.Add(str);
                     func_call.args = args;
-                    return (func_call,true);
+                    return func_call;
                 }
             }
-            return (null,false);
+            return null;
         }
 
         ExpSyntaxTree TryGetStringExp()
@@ -432,15 +432,6 @@ namespace MyScript
             return null;
         }
 
-        // 基本的函数调用只支持语法 f(...)
-        //FuncCall ParseFunctionCall(ExpSyntaxTree caller, ExpSyntaxTree idx = null)
-        //{
-        //    Debug.Assert(LookAhead().Match('('));
-        //    var func_call = new FuncCall(LookAhead().m_line);
-        //    func_call.caller = caller;
-        //    func_call.args = ParseArgs();
-        //    return func_call;
-        //}
         ArgsList ParseArgs()
         {
             NextToken();// skip '('
@@ -514,9 +505,7 @@ namespace MyScript
             {
                 if (LookAhead().Match('.'))
                 {
-                    bool stop;
-                    (exp,stop) = ParseDotTailExp(exp);
-                    if (stop) break;
+                    exp = ParseDotTailExp(exp);
                 }
                 else if (LookAhead().Match('['))
                 {
@@ -524,16 +513,15 @@ namespace MyScript
                 }
                 else
                 {
-                    var (call, is_str_call) = TryGetFuncCallExp(exp, null, str_call_valid);
+                    var call = TryGetFuncCallExp(exp, null);
                     if (call)
                     {
                         exp = call;
-                        if (!is_str_call)
-                        {
-                            continue;
-                        }
                     }
-                    break;
+                    else
+                    {
+                        break;
+                    }
                 }
             }
             return exp;

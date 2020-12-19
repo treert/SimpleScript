@@ -43,7 +43,7 @@ varlist ::= var {',' var}
 
 var ::= Name [{index | args } index]
 
-funccall ::= Name {index | args} args [String]
+funccall ::= Name {index | args} args
 
 funcname ::= Name {'.' Name}
 
@@ -69,7 +69,7 @@ primary_exp ::= 'nil' | 'false' | 'true' | Number | String
     | '(' exp ')'
     | Name
 
-main_exp ::= primary_exp {index | args} [String]
+main_exp ::= primary_exp {index | args}
 
 # q_exp ::= exp '?' exp ':' exp_or_stat | exp '?:' exp_or_stat | exp '??' exp_or_stat
 # 方便编码，似乎没什么不妥
@@ -77,9 +77,9 @@ q_exp ::= exp '?' [exp] (':'|'?') exp_or_stat
 
 function ::= 'fn' funcbody
 
-index ::= '[' exp ']' | '.' Name
+index ::= '[' exp ']' | '.' Name | '.' String
 
-args ::=  '(' [(args_three | args_two | args_one) [','] ] ')'
+args ::=  '(' [(args_three | args_two | args_one) [','] ] ')' | String
 
 args_one ::= exp {',' exp}
 args_two ::= [args_one ','] '*' exp
