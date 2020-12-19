@@ -986,10 +986,18 @@ namespace MyScript
                 NextToken();
                 statement.exp_list = ParseExpList();
             }
-            else
+            else if(LookAhead().CanBeName())
             {
                 statement.name_list = ParseNameList();
+                if(NextToken().Match('=') == false)
+                {
+                    throw NewParserException("expect '=' in scope statement after name_list", _current);
+                }
                 statement.exp_list = ParseExpList();
+            }
+            else
+            {
+                throw NewParserException("expect '=' or <name> to after 'scope'", _current);
             }
             statement.block = ParseBlock();
             return statement;

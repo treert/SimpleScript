@@ -540,7 +540,7 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("scope xx.yy.zz(){ }");
+            TestUtils.Parse("scope = xx.yy.zz(){ }");
         }
     }
 
