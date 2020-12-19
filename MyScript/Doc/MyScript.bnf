@@ -23,7 +23,7 @@ stat ::= block
       |  'continue' 
       |  'try' block ['catch' [Name] block] ['finally' block] 
       |  'throw' [explist] 
-      |  scope_head+ block 
+      |  scope_head + block 
       |  'fn' funcname funcbody 
       |  'return' [explist] 
       |  ('global'|'local') namelist ['=' explist] 
@@ -32,7 +32,8 @@ stat ::= block
       |  var self_assign exp
       |  funccall
 
-scope_head ::= 'scope' (namelist '=' explist | explist)
+# 这样设计可以简化解析代码
+scope_head ::= 'scope' [namelist] '=' explist
 
 # 语法糖，支持一部分吧
 self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '.='

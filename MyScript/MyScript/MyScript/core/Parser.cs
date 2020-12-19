@@ -972,61 +972,25 @@ namespace MyScript
         }
 
         /// <summary>
-        /// 这个语法LL(2)是不能支持的。
+        /// scope namelist = explist
+        /// scope = explist
+        /// 修改了下语法，可以用LL(2)解析
         /// </summary>
         /// <returns></returns>
         ScopeStatement ParseScopeStatement()
         {
             NextToken();
             var statement = new ScopeStatement(_current.m_line);
-            List<Token> names = new List<Token>();
-            List<ExpSyntaxTree> exps = new List<ExpSyntaxTree>();
-            bool can_be_name_list = true;
-            while (LookAhead().CanBeName())
+            if (LookAhead().Match('='))
             {
-                var exp = ParseExp();
-                exps.Add(exp);
-                if (can_be_name_list && exp is Terminator ter)
-                {
-                    names.Add(ter.token);
-                }
-                else
-                {
-                    can_be_name_list = false;
-                }
-                if (LookAhead().Match(',')){
-                    NextToken();
-                }
-                else if (LookAhead().Match('='))
-                {
-                    if (can_be_name_list)
-                    {
-                        statement.name_list = new NameList(names[0].m_line);
-                        statement.name_list.names = names;
-                        can_be_name_list = false;
-                        exps.Clear();
-                        NextToken();
-                    }
-                    else
-                    {
-                        throw NewParserException("unexpect '=' in scope statement", LookAhead());
-                    }
-                }
-                else
-                {
-                    break;
-                }
+                NextToken();
+                statement.exp_list = ParseExpList();
             }
-            if(exps.Count == 0)
+            else
             {
-                throw NewParserException("there must be some valid <id> start exp in scope statement", LookAhead());
+                statement.name_list = ParseNameList();
+                statement.exp_list = ParseExpList();
             }
-            if(LookAhead().Match('{') == false)
-            {
-                throw NewParserException("expect '{' to start scope block", LookAhead());
-            }
-            statement.exp_list = new ExpressionList(exps[0].line);
-            statement.exp_list.exp_list = exps;
             statement.block = ParseBlock();
             return statement;
         }
