@@ -21,6 +21,12 @@ namespace MyScript
         List<object> Call(Args args);
     }
 
+    public interface IForEach
+    {
+        // expect_cnt 是为了能实现 for v in table {} for k,v in table {}
+        IEnumerable<object[]> GetForEachItor(int expect_cnt);
+    }
+
     /// <summary>
     /// 运行时函数
     /// </summary>
@@ -151,11 +157,10 @@ namespace MyScript
         }
     }
 
-    // 内置Table
-    // 在Dictionary的基础上
-    // 1. 同时作为 array and set。数组的支持是残次的，不要在其中挖洞
-    // 2. 支持一个接近js原型的结构，不用lua元表那么复杂的结构了
-    public class Table: IGetSet, IEnumerable
+    // 内置Table，在Dictionary的基础上加上简单的元表功能。不用lua元表那么复杂的结构了
+    // 如果要实现复杂的结构，那就去继承实现对应的接口好了。
+    // 注意1：ForEach的支持是不搜索元表的。
+    public class Table: IGetSet, IForEach
     {
         Dictionary<object, object> _items = new Dictionary<object, object>();
         Table prototype = null;
@@ -224,13 +229,27 @@ namespace MyScript
             return key;
         }
 
-        public IEnumerator GetEnumerator()
+        public IEnumerable<object[]> GetForEachItor(int expect_cnt)
         {
-            throw new NotImplementedException();
+            if(expect_cnt > 1)
+            {
+                foreach(var it in _items)
+                {
+                    yield return new object[]{ it.Key, it.Value };
+                }
+            }
+            else
+            {
+                foreach (var it in _items)
+                {
+                    yield return new object[] { it.Value };
+                }
+            }
+            yield break;
         }
     }
 
-    public class MyArray: IGetSet, IEnumerable
+    public class MyArray: IGetSet, IForEach
     {
         public List<object> m_items = new List<object>();
 
@@ -239,9 +258,23 @@ namespace MyScript
             throw new NotImplementedException();
         }
 
-        public IEnumerator GetEnumerator()
+        public IEnumerable<object[]> GetForEachItor(int expect_cnt)
         {
-            return m_items.GetEnumerator();
+            if (expect_cnt > 1)
+            {
+                for (int i = 0; i < m_items.Count; i++)
+                {
+                    yield return  new object[] { i, m_items[i] };
+                }
+            }
+            else
+            {
+                for (int i = 0; i < m_items.Count; i++)
+                {
+                    yield return new object[] { m_items[i] };
+                }
+            }
+            yield break;
         }
 
         public bool Set(object key, object val)

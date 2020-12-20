@@ -95,17 +95,16 @@ namespace MyScript
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
 
             var cur_block = frame.cur_block;
-            if (obj is Table)
+            if (obj is IForEach)
             {
-                var iter = obj as Table;
-                var keys = iter.GetKeys();
-                foreach (var k in keys)
+                var iter = obj as IForEach;
+                foreach(var it in iter.GetForEachItor(name_list.names.Count))
                 {
                     frame.cur_block = cur_block;
                     try
                     {
                         frame.EnterBlock();
-                        name_list.AddLocals(frame, k, iter.Get(k));
+                        name_list.AddLocals(frame, it);
                         block.Exec(frame);
                     }
                     catch (ContineException)
