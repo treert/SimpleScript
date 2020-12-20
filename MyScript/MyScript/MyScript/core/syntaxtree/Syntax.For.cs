@@ -95,9 +95,9 @@ namespace MyScript
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
 
             var cur_block = frame.cur_block;
-            if (obj is IForKeys)
+            if (obj is Table)
             {
-                var iter = obj as IForKeys;
+                var iter = obj as Table;
                 var keys = iter.GetKeys();
                 foreach (var k in keys)
                 {

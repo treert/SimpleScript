@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
-
+using System.Collections;
 
 /// <summary>
 /// 人力有穷时，简单化吧，虽然想加好多语法糖。
@@ -14,13 +14,6 @@ namespace MyScript
     {
         object Get(object key);
         bool Set(object key, object val);
-    }
-    // 设计成这样的考虑是，避免在遍历的时候修改集合，导致遍历过程难预测。
-    // 提取成接口，是给
-    public interface IForKeys
-    {
-        List<object> GetKeys();
-        object Get(object key);
     }
 
     public interface ICall
@@ -162,7 +155,7 @@ namespace MyScript
     // 在Dictionary的基础上
     // 1. 同时作为 array and set。数组的支持是残次的，不要在其中挖洞
     // 2. 支持一个接近js原型的结构，不用lua元表那么复杂的结构了
-    public class Table: IForKeys
+    public class Table: IGetSet, IEnumerable
     {
         Dictionary<object, object> _items = new Dictionary<object, object>();
         Table prototype = null;
@@ -190,19 +183,13 @@ namespace MyScript
                 return false;// @om 就不报错了
             }
             key = PreConvertKey(key);
+            if(value == null)
+            {
+                return this._items.Remove(key);
+            }
             this._items[key] = value;
 
             return true;
-        }
-
-        public bool Delete(object key)
-        {
-            if (key == null)
-            {
-                return false;// @om 就不报错了
-            }
-            key = PreConvertKey(key);
-            return this._items.Remove(key);
         }
 
         public object Get(object key)
@@ -236,16 +223,25 @@ namespace MyScript
             }
             return key;
         }
+
+        public IEnumerator GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
     }
 
-    
-    public class MyArray: IGetSet
+    public class MyArray: IGetSet, IEnumerable
     {
         public List<object> m_items = new List<object>();
 
         public object Get(object key)
         {
             throw new NotImplementedException();
+        }
+
+        public IEnumerator GetEnumerator()
+        {
+            return m_items.GetEnumerator();
         }
 
         public bool Set(object key, object val)
