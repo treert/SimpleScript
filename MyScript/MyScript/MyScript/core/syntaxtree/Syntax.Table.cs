@@ -18,17 +18,8 @@ namespace MyScript
             for (var i = 0; i < fields.Count; i++)
             {
                 var f = fields[i];
-                if (f.index == null && i == fields.Count - 1)
-                {
-                    var vs = f.value.GetResults(frame);
-                    foreach (var v in vs)
-                    {
-                        ret.Set(++i, v);
-                    }
-                    break;
-                }
 
-                object key = f.index ? f.index.GetOneResult(frame) : i + 1;
+                object key = f.index.GetOneResult(frame);
                 if (key == null)
                 {
                     throw frame.NewRunException(f.line, "Table key can not be nil");
@@ -45,11 +36,10 @@ namespace MyScript
         {
             _line = line_;
         }
-        public ExpSyntaxTree index = null;
+        public ExpSyntaxTree index;
         public ExpSyntaxTree value;
     }
 
-    // todo 这儿可以做一个优化: a.b.c.d = 1，连着创建2个Table。实际使用时，可能很方便。
     public class TableAccess : ExpSyntaxTree
     {
         public TableAccess(int line_)
@@ -69,6 +59,59 @@ namespace MyScript
             }
             var ret = ExtUtils.Get(t, idx);
             return new List<object>() { ret };
+        }
+
+        private object GetResultForAssgin(Frame frame)
+        {
+            object t = null;
+            if(table is TableAccess tmp)
+            {
+                t = tmp.GetResultForAssgin(frame);
+            }
+            else
+            {
+                t = table.GetOneResult(frame);
+            }
+            var idx = index.GetOneResult(frame);
+            if (idx == null)
+            {
+                throw frame.NewRunException(line, "table index can not be null");
+            }
+
+            if (t is Table t2)
+            {
+                var ret = t2.Get(idx);
+                if(ret == null)
+                {
+                    ret = new Table();
+                    t2.Set(idx, ret);
+                }
+                return ret;
+            }
+            else
+            {
+                return ExtUtils.Get(t, idx);
+            }
+        }
+
+        public void Assign(Frame frame, object val)
+        {
+            // 像PHP一样，针对Table, 做一个优化: a.b.c.d = 1，连着创建2个Table。实际使用时，很方便。
+            object t = null;
+            if (table is TableAccess tmp)
+            {
+                t = tmp.GetResultForAssgin(frame);
+            }
+            else
+            {
+                t = table.GetOneResult(frame);
+            }
+            var idx = index.GetOneResult(frame);
+            if (idx == null)
+            {
+                throw frame.NewRunException(line, "table index can not be null");
+            }
+            ExtUtils.Set(t, idx, val);
         }
     }
 

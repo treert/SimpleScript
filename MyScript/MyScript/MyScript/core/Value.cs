@@ -6,11 +6,17 @@ using System.Linq;
 
 /// <summary>
 /// 人力有穷时，简单化吧，虽然想加好多语法糖。
-/// 1. ss 语言层面只支持非常少的类型：
+/// 1. ms 语言层面只支持非常少的类型：
 /// </summary>
 namespace MyScript
 {
-    // 设计成这样的考虑是，避免在遍历的时候修改集合，导致遍历过程难预测
+    public interface IGetSet
+    {
+        object Get(object key);
+        bool Set(object key, object val);
+    }
+    // 设计成这样的考虑是，避免在遍历的时候修改集合，导致遍历过程难预测。
+    // 提取成接口，是给
     public interface IForKeys
     {
         List<object> GetKeys();
@@ -152,7 +158,8 @@ namespace MyScript
         }
     }
 
-    // 内置Table，
+    // 内置Table
+    // 在Dictionary的基础上
     // 1. 同时作为 array and set。数组的支持是残次的，不要在其中挖洞
     // 2. 支持一个接近js原型的结构，不用lua元表那么复杂的结构了
     public class Table: IForKeys
@@ -228,6 +235,22 @@ namespace MyScript
                 key = f;
             }
             return key;
+        }
+    }
+
+    
+    public class MyArray: IGetSet
+    {
+        public List<object> m_items = new List<object>();
+
+        public object Get(object key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Set(object key, object val)
+        {
+            throw new NotImplementedException();
         }
     }
 

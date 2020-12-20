@@ -71,6 +71,7 @@ namespace MyScript
                 token_type == (int)Keyword.FN ||
                 token_type == (int)'(' ||
                 token_type == (int)'{' ||
+                token_type == (int)'[' ||
                 token_type == (int)'-' ||
                 token_type == (int)Keyword.NOT;
         }
@@ -169,10 +170,11 @@ namespace MyScript
 
         ExpSyntaxTree ParseConditionExp()
         {
-            if (LookAhead().Match('{'))
-            {
-                throw NewParserException("condition exp should not start with '{'", _look_ahead);
-            }
+            // 想了想，这个就算了，不做限制了。
+            //if (LookAhead().Match('{'))
+            //{
+            //    throw NewParserException("condition exp should not start with '{'", _look_ahead);
+            //}
             return ParseExp();
         }
 
@@ -206,6 +208,9 @@ namespace MyScript
                     break;
                 case (int)'{':
                     exp = ParseTableConstructor();
+                    break;
+                case (int)'[':
+                    exp = ParseArrayConstructor();
                     break;
                 // unop exp priority is 90 less then ^
                 case (int)'-':
@@ -602,60 +607,69 @@ namespace MyScript
                 else
                 {
                     last_field = new TableField(LookAhead().m_line);
-                    if (LookAhead().Match(TokenType.STRING_BEGIN))
+                    var str = TryGetStringExp();
+                    if (str)
                     {
-                        var exp = ParseComplexString();
-                        if (LookAhead().Match('='))
-                        {
-                            last_field.index = exp;
-                            NextToken();
-                            last_field.value = ParseExp();
-                        }
-                        else
-                        {
-                            last_field.value = exp;
-                        }
+                        last_field.index = str;
                     }
-                    else if (LookAhead2().Match('='))
+                    else if (LookAhead().CanBeName())
                     {
-                        // must be kv
+                        last_field.index = new Terminator(NextToken().ConvertToStringToken());
+                    }
+                    else
+                    {
+                        throw NewParserException("expect <name>,<string>,'[' to define table-key", _current);
+                    }
+
+                    if (LookAhead().Match('=', ':'))
+                    {
                         NextToken();
-                        if (_current.Match(TokenType.STRING)
-                            || _current.Match(TokenType.NUMBER))
-                        {
-                            last_field.index = new Terminator(_current);
-                        }
-                        else if (_current.CanBeName())
-                        {
-                            last_field.index = new Terminator(_current.ConvertToStringToken());
-                        }
-                        else
-                        {
-                            throw NewParserException("expect <name>,<string>,<number> to define table-key before '='", _current);
-                        }
-                        NextToken();// skip =
                         last_field.value = ParseExp();
                     }
                     else
                     {
-                        last_field.value = ParseExp();
+                        throw NewParserException("expect '=' to between key and value", _current);
                     }
                 }
 
                 table.fields.Add(last_field);
-
-                if (LookAhead().m_type != '}')
+                if (LookAhead().Match(',', ';'))
                 {
                     NextToken();
-                    if (_current.m_type != (int)','
-                        && _current.m_type != (int)';')
-                        throw NewParserException("expect ',' or ';' to split table fields", _current);
+                }
+                else
+                {
+                    break;
                 }
             }
             if (NextToken().m_type != '}')
-                throw NewParserException("expect '}' for table", _current);
+                throw NewParserException("expect '}' to end table-define", _current);
 
             return table;
+        }
+
+        ArrayDefine ParseArrayConstructor()
+        {
+            NextToken();
+            ArrayDefine arr = new ArrayDefine(_current.m_line);
+            while(LookAhead().Match(']') == false)
+            {
+                var exp = ParseExp();
+                arr.fileds.Add(exp);
+                if (LookAhead().Match(','))
+                {
+                    NextToken();// 不支持[,,]这种
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if(NextToken().Match(']') == false)
+            {
+                throw NewParserException("expect ']' to end array-define", _current);
+            }
+            return arr;
         }
 
         BlockTree ParseBlock()

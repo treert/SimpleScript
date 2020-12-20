@@ -156,7 +156,7 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("t = {['str'] = 1 ^ 2, abc = 'str' .. 2, id, 1 + 2;}");
+            TestUtils.Parse("t = {['str'] = 1 ^ 2, abc = 'str' .. 2, id:val, 'key':'value';}");
         }
     }
     class TestParser_parser4 : TestBase
@@ -237,7 +237,7 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("f(1, 2, 3).m({1, 2, 3}).m[123].m = 1");
+            TestUtils.Parse("f(1, 2, 3).m([1, 2, 3]).m[123].m = 1");
         }
     }
     class TestParser_parser13 : TestBase

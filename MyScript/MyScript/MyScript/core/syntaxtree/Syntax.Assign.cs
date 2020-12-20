@@ -23,16 +23,7 @@ namespace MyScript
                 object val = results.Count > i ? results[i] : null;
                 if (it is TableAccess)
                 {
-                    // TableAccess
-                    var access = it as TableAccess;
-                    var table = access.table.GetOneResult(frame);
-                    var idx = access.index.GetOneResult(frame);
-                    if (idx == null)
-                    {
-                        throw frame.NewRunException(line, "table index can not be null");
-                    }
-
-                    ExtUtils.Set(table, idx, val);
+                    (it as TableAccess).Assign(frame, val);
                 }
                 else
                 {
