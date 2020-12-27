@@ -44,7 +44,7 @@ class Program
             Console.WriteLine("Start Test MS 1.0");
             VM vm = new VM();
             // 注入基础扩展
-            ExtUtils.Import(typeof(BaseExt), vm);
+            ExtUtils.Import(vm, typeof(BaseExt));
             // 执行测试文件
             try
             {

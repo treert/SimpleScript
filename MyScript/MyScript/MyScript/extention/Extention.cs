@@ -122,7 +122,7 @@ namespace MyScript
     {
         static Dictionary<Type, ExtContain> ext_types = new Dictionary<Type, ExtContain>();
 
-        public static void Register(ExtFuncWrap func_wrap, VM vm)
+        public static void Register(VM vm, ExtFuncWrap func_wrap)
         {
             var that_type = func_wrap.that_type;
             if(that_type == null)
@@ -145,7 +145,7 @@ namespace MyScript
         }
 
         // 注册类里面的函数
-        public static void Import(Type type, VM vm)
+        public static void Import(VM vm, Type type)
         {
             var methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic);
             foreach(var method in methods)
@@ -153,7 +153,7 @@ namespace MyScript
                 foreach(var attr in method.GetCustomAttributes<ExtFuncAttribute>())
                 {
                     var f = new ExtFuncWrap(method, attr);
-                    Register(f, vm);
+                    Register(vm, f);
                 }
             }
             // todo 
@@ -209,9 +209,9 @@ namespace MyScript
         {
             if (obj == null || key == null) return null;
 
-            if(obj is Table)
+            if(obj is IGetSet)
             {
-                return (obj as Table).Get(key);
+                return (obj as IGetSet).Get(key);
             }
             else if(obj is IDictionary)
             {
