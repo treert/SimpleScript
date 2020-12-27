@@ -344,21 +344,13 @@ namespace MyScript
         TableAccess ParseTableAccessor(ExpSyntaxTree table)
         {
             NextToken();// skip '['
+            Debug.Assert(_current.Match('['));
 
             var index_access = new TableAccess(_current.m_line);
             index_access.table = table;
-            if (_current.m_type == (int)'[')
-            {
-                index_access.index = ParseExp();
-                if (NextToken().m_type != (int)']')
-                    throw NewParserException("expect ']'", _current);
-            }
-            else
-            {
-                if (!NextToken().CanBeName())
-                    throw NewParserException("expect <id> after '.'", _current);
-                index_access.index = new Terminator(_current.ConvertToStringToken());
-            }
+            index_access.index = ParseExp();
+            if (NextToken().Match(']') == false)
+                throw NewParserException("expect ']'", _current);
             return index_access;
         }
 
@@ -368,7 +360,7 @@ namespace MyScript
             int line_dot = _current.m_line;
             ExpSyntaxTree idx = null;
             var tok = LookAhead();
-            if (tok.CanBeName())
+            if (tok.CanBeNameString())
             {
                 // 当成字符串来用
                 idx = new Terminator(NextToken().ConvertToStringToken());
@@ -612,7 +604,7 @@ namespace MyScript
                     {
                         last_field.index = str;
                     }
-                    else if (LookAhead().CanBeName())
+                    else if (LookAhead().CanBeNameString())
                     {
                         last_field.index = new Terminator(NextToken().ConvertToStringToken());
                     }
@@ -633,7 +625,7 @@ namespace MyScript
                 }
 
                 table.fields.Add(last_field);
-                if (LookAhead().Match(',', ';'))
+                if (LookAhead().Match(','))
                 {
                     NextToken();
                 }
@@ -986,8 +978,8 @@ namespace MyScript
         }
 
         /// <summary>
-        /// scope namelist = explist
-        /// scope = explist
+        /// scope namelist = explist {  }
+        /// scope = explist {  }
         /// 修改了下语法，可以用LL(2)解析
         /// </summary>
         /// <returns></returns>
@@ -1000,7 +992,7 @@ namespace MyScript
                 NextToken();
                 statement.exp_list = ParseExpList();
             }
-            else if(LookAhead().CanBeName())
+            else if(LookAhead().CanBeNameString())
             {
                 statement.name_list = ParseNameList();
                 if(NextToken().Match('=') == false)

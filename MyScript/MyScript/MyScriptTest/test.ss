@@ -13,4 +13,4 @@ print("hello World")
 a = 1
 b = a + 2;
 
-print(b);
+print("1+2=$b");
