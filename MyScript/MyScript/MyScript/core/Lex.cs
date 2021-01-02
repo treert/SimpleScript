@@ -53,6 +53,8 @@ namespace MyScript
         GE,// >=
         LE,// <=
         NE,// !=
+        SHIFT_LEFT,// <<
+        SHIFT_RIGHT,// >>
         SpecialAssignBegin,
         ADD_SELF,// +=
         DEC_SELF,// -=
@@ -714,14 +716,30 @@ namespace MyScript
                     //break;
                     case '<':
                         _NextChar();
-                        if (_current != '=') return new Token('<');
-                        _NextChar();
-                        return new Token(TokenType.LE);
+                        if(_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.LE);
+                        }
+                        else if(_current == '<')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.SHIFT_LEFT);
+                        }
+                        return new Token('<');
                     case '>':
                         _NextChar();
-                        if (_current != '=') return new Token('>');
-                        _NextChar();
-                        return new Token(TokenType.GE);
+                        if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.GE);
+                        }
+                        else if (_current == '>')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.SHIFT_RIGHT);
+                        }
+                        return new Token('>');
                     case '\'':
                         _NextChar();
                         _block_stack.Push(StringBlockType.SingleQuotation);
