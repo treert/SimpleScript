@@ -115,11 +115,17 @@ namespace MyScript
         public object that = null;// this
         public Dictionary<string, object> name_args;
         public List<object> args;
+        public Frame frame = null;// VM 调用外部接口时，通过这个可以传递运行是环境，增加功能
 
         public Args()
         {
             name_args = new Dictionary<string, object>();
             args = new List<object>();
+        }
+
+        public Args(Frame frame): this()
+        {
+            this.frame = frame;
         }
 
         public Args(params object[] args)
@@ -164,20 +170,6 @@ namespace MyScript
     {
         Dictionary<object, object> _items = new Dictionary<object, object>();
         Table prototype = null;
-
-        public List<object> GetKeys()
-        {
-            List<object> ret = new List<object>();
-            var it = this;
-            do
-            {
-                ret.AddRange(it._items.Keys);
-                it = it.prototype;
-            } while (it != null);
-            ret = ret.Distinct().ToList();
-            ret.Sort();
-            return ret;
-        }
 
         public int Len => _items.Count;
 

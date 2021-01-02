@@ -175,7 +175,7 @@ namespace MyScript
 
         public Args GetArgs(Frame frame)
         {
-            Args args = new Args();
+            Args args = new Args(frame);
             for (int i = 0; i < exp_list.Count - 1; i++)
             {
                 args.args.Add(exp_list[i].GetOneResult(frame));
@@ -190,6 +190,7 @@ namespace MyScript
                 Table table = kw_table.GetOneResult(frame) as Table;
                 if (table != null)
                 {
+
                     // todo
                 }
                 // 要不要报个错
