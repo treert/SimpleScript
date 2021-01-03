@@ -96,7 +96,7 @@ namespace MyScript
 
                 if (code.param_list.kw_name)
                 {
-                    frame.AddLocalVal(code.param_list.kw_name.m_string, args.name_args);
+                    frame.AddLocalVal(code.param_list.kw_name.m_string, args);// 直接获取所有参数好了
                 }
 
                 foreach(var it in args.name_args)
@@ -107,10 +107,6 @@ namespace MyScript
                         v.obj = it.Value;
                     }
                 }
-            }
-            for (int i = name_cnt; i < args.args.Count; i++)
-            {
-                frame.extra_args.Add(args[i]);
             }
             try
             {
@@ -133,7 +129,7 @@ namespace MyScript
         }
     }
 
-    public class Args
+    public class Args:IGetSet
     {
         public object that = null;// this
         public Dictionary<string, object> name_args;
@@ -183,6 +179,16 @@ namespace MyScript
                 name_args.TryGetValue(name, out ret);
                 return ret;
             }
+        }
+
+        public object Get(object key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Set(object key, object val)
+        {
+            throw new NotImplementedException();
         }
     }
 

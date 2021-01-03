@@ -57,7 +57,7 @@ namespace MyScript.Test
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init("+ - * / % ^ == ~= <= >= < > = ( ) { } [ ] ; : , . .. ... += -= .=");
+            lex.Init("+ - * / % ^ == ~= <= >= < > = ( ) { } [ ] ; : , . .. += -= .=");
             ExpectTrue(lex.GetNextToken().m_type == (int)'+');
             ExpectTrue(lex.GetNextToken().m_type == (int)'-');
             ExpectTrue(lex.GetNextToken().m_type == (int)'*');
@@ -82,7 +82,6 @@ namespace MyScript.Test
             ExpectTrue(lex.GetNextToken().m_type == (int)',');
             ExpectTrue(lex.GetNextToken().m_type == (int)'.');
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.CONCAT);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DOTS);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.ADD_SELF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.DEC_SELF);
             ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT_SELF));
@@ -134,7 +133,7 @@ nil not or return true while");
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"""${name..[=[ haha ha ]=]
+            lex.Init(@"""${name..` haha ha `
 ..''''
 ..`ls -l`
 ..```bash `lalala`
@@ -152,13 +151,10 @@ nil not or return true while");
                 ExpectTrue(lex.CurStringType == StringBlockType.SingleQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "'");
                 ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
-                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
-                ExpectTrue(lex.CurStringType == StringBlockType.InverseQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "ls -l");
                 ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
-                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
-                ExpectTrue(lex.CurStringType == StringBlockType.InverseThreeQuotation);
-                ExpectTrue(lex.GetNextToken().Match(TokenType.STRING));
+                ExpectTrue(lex.GetNextToken().m_string == "bash `lalala`\n");
+                //ExpectTrue(lex.GetNextToken().Match(TokenType.STRING));
                 ExpectTrue(lex.GetNextToken().Match('}'));
             }
             ExpectTrue(lex.GetNextToken().m_string == " \n \t end");

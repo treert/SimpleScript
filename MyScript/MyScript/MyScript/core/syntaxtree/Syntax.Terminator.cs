@@ -16,11 +16,6 @@ namespace MyScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            if (token.Match(TokenType.DOTS))
-            {
-                return frame.extra_args;
-            }
-
             object obj = null;
             if (token.Match(TokenType.NAME))
             {

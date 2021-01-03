@@ -66,7 +66,6 @@ namespace MyScript
                 token_type == (int)TokenType.NUMBER ||
                 token_type == (int)TokenType.STRING ||
                 token_type == (int)TokenType.STRING_BEGIN ||
-                token_type == (int)TokenType.DOTS ||
                 token_type == (int)TokenType.NAME ||
                 token_type == (int)Keyword.FN ||
                 token_type == (int)'(' ||
@@ -188,7 +187,6 @@ namespace MyScript
                 case (int)Keyword.TRUE:
                 case (int)TokenType.NUMBER:
                 case (int)TokenType.STRING:
-                case (int)TokenType.DOTS:
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.NAME:
@@ -228,51 +226,27 @@ namespace MyScript
 
         private ComplexString ParseComplexString()
         {
-            var head = NextToken();
-            var next = LookAhead();
+            NextToken();// skip StringBegin
 
             var exp = new ComplexString(_current.m_line);
-            if (head.m_string_type >= StringBlockType.InverseQuotation)
-            {
-                exp.is_shell = true;
-                if (next.Match(TokenType.STRING)
-                    && next.m_string.Length > 3
-                    && head.m_string_type == StringBlockType.InverseThreeQuotation)
-                {
-                    int idx = 0;
-                    var str = next.m_string;
-                    while (idx < str.Length && char.IsLetter(str[idx]))
-                    {
-                        idx++;
-                    }
-                    if (idx < str.Length && str[idx] == ' ')
-                    {
-                        exp.shell_name = str.Substring(0, idx);
-                        next.m_string = str.Substring(idx + 1);
-                    }
-                }
-            }
-
             do
             {
-                next = NextToken();
-                if (next.Match(TokenType.STRING) || next.Match(TokenType.NAME))
+                NextToken();
+                if (_current.Match(TokenType.STRING) || _current.Match(TokenType.NAME))
                 {
-                    var term = new Terminator(next);
+                    var term = new Terminator(_current);
                     exp.list.Add(term);
                 }
-                else if (next.Match('{'))
+                else if (_current.Match('{'))
                 {
                     var term = ParseComplexItem();
                     exp.list.Add(term);
                 }
                 else
                 {
-                    throw NewParserException("expect string,name,'{' in complex-string", next);
+                    throw NewParserException("expect string,name,'{' in complex-string", _current);
                 }
-            } while (next.IsStringEnded == false);
-
-
+            } while (_current.IsStringEnded == false);
             return exp;
         }
 

@@ -17,7 +17,6 @@ namespace MyScript
         }
 
         public Function func;
-        public List<object> extra_args = new List<object>();// for ...
         public GenBlock cur_block;
 
         public Frame(Function func)

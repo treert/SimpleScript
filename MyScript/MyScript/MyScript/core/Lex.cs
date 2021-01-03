@@ -48,7 +48,6 @@ namespace MyScript
         EOS = 256,
 
         CONCAT,// .. string concat
-        DOTS,// ...
         EQ,// ==
         GE,// >=
         LE,// <=
@@ -81,9 +80,6 @@ namespace MyScript
 
         SingleQuotation,// ' $x '' x '
         DoubleQuotation,// " $x \n \" \t "
-
-        InverseQuotation,// ` ${abc}  `
-        InverseThreeQuotation, // ```bash ```
     }
 
     public class Token
@@ -280,8 +276,8 @@ namespace MyScript
                 char head = _current;
                 _NextChar();
                 int cnt = 2;
-                if (cnt == 'u') cnt = 4;
-                else if (cnt == 'U') cnt = 8;
+                if (head == 'u') cnt = 4;
+                else if (head == 'U') cnt = 8;
                 int code = 0;
                 int i = 0;
                 for (; i < cnt; ++i)
@@ -304,12 +300,13 @@ namespace MyScript
                     }
                     _NextChar();
                 }
-                if (i == 0) throw NewLexException($"expect {cnt} hexadecimal number after '\\{head}'");
+                if (i != cnt) throw NewLexException($"expect {cnt} hexadecimal number after '\\{head}'");
                 _buf.Append(char.ConvertFromUtf32(code));
                 return;
             }
             else if (char.IsDigit(_current))// 特殊支持\d[d][d]，三位十进制（不是C++的八进制），需要小于255。
             {
+                // todo 可以考虑支持到所有的Unicode
                 int code = 0;
                 int i = 0;
                 for (; i < 3; ++i)
@@ -370,6 +367,7 @@ namespace MyScript
                 }
                 _buf.Append('$');
             }
+
             switch (_block_stack.Peek())
             {
                 case StringBlockType.SingleQuotation:
@@ -377,12 +375,6 @@ namespace MyScript
                     break;
                 case StringBlockType.DoubleQuotation:
                     _ReadStringInDoubleQuotation();
-                    break;
-                case StringBlockType.InverseQuotation:
-                    _ReadStringInInverseQuotation();
-                    break;
-                case StringBlockType.InverseThreeQuotation:
-                    _ReadStringInInverseThreeQuotation();
                     break;
             }
             if (_current == '\0' && IsStringEnded == false)
@@ -397,11 +389,7 @@ namespace MyScript
         {
             while (_current != '\0' && _current != '$')
             {
-                if (_TryReadNewLine())
-                {
-                    _buf.Append('\n');
-                }
-                else if (_current == '\'')
+                if (_current == '\'')
                 {
                     _NextChar();
                     if (_current == '\'')
@@ -411,6 +399,7 @@ namespace MyScript
                     }
                     else
                     {
+                        // complete
                         _block_stack.Pop();
                         return;
                     }
@@ -427,133 +416,16 @@ namespace MyScript
         {
             while (_current != '\0' && _current != '$')
             {
-                if (_TryReadNewLine())
-                {
-                    _buf.Append('\n');
-                }
-                else if (_current == '\\')
+                if (_current == '\\')
                 {
                     _PutSpecialCharInBuf();
                 }
                 else if (_current == '\"')
                 {
+                    // complete
                     _NextChar();
                     _block_stack.Pop();
                     return;
-                }
-                else
-                {
-                    _buf.Append(_current);
-                    _NextChar();
-                }
-            }
-        }
-
-        void _ReadStringInInverseQuotation()
-        {
-            while (_current != '\0' && _current != '$')
-            {
-                if (_TryReadNewLine())
-                {
-                    _buf.Append('\n');
-                }
-                else if (_current == '`')
-                {
-                    _NextChar();
-                    _block_stack.Pop();
-                    return;
-                }
-                else
-                {
-                    _buf.Append(_current);
-                    _NextChar();
-                }
-            }
-        }
-
-        void _ReadStringInInverseThreeQuotation()
-        {
-            while (_current != '\0' && _current != '$')
-            {
-                if (_TryReadNewLine())
-                {
-                    _buf.Append('\n');
-                }
-                else if (_current == '`')
-                {
-                    _NextChar();
-                    if (_current == '`')
-                    {
-                        _NextChar();
-                        if (_current == '`')
-                        {
-                            _NextChar();
-                            _block_stack.Pop();
-                            return;
-                        }
-                        else
-                        {
-                            _buf.Append("``");
-                        }
-                    }
-                    else
-                    {
-                        _buf.Append('`');
-                    }
-                }
-                else
-                {
-                    _buf.Append(_current);
-                    _NextChar();
-                }
-            }
-        }
-
-        void _ReadStringInSquareBrackets()
-        {
-            Debug.Assert(_current == '[' || _current == '=');
-
-            int equal_cnt = 0;
-            while (_current == '=')
-            {
-                ++equal_cnt;
-                _NextChar();
-            }
-            if (_current != '[')
-                throw NewLexException("expect '[' for string");
-            _NextChar();
-            _buf.Clear();
-            _TryReadNewLine();// ignore first \n
-
-            while (_current != '\0')
-            {
-                if (_current == ']')
-                {
-                    _NextChar();
-                    int i = 0;
-                    for (; i < equal_cnt; ++i)
-                    {
-                        if (_current != '=') break;
-                        _NextChar();
-                    }
-                    if (i == equal_cnt && _current == ']')
-                    {
-                        if (_buf.Length > 1 && _buf[_buf.Length - 1] == '\n')
-                        {
-                            _buf.Remove(_buf.Length - 1, 1);// ignore last '\n'
-                        }
-                        _NextChar();
-                        break;// end while
-                    }
-                    else
-                    {
-                        _buf.Append(']');
-                        _buf.Append('=', i);
-                    }
-                }
-                if (_TryReadNewLine())
-                {
-                    _buf.Append('\n');
                 }
                 else
                 {
@@ -568,6 +440,19 @@ namespace MyScript
         {
             Debug.Assert(_current == '-');
             _NextChar();
+            if(_current == '`')
+            {
+                _ReadStringInBackQuotation();
+            }
+            else
+            {
+                // 忽略到行尾
+                while(_current != '\n' && _current != '\0')
+                {
+                    _NextChar();
+                }
+                _NextChar();// 如果是'\0',也没坏处
+            }
         }
 
         void _ReadStringInBackQuotation()
@@ -632,29 +517,6 @@ namespace MyScript
             }
         }
 
-        void _ReadStringInComment()
-        {
-            Debug.Assert(_current == '/');
-            _NextChar();
-            _buf.Clear();
-            if (_current == '[')
-            {
-                _buf.Append(_current);
-                _NextChar();
-                if (_current == '=' || _current == '[')
-                {
-                    _ReadStringInSquareBrackets();
-                    return;
-                }
-            }
-            // util line end
-            while (_current != '\r' && _current != '\n' && _current != '\0')
-            {
-                _buf.Append(_current);
-                _NextChar();
-            }
-        }
-
         Token _GetNextToken(ref int line, ref int column)
         {
             if (_block_stack.Peek() > StringBlockType.StringBegin)
@@ -666,9 +528,8 @@ namespace MyScript
             {
                 switch (_current)
                 {
-                    case '\r':
                     case '\n':
-                        _TryReadNewLine();
+                        _NextChar();// 空行过滤
                         line = _line; column = _column;
                         break;
                     case '{':
@@ -687,9 +548,7 @@ namespace MyScript
                         _NextChar();
                         if (_current == '/')
                         {
-                            _ReadStringInComment();
-                            line = _line; column = _column;
-                            break;
+                            throw NewLexException("do not support '//' ");
                         }
                         else
                         {
@@ -699,9 +558,9 @@ namespace MyScript
                         _NextChar();
                         if (_current == '-')
                         {
-                            _NextChar();
-                            // todo@om
-                            throw NewLexException("do not support '--' forever");
+                            _ReadComment();
+                            line = _line;column = _column;
+                            break;
                         }
                         else if (_current == '=')
                         {
@@ -733,15 +592,7 @@ namespace MyScript
                         if (_current == '.')
                         {
                             _NextChar();
-                            if (_current == '.')
-                            {
-                                _NextChar();
-                                return new Token(TokenType.DOTS);
-                            }
-                            else
-                            {
-                                return new Token(TokenType.CONCAT);
-                            }
+                            return new Token(TokenType.CONCAT);
                         }
                         else if (char.IsDigit(_current))
                         {
@@ -818,35 +669,8 @@ namespace MyScript
                         _block_stack.Push(StringBlockType.DoubleQuotation);
                         return new Token(TokenType.STRING_BEGIN);
                     case '`':
-                        _NextChar();
-                        if (_current == '`')
-                        {
-                            _NextChar();
-                            if (_current == '`')
-                            {
-                                _NextChar();
-                                _block_stack.Push(StringBlockType.InverseThreeQuotation);
-                                return new Token(TokenType.STRING_BEGIN);
-                            }
-                            else
-                            {
-                                throw NewLexException("not support ``, do you mean ```");
-                            }
-                        }
-                        else
-                        {
-                            _block_stack.Push(StringBlockType.InverseQuotation);
-                            return new Token(TokenType.STRING_BEGIN);
-                        }
-                    case '[':
-                        _NextChar();
-                        if (_current == '[' || _current == '=')
-                        {
-                            _ReadStringInSquareBrackets();
-                            return new Token(_buf.ToString());
-                        }
-                        else
-                            return new Token('[');
+                        _ReadStringInBackQuotation();
+                        return new Token(_buf.ToString());
                     default:
                         if (char.IsWhiteSpace(_current))
                         {

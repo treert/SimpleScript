@@ -11,8 +11,6 @@ namespace MyScript
         {
             _line = line_;
         }
-        public bool is_shell = false;// ` and ```
-        public string shell_name = null;// 默认空的执行时取 Config.def_shell
         public List<ExpSyntaxTree> list = new List<ExpSyntaxTree>();
 
         protected override List<object> _GetResults(Frame frame)
@@ -22,15 +20,7 @@ namespace MyScript
             {
                 sb.Append(item.GetString(frame));
             }
-            if (is_shell)
-            {
-                // todo
-                throw new NotImplementedException();
-            }
-            else
-            {
-                return new List<object>() { sb.ToString() };
-            }
+            return new List<object>() { sb.ToString() };
         }
     }
 
