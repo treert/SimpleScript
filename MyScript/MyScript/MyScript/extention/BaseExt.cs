@@ -6,12 +6,40 @@ using System.Text;
 /// </summary>
 namespace MyScript
 {
-    public class BaseExt
+    public class MyConsole : ICall, IGetSet
     {
-        [ExtGlobalFunc]
-        static void print(object obj)
+        public List<object> Call(Args args)
         {
-            Console.WriteLine($"{obj}");
+            for(var i = 0; i < args.args.Count; i++)
+            {
+                Console.Write(args[i]);
+            }
+            Console.WriteLine();
+            return Utils.EmptyResults;
+        }
+        Dictionary<object, ICall> m_items = new Dictionary<object, ICall>();
+        public MyConsole()
+        {
+            m_items.Add("test", ICall.Create(Test));
+        }
+        public object Get(object key)
+        {
+            if(m_items.TryGetValue(key, out ICall ret))
+            {
+                return ret;
+            }
+            throw new Exception($"unexport key {key}");
+        }
+
+        public List<object> Test(Args args)
+        {
+            Console.WriteLine($"test {args.args.Count}");
+            return Utils.EmptyResults;
+        }
+
+        public bool Set(object key, object val)
+        {
+            throw new NotImplementedException();
         }
     }
 }

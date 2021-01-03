@@ -145,16 +145,29 @@ namespace MyScript
 
         protected override List<object> _GetResults(Frame frame)
         {
-            ICall func = caller.GetOneResult(frame) as ICall;
-            if (func == null)
+            if(idx == null)
             {
-                throw frame.NewRunException(caller.line, "expect fn or ext_fn to call");
+                ICall func = caller.GetOneResult(frame) as ICall;
+                if(func == null)
+                {
+                    throw frame.NewRunException(caller.line, "expect something can call");
+                }
+                var args = this.args.GetArgs(frame);
+                return func.Call(args);
             }
-
-            var args = this.args.GetArgs(frame);
-            object that = caller is TableAccess ? (caller as TableAccess).table : null;
-
-            return func.Call(args);
+            else
+            {
+                var t = caller.GetOneResult(frame);
+                var idx = this.idx.GetOneResult(frame);
+                ICall func = ExtUtils.Get(t, idx) as ICall;
+                if (func == null)
+                {
+                    throw frame.NewRunException(caller.line, "expect something can call");
+                }
+                var args = this.args.GetArgs(frame);
+                args.that = t;
+                return func.Call(args);
+            }
         }
     }
 

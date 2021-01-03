@@ -563,6 +563,75 @@ namespace MyScript
             }
         }
 
+        // 读取注释，实际就跳过了字符串。
+        void _ReadComment()
+        {
+            Debug.Assert(_current == '-');
+            _NextChar();
+        }
+
+        void _ReadStringInBackQuotation()
+        {
+            Debug.Assert(_current == '`');
+            _NextChar();
+            _buf.Clear();
+            if(_current == '`')
+            {
+                _NextChar();
+                if(_current == '`')
+                {
+                    _NextChar();
+                    // 多重反引号
+                    int cnt = 3;
+                    while(_current == '`')
+                    {
+                        _NextChar();
+                        cnt++;
+                    }
+                    if(_current == '\n')
+                    {
+                        _NextChar();// skip first line
+                    }
+                    while(_current != '\0')
+                    {
+                        if(_current == '`')
+                        {
+                            _NextChar();
+                            int num = 1;
+                            while(num < cnt && _current == '`')
+                            {
+                                num++;
+                                _NextChar();
+                            }
+                            if(num == cnt)
+                            {
+                                return;// complete string
+                            }
+                            _buf.Append('`', num);
+                            if (_current == '\0') return;
+                        }
+                        _buf.Append(_current);
+                        _NextChar();
+                    }
+                }
+                return;// 空串
+            }
+            else
+            {
+                // 单反引号串
+                while(_current != '\0')
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                    if(_current == '`')
+                    {
+                        _NextChar();
+                        return;// complete string
+                    }
+                }
+            }
+        }
+
         void _ReadStringInComment()
         {
             Debug.Assert(_current == '/');
@@ -842,6 +911,23 @@ namespace MyScript
         private int _column;
         private void _NextChar()
         {
+            var ch = __NextChar();
+
+            // 从底层就忽略掉回车。想想，还可以忽略很多哎，先不管吧
+            while (ch == '\r')
+            {
+                ch = __NextChar();  
+            }
+
+            if(ch == '\n')
+            {
+                ++_line;
+                _column = 0;
+            }
+        }
+
+        char __NextChar()
+        {
             if (_pos < _source.Length)
             {
                 _current = _source[_pos];
@@ -852,6 +938,7 @@ namespace MyScript
             {
                 _current = '\0';
             }
+            return _current;
         }
 
         public void Init(string input_, string name_ = "")

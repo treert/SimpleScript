@@ -19,7 +19,30 @@ namespace MyScript
     public interface ICall
     {
         List<object> Call(Args args);
+
+        // 原来打算直接使用 delegate 的，但是并不方便
+        // 1. Method不能直接赋值给object，需要new Delegate(Method)。
+        // 2. 函数调用的地方需要额外增加判断
+        public delegate List<object> CallDelegate(Args args);
+        public class CallWrap : ICall
+        {
+            CallDelegate func;
+            public CallWrap(CallDelegate func)
+            {
+                this.func = func;
+            }
+            public List<object> Call(Args args)
+            {
+                return func(args);
+            }
+        }
+        public static ICall Create(CallDelegate func)
+        {
+            return new CallWrap(func);
+        }
     }
+
+    
 
     public interface IForEach
     {
@@ -34,7 +57,7 @@ namespace MyScript
     {
         public VM vm;
         public FunctionBody code;
-        public Dictionary<string, object> module_table = null;
+        public Table module_table = null;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
         public Dictionary<string, LocalValue> upvalues;
 
@@ -170,6 +193,18 @@ namespace MyScript
     {
         Dictionary<object, object> _items = new Dictionary<object, object>();
         Table prototype = null;
+
+        public object this[string idx]
+        {
+            get
+            {
+                return Get(idx);
+            }
+            set
+            {
+                Set(idx, value);
+            }
+        }
 
         public int Len => _items.Count;
 

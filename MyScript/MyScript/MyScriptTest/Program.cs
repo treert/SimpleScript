@@ -33,8 +33,6 @@ class TestA
 
 class Program
 {
-
-
     static void Main(string[] args)
     {
         Console.WriteLine("Hello World!");
@@ -44,11 +42,11 @@ class Program
             Console.WriteLine("Start Test MS 1.0");
             VM vm = new VM();
             // 注入基础扩展
-            ExtUtils.Import(vm, typeof(BaseExt));
+            vm.global_table["echo"] = new MyConsole();
             // 执行测试文件
             try
             {
-                vm.DoFile("test.ss");
+                vm.DoFile("test.ms");
             }
             catch (Exception e)
             {

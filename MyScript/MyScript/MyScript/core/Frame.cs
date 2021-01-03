@@ -87,7 +87,7 @@ namespace MyScript
             var v = GetName(name, out global);
             if (global)
             {
-                return func.vm.global_table.GetValueOrDefault(name);
+                return func.vm.global_table[name];
             }
             else if (v)
             {
@@ -95,10 +95,10 @@ namespace MyScript
             }
             else
             {
-                var obj = func.module_table.GetValueOrDefault(name);
+                var obj = func.module_table[name];
                 if(obj == null)
                 {
-                    obj = func.vm.global_table.GetValueOrDefault(name);
+                    obj = func.vm.global_table[name];
                 }
                 return obj;
             }
