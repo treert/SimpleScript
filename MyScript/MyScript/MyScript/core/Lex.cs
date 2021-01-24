@@ -193,23 +193,6 @@ namespace MyScript
         public StringBlockType CurStringType => _block_stack.Peek();
         public bool IsStringEnded => _block_stack.Peek() < StringBlockType.StringBegin;
 
-        bool _TryReadNewLine()
-        {
-            if (_current == '\r' || _current == '\n')
-            {
-                var c = _current;
-                _NextChar();
-                if ((_current == '\r' || _current == '\n') && _current != c)
-                {
-                    _NextChar();
-                }
-                ++_line;
-                _column = 1;
-                return true;
-            }
-            return false;
-        }
-
         private Token _ReadNumber()
         {
             Debug.Assert(char.IsDigit(_current));
