@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace MyScript
 {
@@ -121,7 +122,7 @@ namespace MyScript
             else
             {
                 Keyword key;
-                if(Enum.TryParse<Keyword>(string_, true, out key))
+                if(Regex.IsMatch(string_,"[a-z]") && Enum.TryParse<Keyword>(string_, true, out key))
                 {
                     m_type = (int)key;
                 }

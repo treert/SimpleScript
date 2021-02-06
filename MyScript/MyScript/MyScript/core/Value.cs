@@ -192,13 +192,27 @@ namespace MyScript
         }
     }
 
-    // 内置Table，在Dictionary的基础上加上简单的元表功能。不用lua元表那么复杂的结构了
-    // 如果要实现复杂的结构，那就去继承实现对应的接口好了。
-    // 注意1：ForEach的支持是不搜索元表的。
+    // 类似java的LinkedHashMap，内置Table。
+    // 简单的实现，不支持lua元表或者js原型。如果需要支持这种，自定义结构，实现接口就好，比如实现一个class。
     public class Table: IGetSet, IForEach
     {
-        Dictionary<object, object> _items = new Dictionary<object, object>();
-        Table prototype = null;
+        class ItemNode
+        {
+            public object key;
+            public object value;
+            public ItemNode next = null;
+            public ItemNode prev = null;
+        }
+
+        ItemNode _itor_node = new ItemNode();
+
+        Dictionary<object, ItemNode> _key_map = new Dictionary<object, ItemNode>();
+
+        public Table()
+        {
+            _itor_node.prev = _itor_node;
+            _itor_node.next = _itor_node;
+        }
 
         public object this[string idx]
         {
@@ -212,7 +226,27 @@ namespace MyScript
             }
         }
 
-        public int Len => _items.Count;
+        public int Len => _key_map.Count;
+
+        void _RemoveNode(ItemNode node)
+        {
+            _key_map.Remove(node.key);
+            node.prev.next = node.next;
+            node.next.prev = node.prev;
+        }
+
+        ItemNode _AddNodeAtLast(object key, object value)
+        {
+            ItemNode node = new ItemNode {
+                key = key,
+                value = value,
+                prev = _itor_node.prev,
+                next = _itor_node,
+            };
+            _itor_node.prev = node;
+            node.prev.next = node;
+            return node;
+        }
 
         public bool Set(object key, object value)
         {
@@ -221,12 +255,28 @@ namespace MyScript
                 return false;// @om 就不报错了
             }
             key = PreConvertKey(key);
-            if(value == null)
+            if (_key_map.TryGetValue(key, out var node))
             {
-                return this._items.Remove(key);
+                if(value == null)
+                {
+                    _RemoveNode(node);
+                }
+                else
+                {
+                    node.value = value;
+                }
             }
-            this._items[key] = value;
-
+            else
+            {
+                if(value != null)
+                {
+                    _key_map.Add(key, _AddNodeAtLast(key, value));
+                }
+                else
+                {
+                    return false;// 无事发生
+                }
+            }
             return true;
         }
 
@@ -238,20 +288,13 @@ namespace MyScript
             }
             key = PreConvertKey(key);
 
-            var it = this;
-            object val;
-            do
-            {
-                if (it._items.TryGetValue(key, out val))
-                {
-                    return val;
-                }
-                it = it.prototype;
-            } while (it != null);
-
+            if(_key_map.TryGetValue(key, out var node)){
+                return node.value;
+            }
             return null;
         }
 
+        // 对数字类型的key做规约处理。
         public static object PreConvertKey(object key)
         {
             double f = Utils.ConvertToPriciseDouble(key);
@@ -266,16 +309,20 @@ namespace MyScript
         {
             if(expect_cnt > 1)
             {
-                foreach(var it in _items)
+                var it = _itor_node.next;
+                while(it != _itor_node)
                 {
-                    yield return new object[]{ it.Key, it.Value };
+                    yield return new object[] { it.key, it.value };
+                    it = it.next;
                 }
             }
             else
             {
-                foreach (var it in _items)
+                var it = _itor_node.next;
+                while (it != _itor_node)
                 {
-                    yield return new object[] { it.Value };
+                    yield return new object[] {it.value };
+                    it = it.next;
                 }
             }
             yield break;
