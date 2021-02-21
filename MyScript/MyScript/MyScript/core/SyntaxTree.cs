@@ -200,13 +200,24 @@ namespace MyScript
             }
             if (kw_table != null)
             {
+                // todo@om 这个实现不好
                 Table table = kw_table.GetOneResult(frame) as Table;
                 if (table != null)
                 {
-
-                    // todo
+                    var it = table._itor_node.next;
+                    while (it != table._itor_node)
+                    {
+                        if(it.key is string str)
+                        {
+                            args.name_args[str] = it.value;
+                        }
+                        it = it.next;
+                    }
                 }
-                // 要不要报个错
+                else
+                {
+                    // todo@om warning log
+                }
             }
             foreach (var kw in kw_exp_list)
             {

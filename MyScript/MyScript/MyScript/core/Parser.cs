@@ -864,7 +864,14 @@ namespace MyScript
                 // a,b,c,d
                 while (LookAhead().Match(TokenType.NAME))
                 {
-                    statement.name_list.Add(NextToken());
+                    var token = NextToken();
+                    ExpSyntaxTree exp = null;
+                    if (LookAhead().Match('='))
+                    {
+                        NextToken();
+                        exp = ParseExp();
+                    }
+                    statement.name_list.Add((token, exp));
                     if (LookAhead().Match(','))
                     {
                         NextToken();
@@ -881,10 +888,11 @@ namespace MyScript
                         throw NewParserException("expect ',' before *", _current);
                     }
                     NextToken();
-                    if (LookAhead().Match(TokenType.NAME))
+                    if (NextToken().Match(TokenType.NAME) == false)
                     {
-                        statement.kw_name = NextToken();
+                        throw NewParserException("expect <Name> after *", _current);
                     }
+                    statement.kw_name = NextToken();
                 }
 
                 if (NextToken().Match(')') == false)

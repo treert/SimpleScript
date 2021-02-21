@@ -19,15 +19,14 @@ namespace MyScript
     public interface ICall
     {
         List<object> Call(Args args);
+        public static ICall Create(Func<Args, List<object>> func) => new CallWrap(func);
 
-        // 原来打算直接使用 delegate 的，但是并不方便
-        // 1. Method不能直接赋值给object，需要new Delegate(Method)。
-        // 2. 函数调用的地方需要额外增加判断
-        public delegate List<object> CallDelegate(Args args);
-        public class CallWrap : ICall
+        public static ICall Create(Func<Args, object> func) => new CallWrap2(func);
+
+        private class CallWrap : ICall
         {
-            CallDelegate func;
-            public CallWrap(CallDelegate func)
+            Func<Args, List<object>> func;
+            public CallWrap(Func<Args, List<object>> func)
             {
                 this.func = func;
             }
@@ -36,17 +35,25 @@ namespace MyScript
                 return func(args);
             }
         }
-        public static ICall Create(CallDelegate func)
+        private class CallWrap2 : ICall
         {
-            return new CallWrap(func);
+            Func<Args, object> func;
+            public CallWrap2(Func<Args, object> func)
+            {
+                this.func = func;
+            }
+            public List<object> Call(Args args)
+            {
+                List<object> ret = new List<object>(1);
+                ret.Add(func(args));
+                return ret;
+            }
         }
     }
 
-    
-
     public interface IForEach
     {
-        // expect_cnt 是为了能实现 for v in table {} for k,v in table {}
+        // expect_cnt 是为了能实现 for v in table {}, for k,v in table {}
         IEnumerable<object[]> GetForEachItor(int expect_cnt);
     }
 
@@ -60,6 +67,8 @@ namespace MyScript
         public Table module_table = null;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
         public Dictionary<string, LocalValue> upvalues;
+        // 默认参数。有副作用，这些obj是常驻内存的，有可能被修改。
+        public Dictionary<string, object> default_args = new Dictionary<string, object>();
 
         public List<object> Call(params object[] objs)
         {
@@ -91,21 +100,20 @@ namespace MyScript
                 name_cnt = code.param_list.name_list.Count;
                 for (int i = 0; i < name_cnt; i++)
                 {
-                    frame.AddLocalVal(code.param_list.name_list[i].m_string, args[i]);
+                    var name = code.param_list.name_list[i].token.m_string;
+                    object obj = null;
+                    if (args.TryGetValue(i, name, out obj))
+                    {
+                    }
+                    else if(default_args != null && default_args.TryGetValue(name, out obj))
+                    {
+                    }
+                    frame.AddLocalVal(name, obj);
                 }
 
                 if (code.param_list.kw_name)
                 {
                     frame.AddLocalVal(code.param_list.kw_name.m_string, args);// 直接获取所有参数好了
-                }
-
-                foreach(var it in args.name_args)
-                {
-                    LocalValue v;
-                    if(frame.cur_block.values.TryGetValue(it.Key, out v))
-                    {
-                        v.obj = it.Value;
-                    }
                 }
             }
             try
@@ -159,6 +167,22 @@ namespace MyScript
             this.args = new List<object>(args);
         }
 
+        public bool TryGetValue(int idx, string name, out object ret)
+        {
+            if(name_args.TryGetValue(name, out ret))
+            {
+                return true;// 优先级高于数组参数
+            }
+            else if (idx >= 0 && idx < args.Count)
+            {
+                ret = args[idx];
+                return true;
+            }
+
+            ret = null;
+            return false;
+        }
+
         public object this[int idx]
         {
             get
@@ -183,12 +207,20 @@ namespace MyScript
 
         public object Get(object key)
         {
-            throw new NotImplementedException();
+            if(key is string str)
+            {
+                return this[str];
+            }
+            else if(key is int idx)
+            {
+                return this[idx];
+            }
+            return null;
         }
 
         public bool Set(object key, object val)
         {
-            throw new NotImplementedException();
+            throw new Exception("can not modify Args");
         }
     }
 
@@ -196,7 +228,7 @@ namespace MyScript
     // 简单的实现，不支持lua元表或者js原型。如果需要支持这种，自定义结构，实现接口就好，比如实现一个class。
     public class Table: IGetSet, IForEach
     {
-        class ItemNode
+        internal class ItemNode
         {
             public object key;
             public object value;
@@ -204,7 +236,7 @@ namespace MyScript
             public ItemNode prev = null;
         }
 
-        ItemNode _itor_node = new ItemNode();
+        internal ItemNode _itor_node = new ItemNode();
 
         Dictionary<object, ItemNode> _key_map = new Dictionary<object, ItemNode>();
 

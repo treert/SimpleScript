@@ -41,7 +41,7 @@ namespace MyScript
     /// ExtWrap的容器，以类为单位，静态和对象的分离开（分离开，也意味着静态和对象的名字可以重复）。
     /// - 静态的部分直接注入ExtWrap到全局里好了，相当于与类脱离了。
     /// 这儿使用扁平结构，不使用类的继承结构。@om 后续版本可以考虑要不要改改
-    /// </summary>
+    /// </summary> 
     public class ExtContain
     {
         Type type;
@@ -202,8 +202,7 @@ namespace MyScript
     public class ExtFuncWrap: ExtWrap, ICall
     {
         MethodInfo method;
-
-        public Type that_type;// ss 对象方法要用
+        public Type that_type;// 方法所属的类型，需要Args传入this
         ParameterInfo[] param_arr;
 
         public ExtFuncWrap(MethodInfo method, ExtFuncAttribute attr)
@@ -245,7 +244,7 @@ namespace MyScript
             int arg_base = 0;
             if (that_type != null)
             {
-                // ss 对象方法
+                // 对象方法
                 that = args[Utils.MAGIC_THIS] ?? args.that;
                 if (!that_type.IsInstanceOfType(that))
                 {
@@ -260,7 +259,7 @@ namespace MyScript
             }
             else
             {
-                // ss 全局方法
+                // 全局方法
                 // c#对象方法 to ss全局方法需要特殊处理，从参数列表里提取this
                 if (!method.IsStatic)
                 {
@@ -318,6 +317,20 @@ namespace MyScript
     {
         ConstructorInfo ctor;
         ParameterInfo[] param_arr;
+
+        public ExtConstructorWrap(ConstructorInfo ctor, ExtFuncAttribute attr)
+        {
+            this.name = attr.name ?? ctor.Name;
+            this.tip = attr.tip ?? "";
+
+            if (ctor.ContainsGenericParameters)
+            {
+                throw new Exception($"{ctor.DeclaringType}.ctor contain generic parameter");
+            }
+            this.ctor = ctor;
+            param_arr = ctor.GetParameters();
+        }
+
         public override List<object> Call(Args args)
         {
             object[] target_args = new object[param_arr.Length];

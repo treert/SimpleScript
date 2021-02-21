@@ -151,6 +151,7 @@ namespace MyScript
                     return ext.Get(obj, key);
                 }
             }
+
             return null;
         }
 

@@ -66,7 +66,7 @@ namespace MyScript
         {
             _line = line_;
         }
-        public List<Token> name_list = new List<Token>();
+        public List<(Token token, ExpSyntaxTree exp)> name_list = new List<(Token, ExpSyntaxTree)>();
         public Token kw_name = null;
     }
 
@@ -88,6 +88,9 @@ namespace MyScript
             fn.vm = frame.func.vm;
             fn.module_table = frame.func.module_table;
             fn.upvalues = frame.GetAllUpvalues();
+
+            // 默认参数
+
             return new List<object>() { fn };
         }
     }

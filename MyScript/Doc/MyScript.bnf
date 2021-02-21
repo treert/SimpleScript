@@ -50,7 +50,8 @@ funcname ::= Name {'.' Name}
 
 funcbody ::= ['(' [paramlist [',']] ')'] block
 
-paramlist ::= Name (',' Name )* [',' '*' Name] | '*' Name
+param_item ::= Name ['=' exp]
+paramlist ::= param_item (',' param_item )* [',' '*' Name] | '*' Name
 
 explist ::= {exp ','} exp
 
