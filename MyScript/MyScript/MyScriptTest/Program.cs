@@ -3,6 +3,7 @@ using MyScript;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Numerics;
 
 static class ExtClass
 {
@@ -53,6 +54,38 @@ class Program
                 Console.WriteLine($"Error Happen\n{e.Message}");
             }
             Console.WriteLine("End");
+        }
+        {
+
+
+            MyNumber a = 1;
+            MyNumber b = 2;
+            MyNumber c = 2;
+            Dictionary<object, string> map = new Dictionary<object, string>()
+            {
+                {a,"a" },
+                {b,"b" },
+            };
+            Console.WriteLine(map[a]);
+            Console.WriteLine(map[b]);
+            Console.WriteLine(map[c]);
+
+            var aaa = a;
+            
+
+            Console.WriteLine(a++);
+            Console.WriteLine(++a);
+            Console.WriteLine(a);
+            Console.WriteLine(aaa);
+
+            BigInteger b_a = 1;
+            var aab = b_a;
+            Console.WriteLine(b_a++);
+            Console.WriteLine(++b_a);
+            Console.WriteLine(b_a);
+            Console.WriteLine(aab);
+
+
         }
     }
 
