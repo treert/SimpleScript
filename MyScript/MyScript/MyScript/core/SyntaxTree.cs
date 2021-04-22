@@ -40,28 +40,29 @@ namespace MyScript
         {
             _GetResults(frame);
         }
-        public object GetOneResult(Frame frame)
+
+        public object GetResult(Frame frame)
         {
-            var x = GetResults(frame);
-            return x.Count > 0 ? x[0] : null;
+            // @om 要不要做异常行号计算？
+            return _GetResults(frame);
         }
 
         public bool GetBool(Frame frame)
         {
-            var x = GetResults(frame);
-            return x.Count > 0 ? Utils.ToBool(x[0]) : false;
+            var x = GetResult(frame);
+            return Utils.ToBool(x);
         }
 
         public string GetString(Frame frame)
         {
-            var x = GetResults(frame);
-            return x.Count > 0 ? Utils.ToString(x[0]) : "";
+            var x = GetResult(frame);
+            return Utils.ToString(x);
         }
 
         public double GetValidNumber(Frame frame)
         {
-            var x = GetResults(frame);
-            double f = Utils.ToNumber(x.GetValueOrDefault(0));
+            var x = GetResult(frame);
+            double f = Utils.ToNumber(x);
             // @om 这个接口做下double有效性判断
             if (double.IsNaN(f))
             {
@@ -70,20 +71,15 @@ namespace MyScript
             return f;
         }
 
-        public double GetNumber(Frame frame)
+        public MyNumber GetNumber(Frame frame)
         {
-            var x = GetResults(frame);
-            double f = Utils.ToNumber(x.GetValueOrDefault(0));
+            var x = GetResult(frame);
+            // todo@om
+            double f = Utils.ToNumber(x);
             return f;
         }
 
-        public List<object> GetResults(Frame frame)
-        {
-            // @om 要不要做异常行号计算？
-            return _GetResults(frame);
-        }
-
-        protected abstract List<object> _GetResults(Frame frame);
+        protected abstract object _GetResults(Frame frame);
     }
 
     public class BlockTree : SyntaxTree
@@ -124,11 +120,11 @@ namespace MyScript
             }
         }
 
-        public void AddLocals(Frame frame, List<object> objs)
+        public void AddLocals(Frame frame, MyArray objs)
         {
             for (int i = 0; i < names.Count; i++)
             {
-                frame.AddLocalVal(names[i].m_string, objs.Count > i ? objs[i] : null);
+                frame.AddLocalVal(names[i].m_string, objs[i]);
             }
         }
     }
@@ -143,11 +139,11 @@ namespace MyScript
         public ExpSyntaxTree idx;// caller() or caller.idx(args)
         public ArgsList args;
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             if(idx == null)
             {
-                ICall func = caller.GetOneResult(frame) as ICall;
+                ICall func = caller.GetResult(frame) as ICall;
                 if(func == null)
                 {
                     throw frame.NewRunException(caller.line, "expect something can call");
@@ -157,8 +153,8 @@ namespace MyScript
             }
             else
             {
-                var t = caller.GetOneResult(frame);
-                var idx = this.idx.GetOneResult(frame);
+                var t = caller.GetResult(frame);
+                var idx = this.idx.GetResult(frame);
                 ICall func = ExtUtils.Get(t, idx) as ICall;
                 if (func == null)
                 {
@@ -189,19 +185,14 @@ namespace MyScript
         public Args GetArgs(Frame frame)
         {
             Args args = new Args(frame);
-            for (int i = 0; i < exp_list.Count - 1; i++)
+            for (int i = 0; i < exp_list.Count; i++)
             {
-                args.args.Add(exp_list[i].GetOneResult(frame));
-            }
-            if (exp_list.Count > 0)
-            {
-                var rets = exp_list.Last().GetResults(frame);
-                args.args.AddRange(rets);
+                args.args.Add(exp_list[i].GetResult(frame));
             }
             if (kw_table != null)
             {
                 // todo@om 这个实现不好
-                Table table = kw_table.GetOneResult(frame) as Table;
+                Table table = kw_table.GetResult(frame) as Table;
                 if (table != null)
                 {
                     var it = table._itor_node.next;
@@ -221,35 +212,12 @@ namespace MyScript
             }
             foreach (var kw in kw_exp_list)
             {
-                var val = kw.w.GetOneResult(frame);
+                var val = kw.w.GetResult(frame);
                 args.name_args[kw.k.m_string] = val;
             }
             return args;
         }
     }
 
-    public class ExpressionList : ExpSyntaxTree
-    {
-        public ExpressionList(int line_)
-        {
-            _line = line_;
-        }
-        public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
-
-        protected override List<object> _GetResults(Frame frame)
-        {
-            List<object> list = new List<object>(exp_list.Count);
-            for (int i = 0; i < exp_list.Count - 1; i++)
-            {
-                list.Add(exp_list[i].GetOneResult(frame));
-            }
-            if (exp_list.Count > 0)
-            {
-                var rets = exp_list.Last().GetResults(frame);
-                list.AddRange(rets);
-            }
-            return list;
-        }
-    }
 
 }

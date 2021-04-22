@@ -11,16 +11,16 @@ namespace MyScript
             _line = line_;
         }
         public List<ExpSyntaxTree> fileds = new List<ExpSyntaxTree>();
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             MyArray ret = new MyArray();
             foreach(var f in fileds)
             {
-                var val = f.GetOneResult(frame);
-                ret.m_items.Add(val);
+                var val = f.GetResult(frame);
+                ret.Add(val);
             }
 
-            return new List<object>() { ret };
+            return ret;
         }
     }
 }

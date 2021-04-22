@@ -8,14 +8,14 @@ namespace MyScript
 {
     public class MyConsole : ICall, IGetSet
     {
-        public List<object> Call(Args args)
+        public object Call(Args args)
         {
             for(var i = 0; i < args.args.Count; i++)
             {
                 Console.Write(args[i]);
             }
             Console.WriteLine();
-            return Utils.EmptyResults;
+            return null;
         }
         Dictionary<object, ICall> m_items = new Dictionary<object, ICall>();
         public MyConsole()

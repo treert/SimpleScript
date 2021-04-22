@@ -17,6 +17,7 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
+            // todo@om 需要处理出现异常栈平衡的问题
             try
             {
                 block.Exec(frame);

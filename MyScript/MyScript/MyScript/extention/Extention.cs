@@ -120,7 +120,7 @@ namespace MyScript
         }
 
         // 方法被调用
-        public virtual List<object> Call(Args args)
+        public virtual object Call(Args args)
         {
             throw new Exception("I am not a function, can not be call.");
         }
@@ -236,7 +236,7 @@ namespace MyScript
             }
         }
 
-        public override List<object> Call(Args args)
+        public override object Call(Args args)
         {
             object that = null;
             object[] target_args = new object[param_arr.Length];
@@ -299,7 +299,8 @@ namespace MyScript
             }
 
             var ret = method.Invoke(that, target_args);
-            List<object> ls = new List<object>() { ret };
+            MyArray ls = new MyArray();
+            ls.Add(ret);
             for(int idx = 0; idx < param_arr.Length; idx++)
             {
                 var param = param_arr[idx];
@@ -309,7 +310,7 @@ namespace MyScript
                 }
             }
             
-            return ls;
+            return ls.Count == 1 ? ls[0] : null;
         }
     }
 
@@ -331,7 +332,7 @@ namespace MyScript
             param_arr = ctor.GetParameters();
         }
 
-        public override List<object> Call(Args args)
+        public override object Call(Args args)
         {
             object[] target_args = new object[param_arr.Length];
             for (int idx = 0; idx < param_arr.Length; idx++)
@@ -360,7 +361,7 @@ namespace MyScript
             }
 
             var ret = ctor.Invoke(target_args);
-            return new List<object>(){ ret};
+            return ret;
         }
     }
 

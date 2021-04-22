@@ -15,7 +15,7 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            var fn = func_body.GetOneResult(frame);
+            var fn = func_body.GetResult(frame);
             if (func_name.names.Count == 1)
             {
                 frame.Write(func_name.names[0].m_string, fn);
@@ -81,7 +81,7 @@ namespace MyScript
         public BlockTree block;
         public string source_name;
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             Function fn = new Function();
             fn.code = this;
@@ -91,7 +91,7 @@ namespace MyScript
 
             // 默认参数
 
-            return new List<object>() { fn };
+            return fn;
         }
     }
 

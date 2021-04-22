@@ -21,27 +21,25 @@ namespace MyScript
         public ExpSyntaxTree b;
         public ExpSyntaxTree c;
         public bool isqq = false;
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             if (b == null)
             {
-                var aa = a.GetResults(frame);
-                var a1 = aa.Count > 0 ? aa[0] : null;
-                if (isqq && a1 is null)
+                var aa = a.GetResult(frame);
+                if (isqq && aa is null)
                 {
-                    return c.GetResults(frame);
+                    return c.GetResult(frame);
                 }
-                else if(!isqq && Utils.ToBool(a1) == false)
+                else if(!isqq && Utils.ToBool(aa) == false)
                 {
-                    return c.GetResults(frame);
+                    return c.GetResult(frame);
                 }
-                
                 return aa;
             }
             else
             {
                 var aa = a.GetBool(frame);
-                return aa ? b.GetResults(frame) : c.GetResults(frame);
+                return aa ? b.GetResult(frame) : c.GetResult(frame);
             }
         }
     }

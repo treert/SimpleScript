@@ -14,7 +14,7 @@ namespace MyScript
         public ExpSyntaxTree exp;
         public Token op;
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             object ret = null;
             if (op.Match('-'))
@@ -29,7 +29,7 @@ namespace MyScript
             {
                 Debug.Assert(false);
             }
-            return new List<object>() { ret };
+            return ret;
         }
     }
 

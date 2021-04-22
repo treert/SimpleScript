@@ -12,14 +12,14 @@ namespace MyScript
         }
         public ExpSyntaxTree exp;
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             ThrowException ep = new ThrowException();
             ep.line = _line;
             ep.source_name = frame.func.code.source_name;
             if (exp)
             {
-                ep.obj = exp.GetOneResult(frame);
+                ep.obj = exp.GetResult(frame);
             }
             throw ep;
         }

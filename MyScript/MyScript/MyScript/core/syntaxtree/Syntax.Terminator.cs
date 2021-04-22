@@ -14,7 +14,7 @@ namespace MyScript
             _line = token_.m_line;
         }
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             object obj = null;
             if (token.Match(TokenType.NAME))
@@ -45,7 +45,7 @@ namespace MyScript
             {
                 Debug.Assert(false);
             }
-            return new List<object>() { obj };
+            return obj;
         }
     }
 

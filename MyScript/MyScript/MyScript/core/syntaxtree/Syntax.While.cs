@@ -17,7 +17,7 @@ namespace MyScript
         {
             while (true)
             {
-                var obj = exp.GetOneResult(frame);
+                var obj = exp.GetResult(frame);
                 if (Utils.ToBool(obj))
                 {
                     block.Exec(frame);

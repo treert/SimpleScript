@@ -4,7 +4,7 @@ using System.Text;
 
 namespace MyScript
 {
-    public partial class Utils
+    public class Utils
     {
         public const long MaxSafeInt = 9007199254740991;
         public const long MinSafeInt = -9007199254740991;

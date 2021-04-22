@@ -11,7 +11,7 @@ namespace MyScript
             _line = line_;
         }
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             throw new BreakException(_line);
         }

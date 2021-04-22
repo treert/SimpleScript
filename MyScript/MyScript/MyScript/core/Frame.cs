@@ -13,11 +13,13 @@ namespace MyScript
         public class GenBlock
         {
             public Dictionary<string, LocalValue> values = new Dictionary<string, LocalValue>();
+            public List<IDisposable> scope_objs = null;
+            public List<IDisposable> ScopeObjs => scope_objs ?? (scope_objs = new List<IDisposable>());
             public GenBlock parent = null;
         }
 
         public Function func;
-        public GenBlock cur_block;
+        GenBlock cur_block;
 
         public Frame(Function func)
         {
@@ -113,8 +115,48 @@ namespace MyScript
 
         public void LeaveBlock()
         {
+            if(cur_block.scope_objs != null)
+            {
+                foreach(var obj in cur_block.scope_objs)
+                {
+                    obj.Dispose();
+                }
+            }
             this.cur_block = this.cur_block.parent;
         }
+
+        public GenBlock CurrentBlock
+        {
+            get => cur_block;
+            set {
+                // 不应该出现value不在栈里的情况
+                while(cur_block != value)
+                {
+                    LeaveBlock();
+                }
+            }
+        }
+
+        void AddScopeObj(object obj)
+        {
+            if (obj is IDisposable a)
+            {
+                cur_block.ScopeObjs.Add(a);
+            }
+            else if (obj is MyArray b)
+            {
+                AddScopeObjs(b);
+            }
+        }
+
+        public void AddScopeObjs(MyArray arr)
+        {
+            foreach(var obj in arr)
+            {
+                AddScopeObj(obj);
+            }
+        }
+
         
         public Dictionary<string, LocalValue> GetAllUpvalues()
         {

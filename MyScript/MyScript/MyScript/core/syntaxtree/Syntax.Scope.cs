@@ -4,6 +4,7 @@ using System.Text;
 
 namespace MyScript
 {
+    // 实现类似c# using 的功能
     public class ScopeStatement:SyntaxTree
     {
         public ScopeStatement(int line_)
@@ -17,47 +18,22 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            frame.EnterBlock();
+            if(block) frame.EnterBlock();
             {
-                var results = exp_list.GetResults(frame);
+                var results = exp_list.GetResultForSplit(frame);
                 if (name_list)
                 {
                     for (int i = 0; i < name_list.names.Count; i++)
                     {
                         var name = name_list.names[i];
-                        var obj = results.Count > i ? results[i] : null;
+                        var obj = results[i];
                         frame.AddLocalVal(name.m_string, obj);
                     }
                 }
-                // 想了想，随便啦。
-                //foreach(var ret in results)
-                //{
-                //    if(!(ret is IDisposable))
-                //    {
-                //        throw frame.NewRunException(exp_list.line, "scope params must be IDisposable");
-                //    }
-                //}
-                try
-                {
-                    block.Exec(frame);
-                }
-                catch
-                {
-                    throw;
-                }
-                finally
-                {
-                    foreach (var ret in results)
-                    {
-                        if (ret is IDisposable tmp)
-                        {
-                            tmp.Dispose();
-                        }
-                    }
-                }
+                frame.AddScopeObjs(results);
+                if (block) block.Exec(frame);
             }
-            frame.LeaveBlock();
-
+            if (block) frame.LeaveBlock();
         }
     }
 }

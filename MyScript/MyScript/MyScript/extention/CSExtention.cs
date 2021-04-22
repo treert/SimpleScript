@@ -76,7 +76,7 @@ namespace MyScript
             Args args = new Args(objs);
             args.that = that;
             var ret = func.Call(args);
-            return ret.GetValueOrDefault(0);
+            return ret;
         }
     }
 

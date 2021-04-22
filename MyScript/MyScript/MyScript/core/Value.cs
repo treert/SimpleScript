@@ -18,7 +18,7 @@ namespace MyScript
 
     public interface ICall
     {
-        List<object> Call(Args args);
+        object Call(Args args);
         public static ICall Create(Func<Args, List<object>> func) => new CallWrap(func);
 
         public static ICall Create(Func<Args, object> func) => new CallWrap2(func);
@@ -30,7 +30,7 @@ namespace MyScript
             {
                 this.func = func;
             }
-            public List<object> Call(Args args)
+            public object Call(Args args)
             {
                 return func(args);
             }
@@ -42,11 +42,9 @@ namespace MyScript
             {
                 this.func = func;
             }
-            public List<object> Call(Args args)
+            public object Call(Args args)
             {
-                List<object> ret = new List<object>(1);
-                ret.Add(func(args));
-                return ret;
+                return func(args);
             }
         }
     }
@@ -70,25 +68,25 @@ namespace MyScript
         // 默认参数。有副作用，这些obj是常驻内存的，有可能被修改。
         public Dictionary<string, object> default_args = new Dictionary<string, object>();
 
-        public List<object> Call(params object[] objs)
+        public object Call(params object[] objs)
         {
             Args args = new Args(objs);
             return Call(args);
         }
 
-        public List<object> Call(Dictionary<string, object> name_args, params object[] objs)
+        public object Call(Dictionary<string, object> name_args, params object[] objs)
         {
             Args args = new Args(name_args, objs);
             return Call(args);
         }
 
-        public List<object> Call()
+        public object Call()
         {
             Args args = new Args();
             return Call(args);
         }
 
-        public List<object> Call(Args args)
+        public object Call(Args args)
         {
             Frame frame = new Frame(this);
             // 先填充个this
@@ -122,7 +120,7 @@ namespace MyScript
             }
             catch(ReturnException ep)
             {
-                return ep.results;
+                return ep.result;
             }
             catch(ContineException ep)
             {
@@ -133,7 +131,7 @@ namespace MyScript
                 throw new RunException(code.source_name, ep.line, "unexpect break");
             }
             // 其他的异常就透传出去好了。
-            return Utils.EmptyResults;
+            return null;
         }
     }
 
@@ -358,40 +356,6 @@ namespace MyScript
                 }
             }
             yield break;
-        }
-    }
-
-    public class MyArray: IGetSet, IForEach
-    {
-        public List<object> m_items = new List<object>();
-
-        public object Get(object key)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<object[]> GetForEachItor(int expect_cnt)
-        {
-            if (expect_cnt > 1)
-            {
-                for (int i = 0; i < m_items.Count; i++)
-                {
-                    yield return  new object[] { i, m_items[i] };
-                }
-            }
-            else
-            {
-                for (int i = 0; i < m_items.Count; i++)
-                {
-                    yield return new object[] { m_items[i] };
-                }
-            }
-            yield break;
-        }
-
-        public bool Set(object key, object val)
-        {
-            throw new NotImplementedException();
         }
     }
 

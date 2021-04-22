@@ -1,9 +1,12 @@
 (*
+为了更加方便的定义bnf，引用自定义的bnf语法，反正要不需要那么的准确
+1. $concat(',',a,b) := a ',' b | a | b 
+3. $join(',' , a) := a (',' a)*
+ 
 some choose：
 1. does not support ++ and -- operator, and use -- to begin comment, like lua.
 2. integral division use 'div', modular division use 'mod'
     BTW, 'div' and 'mod' can also use as nomal, for example 'math.div'
-
  *)
 
 module ::= stats
@@ -17,14 +20,15 @@ stat ::= block
       |  'while' exp block 
       |  'do' block 'while' exp 
       |  'for' Name '=' exp ',' exp [',' exp] block 
-      |  'for' Name [',' Name] 'in' exp block 
+      |  'for' Name [',' Name]* [','] 'in' exp block 
       |  'for' block 
       |  'break' 
       |  'continue' 
       |  'try' block ['catch' [Name] block] ['finally' block] 
       |  'throw' [explist] 
-      |  scope_head + block 
-      |  'fn' funcname funcbody 
+      |  scope_block
+      |  scope_line
+      |  'fn' funcname funcbody
       |  'return' [explist] 
       |  ('global'|'local') namelist ['=' explist] 
       |  ('global'|'local') 'fn' Name funcbody 
@@ -33,14 +37,17 @@ stat ::= block
       |  funccall
 
 # 这样设计可以简化解析代码
-scope_head ::= 'scope' [namelist] '=' explist
+scope_block ::= 'using' [namelist] '=' explist block
 
-# 语法糖，支持一部分吧
-self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '^=' | '.='
+scope_line ::= 'using' namelist '=' explist ';'
 
-namelist ::= Name {',' Name}
+# 语法糖，支持一部分吧，先预留着
+self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '~=' | '^=' | '.='
 
-varlist ::= var {',' var}
+# 单个name或者var时，可以在后面追加一个',' 用于说明需要解散 MyArray，其他情况，看赋值语句，前后数量多少
+namelist ::= Name {',' Name} [',']
+
+varlist ::= $join('*' var) [',']
 
 var ::= Name [{index | args } index]
 
@@ -50,14 +57,15 @@ funcname ::= Name {'.' Name}
 
 funcbody ::= ['(' [paramlist [',']] ')'] block
 
+# 参考Python的做法
 param_item ::= Name ['=' exp]
-paramlist ::= param_item (',' param_item )* [',' '*' Name] | '*' Name
+paramlist ::= $concat( $join(param_item) , '*' [Name] , '**' Name, $join(param_item))
 
-explist ::= {exp ','} exp
+explist ::= $join(['*'] exp)
 
-array_def ::= '[' [exp {',' exp} [',']] ']'
+array_def ::= '[' [$join(exp) [',']] ']'
 
-table_def ::= '{' [field {',' field} [',']] '}'
+table_def ::= '{' [ $join(field) [',']] '}'
 
 # 顺带兼容下json
 field ::= '[' exp ']' '=' exp | (Name | String) ('='|':') exp
@@ -81,11 +89,7 @@ function ::= 'fn' funcbody
 
 index ::= '[' exp ']' | '.' Name | '.' String
 
-args ::=  '(' [(args_three | args_two | args_one) [','] ] ')' | String
-
-args_one ::= exp {',' exp}
-args_two ::= [args_one ','] '*' exp
-args_three ::= [args_two ','] Name ':' exp {',' Name ':' exp }
+args ::=  '(' [$concat($join(exp) , $join('*' exp) , $join('**' exp), $join(Name '=' exp)) [','] ] ')' | String
 
 binop ::= 'or' | 'and'
     | '<' | '<=' | '>' | '>=' | '==' | '!='

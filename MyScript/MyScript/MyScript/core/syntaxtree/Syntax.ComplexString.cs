@@ -13,14 +13,14 @@ namespace MyScript
         }
         public List<ExpSyntaxTree> list = new List<ExpSyntaxTree>();
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             StringBuilder sb = new StringBuilder();
             foreach (var item in list)
             {
                 sb.Append(item.GetString(frame));
             }
-            return new List<object>() { sb.ToString() };
+            return sb.ToString();
         }
     }
 
@@ -34,11 +34,11 @@ namespace MyScript
         public int len = 0;
         public string format = null;
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
-            var obj = exp.GetOneResult(frame);
+            var obj = exp.GetResult(frame);
             string str = Utils.ToString(obj, format, len);
-            return new List<object>() { str };
+            return str;
         }
     }
 

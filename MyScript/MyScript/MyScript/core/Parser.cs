@@ -43,6 +43,15 @@ namespace MyScript
             }
             return _current;
         }
+        public bool LookAheadAndTryEatOne(char ch)
+        {
+            if (LookAhead().Match(ch))
+            {
+                NextToken();
+                return true;
+            }
+            return false;
+        }
         public Token LookAhead()
         {
             if (_look_ahead == null)
@@ -298,15 +307,17 @@ namespace MyScript
         ExpressionList ParseExpList(bool is_args = false)
         {
             var exp = new ExpressionList(LookAhead().m_line);
-            exp.exp_list.Add(ParseExp());
-            while (LookAhead().m_type == (int)',')
+            bool split = LookAheadAndTryEatOne('*');
+            exp.AddExp(ParseExp(), split);
+            while (LookAhead().Match(','))
             {
                 NextToken();
-                if (is_args && LookAhead().m_type == (int)')')
+                if (is_args && LookAhead().Match(')'))
                 {
                     break;// func call args can have a extra ","
                 }
-                exp.exp_list.Add(ParseExp());
+                split = LookAheadAndTryEatOne('*');
+                exp.AddExp(ParseExp(), split);
             }
             return exp;
         }

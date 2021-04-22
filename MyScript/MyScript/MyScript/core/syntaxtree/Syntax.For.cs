@@ -27,10 +27,10 @@ namespace MyScript
                 {
                     throw frame.NewRunException(line, $"for step {step} should greater than 0, or will cause forerver loop");
                 }
-                var cur_block = frame.cur_block;
+                var cur_block = frame.CurrentBlock;
                 for (double it = start; it <= end; it += step)
                 {
-                    frame.cur_block = cur_block;
+                    frame.CurrentBlock = cur_block;
                     try
                     {
                         var b = frame.EnterBlock();
@@ -46,7 +46,7 @@ namespace MyScript
                         break;
                     }
                 }
-                frame.cur_block = cur_block;
+                frame.CurrentBlock = cur_block;
             }
             else
             {
@@ -55,10 +55,10 @@ namespace MyScript
                 {
                     throw frame.NewRunException(line, $"for step {step} should less than 0, or will cause forerver loop");
                 }
-                var cur_block = frame.cur_block;
+                var cur_block = frame.CurrentBlock;
                 for (double it = start; it >= end; it += step)
                 {
-                    frame.cur_block = cur_block;
+                    frame.CurrentBlock = cur_block;
                     try
                     {
                         var b = frame.EnterBlock();
@@ -74,7 +74,7 @@ namespace MyScript
                         break;
                     }
                 }
-                frame.cur_block = cur_block;
+                frame.CurrentBlock = cur_block;
             }
         }
     }
@@ -91,16 +91,16 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            var obj = exp.GetOneResult(frame);
+            var obj = exp.GetResult(frame);
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
 
-            var cur_block = frame.cur_block;
+            var cur_block = frame.CurrentBlock;
             if (obj is IForEach)
             {
                 var iter = obj as IForEach;
                 foreach(var it in iter.GetForEachItor(name_list.names.Count))
                 {
-                    frame.cur_block = cur_block;
+                    frame.CurrentBlock = cur_block;
                     try
                     {
                         frame.EnterBlock();
@@ -122,13 +122,20 @@ namespace MyScript
                 for (; ; )
                 {
                     var results = (obj as Function).Call();
-                    if (results.GetValueOrDefault(0) != null)
+                    if (results != null)
                     {
-                        frame.cur_block = cur_block;
+                        frame.CurrentBlock = cur_block;
                         try
                         {
                             frame.EnterBlock();
-                            name_list.AddLocals(frame, results);
+                            if(results is MyArray arr)
+                            {
+                                name_list.AddLocals(frame, arr);
+                            }
+                            else
+                            {
+                                name_list.AddLocals(frame, results);
+                            }
                             block.Exec(frame);
                         }
                         catch (ContineException)
@@ -147,7 +154,7 @@ namespace MyScript
             {
                 foreach (var a in (obj as IEnumerable))
                 {
-                    frame.cur_block = cur_block;
+                    frame.CurrentBlock = cur_block;
                     try
                     {
                         frame.EnterBlock();
@@ -166,9 +173,9 @@ namespace MyScript
             }
             else
             {
-                throw frame.NewRunException(exp.line, $"for in does not support type {obj.GetType().Name}");
+                throw frame.NewRunException(exp.line, $"for in does not support type {obj.GetType().FullName}");
             }
-            frame.cur_block = cur_block;
+            frame.CurrentBlock = cur_block;
         }
     }
 
@@ -182,7 +189,7 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            var cur_block = frame.cur_block;
+            var cur_block = frame.CurrentBlock;
             //int cnt = 0;
             for (; ; )
             {
@@ -190,7 +197,7 @@ namespace MyScript
                 //{
                 //    throw frame.NewRunException(line, "forever loop seens can not ended");
                 //}
-                frame.cur_block = cur_block;
+                frame.CurrentBlock = cur_block;
                 try
                 {
                     frame.EnterBlock();
@@ -205,7 +212,7 @@ namespace MyScript
                     break;
                 }
             }
-            frame.cur_block = cur_block;
+            frame.CurrentBlock = cur_block;
         }
     }
 }

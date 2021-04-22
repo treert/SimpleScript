@@ -11,28 +11,39 @@ namespace MyScript
         {
             _line = line_;
         }
+        
         public List<ExpSyntaxTree> var_list = new List<ExpSyntaxTree>();
         public ExpressionList exp_list;
 
         protected override void _Exec(Frame frame)
         {
-            var results = exp_list.GetResults(frame);
-            for (int i = 0; i < var_list.Count; i++)
+            if(var_list.Count == 1)
             {
-                var it = var_list[i];
-                object val = results.Count > i ? results[i] : null;
-                if (it is TableAccess)
+                _AssginOne(frame, var_list[0], exp_list.GetResult(frame));
+            }
+            else
+            {
+                MyArray results = exp_list.GetResultForSplit(frame);
+                for (int i = 0; i < var_list.Count; i++)
                 {
-                    (it as TableAccess).Assign(frame, val);
+                    _AssginOne(frame, var_list[i], results[i]);
                 }
-                else
-                {
-                    // Name
-                    var ter = it as Terminator;
-                    Debug.Assert(ter.token.Match(TokenType.NAME));
-                    var name = ter.token.m_string;
-                    frame.Write(name, val);
-                }
+            }
+        }
+
+        void _AssginOne(Frame frame, ExpSyntaxTree it, object val)
+        {
+            if (it is TableAccess)
+            {
+                (it as TableAccess).Assign(frame, val);
+            }
+            else
+            {
+                // Name
+                var ter = it as Terminator;
+                Debug.Assert(ter.token.Match(TokenType.NAME));
+                var name = ter.token.m_string;
+                frame.Write(name, val);
             }
         }
     }

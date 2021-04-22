@@ -38,7 +38,7 @@ namespace MyScript
             }
         }
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             object ret = null;
             if (op.Match(Keyword.AND))
@@ -73,38 +73,38 @@ namespace MyScript
                 }
                 else if (op.Match('<'))
                 {
-                    var l = left.GetOneResult(frame);
-                    var r = right.GetOneResult(frame);
+                    var l = left.GetResult(frame);
+                    var r = right.GetResult(frame);
                     ret = Utils.Compare(l, r) < 0;
                 }
                 else if (op.Match('>'))
                 {
-                    var l = left.GetOneResult(frame);
-                    var r = right.GetOneResult(frame);
+                    var l = left.GetResult(frame);
+                    var r = right.GetResult(frame);
                     ret = Utils.Compare(l, r) > 0;
                 }
                 else if (op.Match(TokenType.LE))
                 {
-                    var l = left.GetOneResult(frame);
-                    var r = right.GetOneResult(frame);
+                    var l = left.GetResult(frame);
+                    var r = right.GetResult(frame);
                     ret = Utils.Compare(l, r) <= 0;
                 }
                 else if (op.Match(TokenType.GE))
                 {
-                    var l = left.GetOneResult(frame);
-                    var r = right.GetOneResult(frame);
+                    var l = left.GetResult(frame);
+                    var r = right.GetResult(frame);
                     ret = Utils.Compare(l, r) >= 0;
                 }
                 else if (op.Match(TokenType.EQ))
                 {
-                    var l = left.GetOneResult(frame);
-                    var r = right.GetOneResult(frame);
+                    var l = left.GetResult(frame);
+                    var r = right.GetResult(frame);
                     ret = Utils.CheckEquals(l, r);
                 }
                 else if (op.Match(TokenType.NE))
                 {
-                    var l = left.GetOneResult(frame);
-                    var r = right.GetOneResult(frame);
+                    var l = left.GetResult(frame);
+                    var r = right.GetResult(frame);
                     ret = !Utils.CheckEquals(l, r);
                 }
                 else if (op.Match(TokenType.CONCAT))
@@ -118,7 +118,7 @@ namespace MyScript
 
             }
 
-            return new List<object>() { ret };
+            return ret;
         }
     }
 

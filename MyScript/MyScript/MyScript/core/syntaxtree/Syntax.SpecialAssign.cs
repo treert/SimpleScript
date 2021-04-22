@@ -33,12 +33,12 @@ namespace MyScript
             if (var is TableAccess)
             {
                 var access = var as TableAccess;
-                table = access.table.GetOneResult(frame);
+                table = access.table.GetResult(frame);
                 if (table == null)
                 {
                     throw frame.NewRunException(access.table.line, "table can not be null when run TableAccess");
                 }
-                idx = access.index.GetOneResult(frame);
+                idx = access.index.GetResult(frame);
                 if (idx == null)
                 {
                     throw frame.NewRunException(access.index.line, "index can not be null when run TableAccess");

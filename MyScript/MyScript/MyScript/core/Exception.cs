@@ -39,7 +39,7 @@ namespace MyScript
     public class ReturnException : Exception
     {
 
-        public List<object> results = Utils.EmptyResults;
+        public object result = null;
     }
 
     /// <summary>

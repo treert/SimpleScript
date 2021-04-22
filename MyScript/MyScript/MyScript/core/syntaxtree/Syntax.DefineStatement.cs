@@ -28,7 +28,7 @@ namespace MyScript
             {
                 frame.AddLocalName(name.m_string);
             }
-            var fn = func_body.GetOneResult(frame);
+            var fn = func_body.GetResult(frame);
             frame.Write(name.m_string, fn);
         }
     }
@@ -44,27 +44,30 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            var results = Utils.EmptyResults;
-            if (exp_list)
+            if(name_list.names.Count == 1)
             {
-                results = exp_list.GetResults(frame);
+                _DefineOne(frame, name_list.names[0], exp_list?.GetResult(frame));
             }
-            for (int i = 0; i < name_list.names.Count; i++)
+            else
             {
-                var name = name_list.names[i];
-                var obj = results.Count > i ? results[i] : null;
-                if (is_global)
+                MyArray arr = exp_list?.GetResultForSplit(frame);
+                for(int i = 0; i < name_list.names.Count; i++)
                 {
-                    frame.AddGlobalName(name.m_string);
-                    if (results.Count > i)
-                    {
-                        frame.func.vm.global_table[name.m_string] = obj;
-                    }
+                    _DefineOne(frame, name_list.names[i], arr?[i]);
                 }
-                else
-                {
-                    frame.AddLocalVal(name.m_string, obj);
-                }
+            }
+        }
+
+        void _DefineOne(Frame frame, Token name, object obj)
+        {
+            if (is_global)
+            {
+                frame.AddGlobalName(name.m_string);
+                frame.func.vm.global_table[name.m_string] = obj;
+            }
+            else
+            {
+                frame.AddLocalVal(name.m_string, obj);
             }
         }
     }

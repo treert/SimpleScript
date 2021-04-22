@@ -12,21 +12,21 @@ namespace MyScript
         }
         public List<TableField> fields = new List<TableField>();
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
             Table ret = new Table();
             for (var i = 0; i < fields.Count; i++)
             {
                 var f = fields[i];
 
-                object key = f.index.GetOneResult(frame);
+                object key = f.index.GetResult(frame);
                 if (key == null)
                 {
                     throw frame.NewRunException(f.line, "Table key can not be nil");
                 }
-                ret.Set(key, f.value.GetOneResult(frame));
+                ret.Set(key, f.value.GetResult(frame));
             }
-            return new List<object>() { ret };
+            return ret;
         }
     }
 
@@ -49,16 +49,16 @@ namespace MyScript
         public ExpSyntaxTree table;
         public ExpSyntaxTree index;
 
-        protected override List<object> _GetResults(Frame frame)
+        protected override object _GetResults(Frame frame)
         {
-            var t = table.GetOneResult(frame);
-            var idx = index.GetOneResult(frame);
+            var t = table.GetResult(frame);
+            var idx = index.GetResult(frame);
             if (idx == null)
             {
                 throw frame.NewRunException(index.line, "table index can not be null");
             }
             var ret = ExtUtils.Get(t, idx);
-            return new List<object>() { ret };
+            return ret;
         }
 
         private object GetResultForAssgin(Frame frame)
@@ -70,9 +70,9 @@ namespace MyScript
             }
             else
             {
-                t = table.GetOneResult(frame);
+                t = table.GetResult(frame);
             }
-            var idx = index.GetOneResult(frame);
+            var idx = index.GetResult(frame);
             if (idx == null)
             {
                 throw frame.NewRunException(line, "table index can not be null");
@@ -104,9 +104,9 @@ namespace MyScript
             }
             else
             {
-                t = table.GetOneResult(frame);
+                t = table.GetResult(frame);
             }
-            var idx = index.GetOneResult(frame);
+            var idx = index.GetResult(frame);
             if (idx == null)
             {
                 throw frame.NewRunException(line, "table index can not be null");

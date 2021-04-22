@@ -16,7 +16,7 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            var obj = exp.GetOneResult(frame);
+            var obj = exp.GetResult(frame);
             if (Utils.ToBool(obj))
             {
                 true_branch.Exec(frame);

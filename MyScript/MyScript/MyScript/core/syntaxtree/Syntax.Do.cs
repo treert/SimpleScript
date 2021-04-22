@@ -19,7 +19,7 @@ namespace MyScript
             {
                 block.Exec(frame);
 
-                var obj = exp.GetOneResult(frame);
+                var obj = exp.GetResult(frame);
                 if (!Utils.ToBool(obj))
                 {
                     break;
