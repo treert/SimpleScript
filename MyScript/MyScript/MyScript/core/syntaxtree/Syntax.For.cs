@@ -18,17 +18,17 @@ namespace MyScript
         public BlockTree block;
         protected override void _Exec(Frame frame)
         {
-            var start = exp1.GetValidNumber(frame);
-            var end = exp2.GetValidNumber(frame);
+            var start = exp1.GetNumber(frame);
+            var end = exp2.GetNumber(frame);
             if (start <= end)
             {
-                double step = exp3 ? exp3.GetValidNumber(frame) : 1;
+                var step = exp3 ? exp3.GetNumber(frame) : 1;
                 if (step <= 0)
                 {
                     throw frame.NewRunException(line, $"for step {step} should greater than 0, or will cause forerver loop");
                 }
                 var cur_block = frame.CurrentBlock;
-                for (double it = start; it <= end; it += step)
+                for (MyNumber it = start; it <= end; it += step)
                 {
                     frame.CurrentBlock = cur_block;
                     try
@@ -50,13 +50,13 @@ namespace MyScript
             }
             else
             {
-                double step = exp3 ? exp3.GetValidNumber(frame) : -1;
+                var step = exp3 ? exp3.GetValidNumber(frame) : -1;
                 if (step >= 0)
                 {
                     throw frame.NewRunException(line, $"for step {step} should less than 0, or will cause forerver loop");
                 }
                 var cur_block = frame.CurrentBlock;
-                for (double it = start; it >= end; it += step)
+                for (var it = start; it >= end; it += step)
                 {
                     frame.CurrentBlock = cur_block;
                     try

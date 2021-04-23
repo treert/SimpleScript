@@ -63,7 +63,7 @@ namespace MyScript.Test
                 if (test.IsOK())
                 {
                     ++_pass_case;
-                    Console.WriteLine("{0} pass", t.Name);
+                    //Console.WriteLine("{0} pass", t.Name);
                 }
                 else
                 {

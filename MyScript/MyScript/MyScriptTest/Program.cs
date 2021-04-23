@@ -36,57 +36,71 @@ class Program
 {
     static void Main(string[] args)
     {
-        Console.WriteLine("Hello World!");
         TestManager.RunTest();
 
+        //TestMyScript();
+        TestMyNumber();
+        //{
+        //    double a = double.PositiveInfinity;
+        //    unsafe
+        //    {
+        //        Console.WriteLine(Convert.ToString(*(long*)&a, 2));
+        //    }
+        //}
+    }
+
+    static void TestMyScript()
+    {
+        Console.WriteLine("Start Test MS 1.0");
+        VM vm = new VM();
+        // 注入基础扩展
+        vm.global_table["echo"] = new MyConsole();
+        // 执行测试文件
+        try
         {
-            Console.WriteLine("Start Test MS 1.0");
-            VM vm = new VM();
-            // 注入基础扩展
-            vm.global_table["echo"] = new MyConsole();
-            // 执行测试文件
-            try
-            {
-                vm.DoFile("test.ms");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Error Happen\n{e.Message}");
-            }
-            Console.WriteLine("End");
+            vm.DoFile("test.ms");
         }
+        catch (Exception e)
         {
+            Console.WriteLine($"Error Happen\n{e.Message}");
+        }
+        Console.WriteLine("End");
+    }
 
+    static void TestMyNumber()
+    {
+        Console.WriteLine("===== Test MyNumber Start =======");
 
-            MyNumber a = 1;
-            MyNumber b = 2;
-            MyNumber c = 2;
-            Dictionary<object, string> map = new Dictionary<object, string>()
+        MyNumber a = 1;
+        MyNumber b = 2;
+        MyNumber c = 2;
+        Dictionary<object, string> map = new Dictionary<object, string>()
             {
                 {a,"a" },
                 {b,"b" },
             };
-            Console.WriteLine(map[a]);
-            Console.WriteLine(map[b]);
-            Console.WriteLine(map[c]);
+        Console.WriteLine(map[a]);
+        Console.WriteLine(map[b]);
+        Console.WriteLine(map[c]);
 
-            var aaa = a;
-            
-
-            Console.WriteLine(a++);
-            Console.WriteLine(++a);
-            Console.WriteLine(a);
-            Console.WriteLine(aaa);
-
-            BigInteger b_a = 1;
-            var aab = b_a;
-            Console.WriteLine(b_a++);
-            Console.WriteLine(++b_a);
-            Console.WriteLine(b_a);
-            Console.WriteLine(aab);
+        var aaa = a;
 
 
-        }
+        Console.WriteLine(a++);
+        Console.WriteLine(++a);
+        Console.WriteLine(a);
+        Console.WriteLine(aaa);
+
+        Console.WriteLine(" BigInterger ");
+
+        BigInteger b_a = 1;
+        var aab = b_a;
+        Console.WriteLine(b_a++);
+        Console.WriteLine(++b_a);
+        Console.WriteLine(b_a);
+        Console.WriteLine(aab);
+
+        Console.WriteLine("===== Test MyNumber End =======");
     }
 
     static void OtherTest()
