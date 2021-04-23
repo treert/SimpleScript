@@ -4,9 +4,9 @@
 3. $join(',' , a) := a (',' a)*
  
 some choose：
-1. does not support ++ and -- operator, and use -- to begin comment, like lua.
-2. integral division use 'div', modular division use 'mod'
-    BTW, 'div' and 'mod' can also use as nomal, for example 'math.div'
+1. 字符串字面值，无转义 \[...] \[[...]] \[[[...]]] \[=..[...]=..]
+2. 单行注释 \\
+3. 多行块注释 \\[...] \\[[...]] \\[[[...]]] \\[=..[...]=..]
  *)
 
 module ::= stats
@@ -96,7 +96,7 @@ binop ::= 'or' | 'and'
     | '..'
     | '|' | '~' | '&' | '<<' | '>>'
     | '+' | '-' 
-    | '*' | '/' | 'div' | 'mod'
+    | '*' | '/' | '%' | '//'
     | '^'
 
-unop ::= '-' | 'not' | '~'
+unop ::= '-' | 'not' | '~' | '+'

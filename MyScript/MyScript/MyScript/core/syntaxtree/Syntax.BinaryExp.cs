@@ -49,73 +49,73 @@ namespace MyScript
             {
                 ret = left.GetBool(frame) || right.GetBool(frame);
             }
+            else if (op.Match('+'))
+            {
+                ret = left.GetNumber(frame) + right.GetNumber(frame);
+            }
+            else if (op.Match('-'))
+            {
+                ret = left.GetNumber(frame) - right.GetNumber(frame);
+            }
+            else if (op.Match('*'))
+            {
+                ret = left.GetNumber(frame) * right.GetNumber(frame);
+            }
+            else if (op.Match('/'))
+            {
+                ret = left.GetNumber(frame) / right.GetNumber(frame);
+            }
+            else if (op.Match('%'))
+            {
+                ret = left.GetNumber(frame) % right.GetNumber(frame);
+            }
+            else if (op.Match('%'))
+            {
+
+            }
+            else if (op.Match('<'))
+            {
+                var l = left.GetResult(frame);
+                var r = right.GetResult(frame);
+                ret = Utils.Compare(l, r) < 0;
+            }
+            else if (op.Match('>'))
+            {
+                var l = left.GetResult(frame);
+                var r = right.GetResult(frame);
+                ret = Utils.Compare(l, r) > 0;
+            }
+            else if (op.Match(TokenType.LE))
+            {
+                var l = left.GetResult(frame);
+                var r = right.GetResult(frame);
+                ret = Utils.Compare(l, r) <= 0;
+            }
+            else if (op.Match(TokenType.GE))
+            {
+                var l = left.GetResult(frame);
+                var r = right.GetResult(frame);
+                ret = Utils.Compare(l, r) >= 0;
+            }
+            else if (op.Match(TokenType.EQ))
+            {
+                var l = left.GetResult(frame);
+                var r = right.GetResult(frame);
+                ret = Utils.CheckEquals(l, r);
+            }
+            else if (op.Match(TokenType.NE))
+            {
+                var l = left.GetResult(frame);
+                var r = right.GetResult(frame);
+                ret = !Utils.CheckEquals(l, r);
+            }
+            else if (op.Match(TokenType.CONCAT))
+            {
+                ret = left.GetString(frame) + right.GetString(frame);
+            }
             else
             {
-                if (op.Match('+'))
-                {
-                    ret = left.GetValidNumber(frame) + right.GetValidNumber(frame);
-                }
-                else if (op.Match('-'))
-                {
-                    ret = left.GetValidNumber(frame) - right.GetValidNumber(frame);
-                }
-                else if (op.Match('*'))
-                {
-                    ret = left.GetValidNumber(frame) * right.GetValidNumber(frame);
-                }
-                else if (op.Match('/'))
-                {
-                    ret = left.GetValidNumber(frame) / right.GetValidNumber(frame);
-                }
-                else if (op.Match('%'))
-                {
-                    ret = left.GetValidNumber(frame) % right.GetValidNumber(frame);
-                }
-                else if (op.Match('<'))
-                {
-                    var l = left.GetResult(frame);
-                    var r = right.GetResult(frame);
-                    ret = Utils.Compare(l, r) < 0;
-                }
-                else if (op.Match('>'))
-                {
-                    var l = left.GetResult(frame);
-                    var r = right.GetResult(frame);
-                    ret = Utils.Compare(l, r) > 0;
-                }
-                else if (op.Match(TokenType.LE))
-                {
-                    var l = left.GetResult(frame);
-                    var r = right.GetResult(frame);
-                    ret = Utils.Compare(l, r) <= 0;
-                }
-                else if (op.Match(TokenType.GE))
-                {
-                    var l = left.GetResult(frame);
-                    var r = right.GetResult(frame);
-                    ret = Utils.Compare(l, r) >= 0;
-                }
-                else if (op.Match(TokenType.EQ))
-                {
-                    var l = left.GetResult(frame);
-                    var r = right.GetResult(frame);
-                    ret = Utils.CheckEquals(l, r);
-                }
-                else if (op.Match(TokenType.NE))
-                {
-                    var l = left.GetResult(frame);
-                    var r = right.GetResult(frame);
-                    ret = !Utils.CheckEquals(l, r);
-                }
-                else if (op.Match(TokenType.CONCAT))
-                {
-                    ret = left.GetString(frame) + right.GetString(frame);
-                }
-                else
-                {
-                    Debug.Assert(false);
-                }
-
+                Debug.Assert(false);
             }
 
             return ret;

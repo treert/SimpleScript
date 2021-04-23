@@ -48,6 +48,7 @@ namespace MyScript
     {
         EOS = 256,
 
+        DIV, // // 整除
         CONCAT,// .. string concat
         EQ,// ==
         GE,// >=
@@ -532,7 +533,7 @@ namespace MyScript
                         _NextChar();
                         if (_current == '/')
                         {
-                            throw NewLexException("do not support '//' ");
+                            return new Token(TokenType.DIV);
                         }
                         else
                         {

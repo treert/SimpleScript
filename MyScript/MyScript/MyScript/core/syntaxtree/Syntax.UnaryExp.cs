@@ -16,20 +16,23 @@ namespace MyScript
 
         protected override object _GetResults(Frame frame)
         {
-            object ret = null;
             if (op.Match('-'))
             {
-                ret = exp.GetValidNumber(frame);
+                return - exp.GetNumber(frame);
             }
             else if (op.Match(Keyword.NOT))
             {
-                ret = !exp.GetBool(frame);
+                return !exp.GetBool(frame);
+            }
+            else if (op.Match('~'))
+            {
+                return ~exp.GetNumber(frame);
             }
             else
             {
                 Debug.Assert(false);
             }
-            return ret;
+            return null;
         }
     }
 

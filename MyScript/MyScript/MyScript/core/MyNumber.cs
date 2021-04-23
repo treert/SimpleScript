@@ -127,6 +127,17 @@ namespace MyScript
                 return (double)left / (double)right;
             }
         }
+        public static MyNumber operator %(MyNumber left, MyNumber right)
+        {
+            if (left.is_big && right.is_big)
+            {
+                return left.big % right.big;
+            }
+            else
+            {
+                return (double)left % (double)right;
+            }
+        }
         public static MyNumber operator &(MyNumber left, MyNumber right)
         {
             return (BigInteger)left & (BigInteger)right;

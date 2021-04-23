@@ -50,7 +50,7 @@ namespace MyScript
             }
             else
             {
-                var step = exp3 ? exp3.GetValidNumber(frame) : -1;
+                var step = exp3 ? exp3.GetNumber(frame) : -1;
                 if (step >= 0)
                 {
                     throw frame.NewRunException(line, $"for step {step} should less than 0, or will cause forerver loop");

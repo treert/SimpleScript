@@ -100,6 +100,13 @@ class Program
         Console.WriteLine(b_a);
         Console.WriteLine(aab);
 
+        Console.WriteLine(" Double ");
+        Console.WriteLine($"3.4 % 2 = {3.4 % 2}");
+        Console.WriteLine($"-3.4 % 2 = {-3.4 % 2}");
+        Console.WriteLine($"3.4 % -2 = {3.4 % -2}");
+        Console.WriteLine($"-3.4 % -2 = {-3.4 % -2}");
+        Console.WriteLine($"-3.4 % 0 = {-3.4 % 0}");
+
         Console.WriteLine("===== Test MyNumber End =======");
     }
 
