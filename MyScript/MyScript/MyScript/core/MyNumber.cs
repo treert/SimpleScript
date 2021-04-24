@@ -22,27 +22,141 @@ namespace MyScript
         BigInteger big;
         double num;
         bool is_big;// 整数
-        public MyNumber(double value)
+        private MyNumber(double value)
         {
             is_big = false;
             num = value;
             big = BigInteger.Zero;
         }
-        public MyNumber(BigInteger value)
+        private MyNumber(BigInteger value)
         {
             is_big = true;
             big = value;
             num = 0;
         }
-        public static MyNumber Parse(string value)
+        public static MyNumber? TryParse(string s)
         {
-            throw new Exception();
-        }
-        public static MyNumber ConvertFrom(object obj)
-        {
-            throw new Exception();
+            try
+            {
+                if (string.IsNullOrWhiteSpace(s))
+                {
+                    return double.NaN;
+                }
+                s = s.Trim();
+                if (s[0] == '0')
+                {
+                    if (s.Length == 1)
+                    {
+                        return 0;
+                    }
+
+                    if (s[1] == 'x' || s[1] == 'X')
+                    {
+                        return Convert.ToUInt32(s.Substring(2), 16);// 0xff
+                    }
+                    else if (s[1] == 'b' || s[1] == 'B')
+                    {
+                        return Convert.ToUInt32(s.Substring(2), 2);// 0b01
+                    }
+                    else if (s[1] == '.')
+                    {
+                        return Convert.ToDouble(s);
+                    }
+                    else
+                    {
+                        return Convert.ToUInt32(s.Substring(1), 8);
+                    }
+                }
+                else
+                {
+                    return Convert.ToDouble(s);
+                }
+            }
+            catch
+            {
+                return double.NaN;
+            }
         }
 
+        public readonly static MyNumber NaN = double.NaN;
+        public readonly static MyNumber One = 1;
+        public readonly static MyNumber MinusOne = -1;
+        
+        public bool IsZero { get => is_big ? big.IsZero : num == 0; }
+
+        /// <summary>
+        /// 对象转换成MyNumber，一定会成功
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static MyNumber ForceConvertFrom(object obj)
+        {
+            MyNumber? n = null;
+            if(obj is string str)
+            {
+                n = TryParse(str);
+            }
+            else
+            {
+                n = TryConvertFrom(obj);
+            }
+            return n.HasValue ? n.Value : NaN;
+        }
+        public static MyNumber? TryConvertFrom(object obj)
+        {
+            // @om 应该有性能更好的写法
+            switch (obj)
+            {
+                case MyNumber n:
+                    return n;
+                case bool b:
+                    return b;
+                case int i:
+                    return i;
+                case uint i:
+                    return i;
+                case short i:
+                    return i;
+                case ushort i:
+                    return i;
+                case byte i:
+                    return i;
+                case sbyte i:
+                    return i;
+                case long i:
+                    return i;
+                case ulong i:
+                    return i;
+                case double i:
+                    return i;
+                case float i:
+                    return i;
+                case decimal i:
+                    return i;
+                case Enum e:
+                    // c# enum 设计的不方便哎。
+                    // https://social.msdn.microsoft.com/Forums/vstudio/en-US/92e31409-c9b6-4725-ac7e-6b912438f8f2/how-to-cast-an-enum-directly-to-int?forum=csharpgeneral
+                    return e;
+            }
+            return null;
+        }
+
+        public static explicit operator int(MyNumber value)
+        {
+            return value.is_big ? (int)value.big : (int)value.num;
+        }
+        public static explicit operator uint(MyNumber value)
+        {
+            return value.is_big ? (uint)value.big : (uint)value.num;
+        }
+        public static explicit operator long(MyNumber value)
+        {
+            return value.is_big ? (long)value.big : (long)value.num;
+        }
+        public static explicit operator ulong(MyNumber value)
+        {
+            return value.is_big ? (ulong)value.big : (ulong)value.num;
+        }
         public static explicit operator double(MyNumber value)
         {
             return value.is_big ? (double)value.big : value.num;
@@ -51,13 +165,41 @@ namespace MyScript
         {
             return value.is_big ? value.big : (BigInteger)value.num;
         }
+        public static implicit operator MyNumber(bool value)
+        {
+            return new MyNumber((BigInteger)(value?1:0));
+        }
         public static implicit operator MyNumber(double value)
         {
             return new MyNumber(value);
         }
+        public static implicit operator MyNumber(float value)
+        {
+            return new MyNumber(value);// 精度会丢失
+        }
+        public static implicit operator MyNumber(decimal value)
+        {
+            return new MyNumber((double)value);// 精度会丢失
+        }
         public static implicit operator MyNumber(BigInteger value)
         {
             return new MyNumber(value);
+        }
+        public static implicit operator MyNumber(byte value)
+        {
+            return new MyNumber((BigInteger)value);
+        }
+        public static implicit operator MyNumber(sbyte value)
+        {
+            return new MyNumber((BigInteger)value);
+        }
+        public static implicit operator MyNumber(short value)
+        {
+            return new MyNumber((BigInteger)value);
+        }
+        public static implicit operator MyNumber(ushort value)
+        {
+            return new MyNumber((BigInteger)value);
         }
         public static implicit operator MyNumber(int value)
         {
@@ -74,6 +216,10 @@ namespace MyScript
         public static implicit operator MyNumber(ulong value)
         {
             return new MyNumber((BigInteger)value);
+        }
+        public static implicit operator MyNumber(Enum value)
+        {
+            return new MyNumber((BigInteger)Convert.ToUInt64(value));// 枚举最大支持到int64，统一当成 uint64 来处理
         }
         public static MyNumber operator +(MyNumber value)
         {
@@ -195,14 +341,14 @@ namespace MyScript
             if (left.is_big && right.is_big)
                 return left.big == right.big;
             else
-                return (double)left.big == (double)right.big;
+                return (double)left == (double)right;
         }
         public static bool operator !=(MyNumber left, MyNumber right)
         {
             if (left.is_big && right.is_big)
                 return left.big != right.big;
             else
-                return (double)left.big != (double)right.big;
+                return (double)left != (double)right;
         }
         public static bool operator <(MyNumber left, MyNumber right)
         {
@@ -276,5 +422,40 @@ namespace MyScript
             return false;
         }
         #endregion
+
+
+        public const long MaxSafeIntForDouble = 9007199254740991;// 2^54 - 1
+        public const long MinSafeIntForDouble = -9007199254740991;
+        /// <summary>
+        /// 判断是否是整数，浮点数不好办呢，无穷大不能当做整数了。
+        /// > https://stackoverflow.com/questions/9898512/how-to-test-if-a-double-is-an-integer/9898528
+        /// </summary>
+        public bool IsLimitInteger => is_big || (!double.IsInfinity(num) && num == Math.Floor(num));
+        public bool IsInt32 => is_big ? big <= int.MaxValue : num == (int)num;
+        public bool IsInt64 => is_big ? big <= long.MaxValue : num == (long)num;
+
+        public static MyNumber Divide(MyNumber dividend, MyNumber divisor)
+        {
+            if(dividend.is_big && divisor.is_big)
+            {
+                return BigInteger.Divide(dividend.big, divisor.big);
+            }
+            else
+            {
+                return (BigInteger)Math.Floor((double)dividend / (double)divisor);// @om 负数有bug，要不要处理？
+            }
+        }
+        public static MyNumber Pow(MyNumber left, MyNumber right)
+        {
+            // todo@om 后续不用这么测试
+            if(left.IsLimitInteger && right.IsInt32)
+            {
+                return BigInteger.Pow((BigInteger)left, (int)right);
+            }
+            else
+            {
+                return Math.Pow((double)left, (double)right);
+            }
+        }
     }
 } 

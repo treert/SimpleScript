@@ -23,7 +23,10 @@ namespace MyScript.Test
                 if (f.FieldType.IsArray)
                 {
                     Array arr = f.GetValue(root) as Array;
-                    foreach(var af in arr)
+                    if (arr == null) continue;
+                    var et = arr.GetType().GetElementType();
+                    if (et.IsPrimitive || et.IsEnum) continue;
+                    foreach (var af in arr)
                     {
                         ret = Find<T>(af);
                         if (ret != null) return ret;

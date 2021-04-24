@@ -109,9 +109,7 @@ namespace MyScript
             else if (obj is IList)
             {
                 var ls = obj as IList;
-                double f = Utils.ConvertToPriciseDouble(key);
-                int d = (int)f;
-                if (d == f)// 这样的判断能兼容 double.NAN
+                if(Utils.TryConvertToInt32(key,out int d))
                 {
                     return ls.GetByIdx(d);
                 }
@@ -121,9 +119,7 @@ namespace MyScript
                 var arr = obj as Array;
                 if (arr.Rank == 1 && arr.GetLowerBound(0) == 0)
                 {
-                    double f = Utils.ConvertToPriciseDouble(key);
-                    int d = (int)f;
-                    if (d == f)// 这样的判断能兼容 double.NAN
+                    if (Utils.TryConvertToInt32(key, out int d))
                     {
                         return arr.GetByIdx(d);
                     }
@@ -131,9 +127,7 @@ namespace MyScript
             }
             else if (obj is string)
             {
-                double f = Utils.ConvertToPriciseDouble(key);
-                int d = (int)f;
-                if (d == f)// 这样的判断能兼容 double.NAN
+                if (Utils.TryConvertToInt32(key, out int d))
                 {
                     return (obj as string).GetByIdx(d);
                 }
@@ -170,9 +164,7 @@ namespace MyScript
             else if (obj is IList)
             {
                 var ls = obj as IList;
-                double f = Utils.ConvertToPriciseDouble(key);
-                int d = (int)f;
-                if (d == f)// 这样的判断能兼容 double.NAN
+                if(Utils.TryConvertToInt32(key, out int d))
                 {
                     ls.SetByIdx(d, val);
                 }
@@ -182,9 +174,7 @@ namespace MyScript
                 var arr = obj as Array;
                 if (arr.Rank == 1 && arr.GetLowerBound(0) == 0)
                 {
-                    double f = Utils.ConvertToPriciseDouble(key);
-                    int d = (int)f;
-                    if (d == f)// 这样的判断能兼容 double.NAN
+                    if (Utils.TryConvertToInt32(key, out int d))
                     {
                         arr.SetByIdx(d, val);
                     }

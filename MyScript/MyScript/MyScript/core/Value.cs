@@ -324,15 +324,11 @@ namespace MyScript
             return null;
         }
 
-        // 对数字类型的key做规约处理。
+        // 数字类型的全部转换成MyNumber
         public static object PreConvertKey(object key)
         {
-            double f = Utils.ConvertToPriciseDouble(key);
-            if (double.IsNaN(f) == false)
-            {
-                key = f;
-            }
-            return key;
+            var n = MyNumber.TryConvertFrom(key);
+            return n.HasValue ? n.Value : key;
         }
 
         public IEnumerable<object[]> GetForEachItor(int expect_cnt)

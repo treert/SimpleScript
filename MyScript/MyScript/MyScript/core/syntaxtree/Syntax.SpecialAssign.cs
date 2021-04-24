@@ -52,7 +52,6 @@ namespace MyScript
                 name = ter.token.m_string;
                 val = frame.Read(name);
             }
-
             // 运算
             if (op == TokenType.CONCAT_SELF)
             {
@@ -60,19 +59,66 @@ namespace MyScript
                 string str = exp.GetString(frame);
                 val = Utils.ToString(val) + str;
             }
-            else
+            else if(op == TokenType.ADD_SELF)
             {
-                double delta = 1;
-                if (exp != null)
-                {
-                    delta = exp.GetValidNumber(frame);
-                }
-                if (op == TokenType.DEC_SELF)
-                {
-                    delta *= -1;
-                }
-                // @om 要不要检查下NaN
-                val = Utils.ToNumber(val) + delta;
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) + n;
+            }
+            else if (op == TokenType.DEC_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) - n;
+            }
+            else if (op == TokenType.MUL_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) * n;
+            }
+            else if (op == TokenType.DIV_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) / n;
+            }
+            else if (op == TokenType.MOD_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) % n;
+            }
+            else if (op == TokenType.DIVIDE_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = MyNumber.Divide(Utils.ToNumber(val) , n);
+            }
+            else if (op == TokenType.BIT_AND_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) & n;
+            }
+            else if (op == TokenType.BIT_OR_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) | n;
+            }
+            else if (op == TokenType.BIT_XOR_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = Utils.ToNumber(val) ^ n;
+            }
+            else if (op == TokenType.POW_SELF)
+            {
+                var n = exp.GetNumber(frame);
+                val = MyNumber.Pow(Utils.ToNumber(val), n);
+            }
+            else if(op == TokenType.ADD_ONE)
+            {
+                val = Utils.ToNumber(val) + MyNumber.One;
+            }
+            else if(op == TokenType.DEC_ONE)
+            {
+                val = Utils.ToNumber(val) - MyNumber.One;
+            }
+            else{
+                Debug.Assert(false);
             }
 
             // 写

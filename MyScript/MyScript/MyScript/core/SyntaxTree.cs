@@ -59,24 +59,10 @@ namespace MyScript
             return Utils.ToString(x);
         }
 
-        public double GetValidNumber(Frame frame)
-        {
-            var x = GetResult(frame);
-            double f = Utils.ToNumber(x);
-            // @om 这个接口做下double有效性判断
-            if (double.IsNaN(f))
-            {
-                throw frame.NewRunException(line, "exp can not convert to valid double");
-            }
-            return f;
-        }
-
         public MyNumber GetNumber(Frame frame)
         {
             var x = GetResult(frame);
-            // todo@om
-            double f = Utils.ToNumber(x);
-            return f;
+            return MyNumber.ForceConvertFrom(x);
         }
 
         protected abstract object _GetResults(Frame frame);

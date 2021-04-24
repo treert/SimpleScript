@@ -148,24 +148,16 @@ namespace MyScript
             // Enum
             if (target_type.IsEnum)
             {
-                if(obj is double)
+                if(obj is string str)
                 {
-                    var f = (double)obj;
-                    int d = (int)f;
-                    if(d == f)
-                    {
-                        obj = d;// convert to int
-                    }
-                    else
-                    {
-                        throw new Exception($"Only support int32 when assign double to Enum, {f} is not valid");
-                    }
+                    return Enum.Parse(target_type, str);// will three exception
                 }
-                if (Enum.IsDefined(target_type, obj) == false)// IsDefined 本身也会抛异常
+                var n = MyNumber.TryConvertFrom(obj);
+                if (n.HasValue)
                 {
-                    throw new Exception($"{obj} out of Enum {target_type}");
+                    ulong d = (ulong)n;
+                    return Enum.ToObject(target_type, d);
                 }
-                return Enum.ToObject(target_type, obj);
             }
             // 对数字的相互转换做特殊处理
             if (obj is double)

@@ -281,7 +281,7 @@ namespace MyScript
                 }
                 next = NextToken();
             }
-            if (next.Match('|'))
+            if (next.Match(':'))
             {
                 next = NextToken();
                 if (next.Match(TokenType.NAME))

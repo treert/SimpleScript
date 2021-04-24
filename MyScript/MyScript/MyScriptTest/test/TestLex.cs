@@ -65,7 +65,7 @@ namespace MyScript.Test
             ExpectTrue(lex.GetNextToken().m_type == (int)'%');
             ExpectTrue(lex.GetNextToken().m_type == (int)'^');
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.EQ);
-            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.NE);
+            ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.BIT_XOR_SELF);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.LE);
             ExpectTrue(lex.GetNextToken().m_type == (int)TokenType.GE);
             ExpectTrue(lex.GetNextToken().m_type == (int)'<');

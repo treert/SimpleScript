@@ -42,7 +42,7 @@ scope_block ::= 'using' [namelist] '=' explist block
 scope_line ::= 'using' namelist '=' explist ';'
 
 # 语法糖，支持一部分吧，先预留着
-self_assign ::= '+=' | '-=' | '*=' | '/=' | '&=' | '|=' | '~=' | '^=' | '.='
+self_assign ::= '+=' | '-=' | '*=' | '/=' | '%=' | '//=' | '&=' | '|=' | '~=' | '^=' | '.='
 
 # 单个name或者var时，可以在后面追加一个',' 用于说明需要解散 MyArray，其他情况，看赋值语句，前后数量多少
 namelist ::= Name {',' Name} [',']

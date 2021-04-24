@@ -1,6 +1,7 @@
 ﻿using MyScript.Test;
 using MyScript;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Numerics;
@@ -38,20 +39,89 @@ class Program
     {
         TestManager.RunTest();
 
-        //TestMyScript();
-        TestMyNumber();
-        //{
-        //    double a = double.PositiveInfinity;
-        //    unsafe
-        //    {
-        //        Console.WriteLine(Convert.ToString(*(long*)&a, 2));
-        //    }
-        //}
+        TestMyScript();
+
+        //TestMyNumber();
+
+        //TestDouble();
+
+        //TestEnum();
+    }
+    static void TestStringFormat()
+    {
+
+    }
+    enum EA
+    {
+        A = -1,
+        B = 1,
+        C = int.MaxValue,
+    }
+    enum EB : long
+    {
+        A = -1,
+        B = 1,
+        C = int.MaxValue,
+    }
+    enum EC : short
+    {
+        A = -1,
+        B = 1,
+        C = short.MaxValue,
+    }
+    [Flags]
+    enum EE:uint
+    {
+        A = 1,
+        B = 2,
+        C = 4,
+    }
+    static void TestEnum()
+    {
+        Console.WriteLine("============== TestEnum Start ===============");
+        //Console.WriteLine(Enum.IsDefined(typeof(EE), 1L));// fxxk, enum内置类型不对也不行，这TM是个判断函数呀，ToObject都不报错。。
+        Console.WriteLine(Enum.IsDefined(typeof(EE), 7u));
+        EE e = EE.A | EE.B | EE.C;
+        Console.WriteLine(Enum.IsDefined(typeof(EE), e));
+        Console.WriteLine(typeof(EE).IsEnumDefined(e));
+        Console.WriteLine($"{e} {(int)e}");
+        e = (EE)Enum.ToObject(typeof(EE), 3);
+        Console.WriteLine($"{e} {(int)e}");
+        e = (EE)Enum.ToObject(typeof(EE), 9);
+        Console.WriteLine($"{e} {(int)e}");
+        //e = (EE)Enum.ToObject(typeof(EE), 9.3);// 异常
+        //Console.WriteLine($"{e} {(int)e}");
+        e = (EE)Enum.ToObject(typeof(EE), 9999999999999999999);
+        Console.WriteLine($"{e} {(uint)e} {Convert.ToUInt64(e)}");
+
+        Console.WriteLine($"{Enum.Parse(typeof(EE),"A" )}");
+        Console.WriteLine($"{Enum.Parse(typeof(EE), "A,B")}");
+        Console.WriteLine($"{Enum.Parse(typeof(EE), "3")}");
+        Console.WriteLine($"{Enum.Parse(typeof(EE), "33")}");
+        //Console.WriteLine($"{Enum.Parse(typeof(EE), "A,B,D")}");// error
+        Console.WriteLine($"{Enum.Parse(typeof(EE), "B,A")}");
+        Console.WriteLine("============== TestEnum End ===============");
+    }
+    static void TestDouble()
+    {
+        Console.WriteLine("============== TestDouble Start ===============");
+        double a = double.PositiveInfinity;
+        double b = 0.0;
+        double c = -0.0;
+        unsafe
+        {
+            Console.WriteLine(Convert.ToString(*(long*)&a, 2));
+            Console.WriteLine(Convert.ToString(*(long*)&b, 2));
+            Console.WriteLine(Convert.ToString(*(long*)&c, 2));
+        }
+        Console.WriteLine(0.0 == -0.0);
+        Console.WriteLine(b == c);
+        Console.WriteLine("============== TestDouble End ===============");
     }
 
     static void TestMyScript()
     {
-        Console.WriteLine("Start Test MS 1.0");
+        Console.WriteLine("============== Start Test MS ===============");
         VM vm = new VM();
         // 注入基础扩展
         vm.global_table["echo"] = new MyConsole();
@@ -64,7 +134,7 @@ class Program
         {
             Console.WriteLine($"Error Happen\n{e.Message}");
         }
-        Console.WriteLine("End");
+        Console.WriteLine("================ Test MS End ===============");
     }
 
     static void TestMyNumber()
@@ -279,7 +349,6 @@ class Program
             Console.WriteLine($"={a.GetValueOrDefault(1)}");
         }
         {
-            Console.WriteLine(Utils.Compare(1, 1.0));
             Console.WriteLine(Utils.CheckEquals(1, 1.0));
             Console.WriteLine(Utils.CheckEquals(1f, 1.0));
         }

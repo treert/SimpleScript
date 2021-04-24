@@ -48,7 +48,7 @@ namespace MyScript
     {
         EOS = 256,
 
-        DIV, // // 整除
+        DIVIDE, // // 整除
         CONCAT,// .. string concat
         EQ,// ==
         GE,// >=
@@ -57,11 +57,20 @@ namespace MyScript
         SHIFT_LEFT,// <<
         SHIFT_RIGHT,// >>
         SpecialAssignBegin,
+        CONCAT_SELF,// .=
         ADD_SELF,// +=
         DEC_SELF,// -=
-        CONCAT_SELF,// .=
+        MUL_SELF,// *=
+        DIV_SELF,// /=
+        MOD_SELF,// %=
+        DIVIDE_SELF,// //=
+        BIT_AND_SELF,// &=
+        BIT_OR_SELF,// |=
+        BIT_XOR_SELF,// ~=
+        POW_SELF,// ^=
         SpecialAssignSelfEnd,
-        //ADD_ONE,// ++
+        ADD_ONE,// ++
+        DEC_ONE,// --
         SpecialAssignEnd,
         NUMBER,
         STRING_BEGIN,// 方便词法解析代码编写，字符串可能被$语法打断
@@ -87,7 +96,7 @@ namespace MyScript
     public class Token
     {
         public int m_type;
-        public double m_number;
+        public MyNumber m_number;
         public string m_string;
         // for complex string
         public StringBlockType m_string_type;
@@ -100,7 +109,7 @@ namespace MyScript
         {
             m_type = (int)TokenType.EOS;
         }
-        public Token(double number_)
+        public Token(MyNumber number_)
         {
             m_type = (int)TokenType.NUMBER;
             m_number = number_;
@@ -219,14 +228,14 @@ namespace MyScript
                 _NextChar();
             }
 
-            double num = Utils.ParseNumber(_buf.ToString());
-            if (double.IsNaN(num))
+            MyNumber? num = MyNumber.TryParse(_buf.ToString());
+            if (num.HasValue == false)
             {
                 throw NewLexException($"{_buf} is not valid double");
             }
             else
             {
-                return new Token(num);
+                return new Token(num.Value);
             }
         }
 
@@ -423,7 +432,6 @@ namespace MyScript
         // 读取注释，实际就跳过了字符串。
         void _ReadComment()
         {
-            Debug.Assert(_current == '-');
             _NextChar();
             if(_current == '`')
             {
@@ -529,23 +537,38 @@ namespace MyScript
                         _NextChar();
                         _block_stack.Pop();
                         return new Token('}');
-                    case '/':
+                    case '\\':
                         _NextChar();
-                        if (_current == '/')
+                        if (_current == '\\')
                         {
-                            return new Token(TokenType.DIV);
+                            _ReadComment();
+                            line = _line; column = _column;
+                            break;
+                        }
+                        // todo@om
+                        throw new Exception();
+                    case '+':
+                        _NextChar();
+                        if (_current == '+')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.ADD_ONE);
+                        }
+                        else if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.ADD_SELF);
                         }
                         else
                         {
-                            return new Token('/');
+                            return new Token('+');
                         }
                     case '-':
                         _NextChar();
                         if (_current == '-')
                         {
-                            _ReadComment();
-                            line = _line;column = _column;
-                            break;
+                            _NextChar();
+                            return new Token(TokenType.DEC_ONE);
                         }
                         else if (_current == '=')
                         {
@@ -556,21 +579,92 @@ namespace MyScript
                         {
                             return new Token('-');
                         }
-                    case '+':
+                    case '*':
                         _NextChar();
-                        if (_current == '+')
+                        if(_current == '=')
                         {
                             _NextChar();
-                            throw NewLexException("do not support '++' yet");
+                            return new Token(TokenType.MUL_SELF);
+                        }
+                        else
+                        {
+                            return new Token('*');
+                        }
+                    case '/':
+                        _NextChar();
+                        if (_current == '/')
+                        {
+                            _NextChar();
+                            if (_current == '=')
+                            {
+                                _NextChar();
+                                return new Token(TokenType.DIVIDE_SELF);
+                            }
+                            return new Token(TokenType.DIVIDE);
                         }
                         else if (_current == '=')
                         {
                             _NextChar();
-                            return new Token(TokenType.ADD_SELF);
+                            return new Token(TokenType.DIV_SELF);
                         }
                         else
                         {
-                            return new Token('+');
+                            return new Token('/');
+                        }
+                    case '%':
+                        _NextChar();
+                        if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.MOD_SELF);
+                        }
+                        else
+                        {
+                            return new Token('%');
+                        }
+                    case '&':
+                        _NextChar();
+                        if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.BIT_AND_SELF);
+                        }
+                        else
+                        {
+                            return new Token('&');
+                        }
+                    case '|':
+                        _NextChar();
+                        if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.BIT_OR_SELF);
+                        }
+                        else
+                        {
+                            return new Token('&');
+                        }
+                    case '~':
+                        _NextChar();
+                        if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.BIT_XOR_SELF);
+                        }
+                        else
+                        {
+                            return new Token('~');
+                        }
+                    case '^':
+                        _NextChar();
+                        if (_current == '=')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.POW_SELF);
+                        }
+                        else
+                        {
+                            return new Token('^');
                         }
                     case '.':
                         _NextChar();
@@ -595,7 +689,7 @@ namespace MyScript
                             return new Token('.');
                         }
                     //break;
-                    case '~':
+                    case '!':
                         _NextChar();
                         if (_current == '=')
                         {
@@ -604,7 +698,7 @@ namespace MyScript
                         }
                         else
                         {
-                            throw NewLexException("expect '=' after '~'");
+                            throw NewLexException("dot not support '!', use 'not' instead.");
                         }
                     //break;
                     case '=':

@@ -69,45 +69,38 @@ namespace MyScript
             {
                 ret = left.GetNumber(frame) % right.GetNumber(frame);
             }
-            else if (op.Match('%'))
+            else if (op.Match(TokenType.DIVIDE))
             {
-
+                ret = MyNumber.Divide(left.GetNumber(frame), right.GetNumber(frame));
             }
+            else if (op.Match('^'))
+            {
+                ret = MyNumber.Pow(left.GetNumber(frame), right.GetNumber(frame));
+            }
+            // 比较运算值局限于MyNumber，字符串的提供额外的函数
             else if (op.Match('<'))
             {
-                var l = left.GetResult(frame);
-                var r = right.GetResult(frame);
-                ret = Utils.Compare(l, r) < 0;
+                ret = left.GetNumber(frame) < right.GetNumber(frame);
             }
             else if (op.Match('>'))
             {
-                var l = left.GetResult(frame);
-                var r = right.GetResult(frame);
-                ret = Utils.Compare(l, r) > 0;
+                ret = left.GetNumber(frame) > right.GetNumber(frame);
             }
             else if (op.Match(TokenType.LE))
             {
-                var l = left.GetResult(frame);
-                var r = right.GetResult(frame);
-                ret = Utils.Compare(l, r) <= 0;
+                ret = left.GetNumber(frame) <= right.GetNumber(frame);
             }
             else if (op.Match(TokenType.GE))
             {
-                var l = left.GetResult(frame);
-                var r = right.GetResult(frame);
-                ret = Utils.Compare(l, r) >= 0;
+                ret = left.GetNumber(frame) >= right.GetNumber(frame);
             }
             else if (op.Match(TokenType.EQ))
             {
-                var l = left.GetResult(frame);
-                var r = right.GetResult(frame);
-                ret = Utils.CheckEquals(l, r);
+                ret = Utils.CheckEquals(left.GetResult(frame), right.GetResult(frame));
             }
             else if (op.Match(TokenType.NE))
             {
-                var l = left.GetResult(frame);
-                var r = right.GetResult(frame);
-                ret = !Utils.CheckEquals(l, r);
+                ret = !Utils.CheckEquals(left.GetResult(frame), right.GetResult(frame));
             }
             else if (op.Match(TokenType.CONCAT))
             {
