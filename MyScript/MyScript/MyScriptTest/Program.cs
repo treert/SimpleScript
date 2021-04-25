@@ -119,10 +119,10 @@ class Program
         Console.WriteLine(b == c);
         Console.WriteLine(" int & double convert");
         double fa = 1.5e100;
-        Console.WriteLine(((int)fa).ToString("X"));
-        Console.WriteLine(((long)fa).ToString("X"));
-        Console.WriteLine(((uint)fa).ToString("X"));
-        Console.WriteLine(((ulong)fa).ToString("X"));
+        Console.WriteLine(((int)fa).ToString("x"));
+        Console.WriteLine(((long)fa).ToString("x"));
+        Console.WriteLine(((uint)fa).ToString("x"));
+        Console.WriteLine(((ulong)fa).ToString("x"));
         Console.WriteLine("num == Math.Floor(num) VS num == Math.Floor(num)");
         Stopwatch sw = new Stopwatch();
         long cnt = 100000000 * 1;
@@ -133,7 +133,6 @@ class Program
         {
             if(num == Math.Floor(num))
             {
-                num += 10000000000000.1;
                 okcnt++;
             }
             num += 10000000000000.1;
@@ -147,7 +146,6 @@ class Program
         {
             if (num == (long)(num))
             {
-                num += 10000000000000.1;
                 okcnt++;
             }
             num += 10000000000000.1;
@@ -155,6 +153,18 @@ class Program
         sw.Stop();
         // 蛋疼，结果不一样哟。
         Console.WriteLine($"num={num} long={(long)num} okcnt={okcnt} cost {sw.ElapsedMilliseconds}");// 241
+        {
+            long ii = unchecked((long)1.5e100);
+            double dd = (double)ii;
+            Console.WriteLine(ii.ToString("x"));
+            Console.WriteLine(dd);
+            Console.WriteLine(dd == (long)dd);
+            double d2 = 1.5e100;
+            Console.WriteLine(unchecked((long)1.5e100).ToString("x"));
+            Console.WriteLine(((long)d2).ToString("x"));
+            Console.WriteLine(unchecked((ulong)1.5e100).ToString("x"));
+            Console.WriteLine(((ulong)d2).ToString("x"));
+        }
 
         Console.WriteLine("============== TestDouble End ===============");
     }

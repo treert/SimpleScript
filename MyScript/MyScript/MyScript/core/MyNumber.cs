@@ -427,12 +427,12 @@ namespace MyScript
         public const long MaxSafeIntForDouble = 9007199254740991;// 2^54 - 1
         public const long MinSafeIntForDouble = -9007199254740991;
         /// <summary>
-        /// 判断是否是整数，浮点数不好办呢，无穷大不能当做整数了。
+        /// 判断是否是有限整数，也就是能不能转换成有效的BigInteger
         /// > https://stackoverflow.com/questions/9898512/how-to-test-if-a-double-is-an-integer/9898528
         /// </summary>
         public bool IsLimitInteger => is_big || (!double.IsInfinity(num) && num == Math.Floor(num));
-        public bool IsInt32 => is_big ? big <= int.MaxValue : num == (int)num;
-        public bool IsInt64 => is_big ? big <= long.MaxValue : num == (long)num;// can be error
+        public bool IsInt32 => is_big ? (int.MinValue <= big && big <= int.MaxValue) : num == (int)num;
+        public bool IsInt64 => is_big ? (long.MinValue <= big && big <= long.MaxValue) : num == (long)num;
 
         public static MyNumber Divide(MyNumber dividend, MyNumber divisor)
         {
