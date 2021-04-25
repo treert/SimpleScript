@@ -5,6 +5,7 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Numerics;
+using System.Diagnostics;
 
 static class ExtClass
 {
@@ -37,13 +38,13 @@ class Program
 {
     static void Main(string[] args)
     {
-        TestManager.RunTest();
+        //TestManager.RunTest();
 
-        TestMyScript();
+        //TestMyScript();
 
         //TestMyNumber();
 
-        //TestDouble();
+        TestDouble();
 
         //TestEnum();
     }
@@ -116,6 +117,45 @@ class Program
         }
         Console.WriteLine(0.0 == -0.0);
         Console.WriteLine(b == c);
+        Console.WriteLine(" int & double convert");
+        double fa = 1.5e100;
+        Console.WriteLine(((int)fa).ToString("X"));
+        Console.WriteLine(((long)fa).ToString("X"));
+        Console.WriteLine(((uint)fa).ToString("X"));
+        Console.WriteLine(((ulong)fa).ToString("X"));
+        Console.WriteLine("num == Math.Floor(num) VS num == Math.Floor(num)");
+        Stopwatch sw = new Stopwatch();
+        long cnt = 100000000 * 1;
+        int okcnt = 0;
+        double num = 1;
+        sw.Restart();
+        for(long i = 0L; i <cnt; i++)
+        {
+            if(num == Math.Floor(num))
+            {
+                num += 10000000000000.1;
+                okcnt++;
+            }
+            num += 10000000000000.1;
+        }
+        sw.Stop();
+        Console.WriteLine($"num={num} long={(long)num} okcnt={okcnt} cost {sw.ElapsedMilliseconds}");// 411
+        num = 1;
+        okcnt = 0;
+        sw.Restart();
+        for (long i = 0L; i < cnt; i++)
+        {
+            if (num == (long)(num))
+            {
+                num += 10000000000000.1;
+                okcnt++;
+            }
+            num += 10000000000000.1;
+        }
+        sw.Stop();
+        // 蛋疼，结果不一样哟。
+        Console.WriteLine($"num={num} long={(long)num} okcnt={okcnt} cost {sw.ElapsedMilliseconds}");// 241
+
         Console.WriteLine("============== TestDouble End ===============");
     }
 

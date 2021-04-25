@@ -432,7 +432,7 @@ namespace MyScript
         /// </summary>
         public bool IsLimitInteger => is_big || (!double.IsInfinity(num) && num == Math.Floor(num));
         public bool IsInt32 => is_big ? big <= int.MaxValue : num == (int)num;
-        public bool IsInt64 => is_big ? big <= long.MaxValue : num == (long)num;
+        public bool IsInt64 => is_big ? big <= long.MaxValue : num == (long)num;// can be error
 
         public static MyNumber Divide(MyNumber dividend, MyNumber divisor)
         {
