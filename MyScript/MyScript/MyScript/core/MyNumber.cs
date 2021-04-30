@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Numerics;
 using System.Text;
+using System.Linq;
 
 namespace MyScript
 {
@@ -34,47 +36,71 @@ namespace MyScript
             big = value;
             num = 0;
         }
+        /// <summary>
+        /// 格式化字符串，发现还挺麻烦的。这儿采用简单的使用
+        /// </summary>
+        /// <param name="s"></param>
+        /// <returns></returns>
         public static MyNumber? TryParse(string s)
         {
             try
             {
+                s = s.Trim().Replace("_", "");
                 if (string.IsNullOrWhiteSpace(s))
                 {
-                    return double.NaN;
+                    return null;
                 }
-                s = s.Trim();
+                if(s.IndexOf('.') >= 0)
+                {
+                    // @om 可以特殊分离E来支持 1e100 这种的
+                    return double.Parse(s);
+                }
+                int e_idx = s.IndexOf('e', StringComparison.OrdinalIgnoreCase);
+                if(e_idx > 0)
+                {
+                    // 这儿就不支持十六进制之类的了。
+                    BigInteger n = BigInteger.Parse(s.Substring(0, e_idx));
+                    int exponent = int.Parse(s.Substring(e_idx + 1));
+                    return n * BigInteger.Pow(10, exponent);
+                }
+                else if(e_idx == 0)
+                {
+                    return null;
+                }
+                // 支持 2,8,16 进制。
                 if (s[0] == '0')
                 {
                     if (s.Length == 1)
                     {
                         return 0;
                     }
-
                     if (s[1] == 'x' || s[1] == 'X')
                     {
-                        return Convert.ToUInt32(s.Substring(2), 16);// 0xff
+                        return BigInteger.Parse(s.Substring(2), NumberStyles.HexNumber);
                     }
                     else if (s[1] == 'b' || s[1] == 'B')
                     {
-                        return Convert.ToUInt32(s.Substring(2), 2);// 0b01
+                        // 哎，就很气，biginteger 原生不支持
+                        return s.Substring(2).TryParseToBigIntegerBase2();
                     }
-                    else if (s[1] == '.')
+                    else if (char.IsDigit(s[1]))
                     {
-                        return Convert.ToDouble(s);
+                        return s.Substring(1).TryParseToBigIntegerBase8();
                     }
                     else
                     {
-                        return Convert.ToUInt32(s.Substring(1), 8);
+                        return null;
                     }
                 }
                 else
                 {
-                    return Convert.ToDouble(s);
+                    // 正常十进制
+                    return BigInteger.Parse(s);
                 }
             }
             catch
             {
-                return double.NaN;
+                return null;
             }
         }
 
@@ -161,6 +187,10 @@ namespace MyScript
         {
             return value.is_big ? (double)value.big : value.num;
         }
+        /// <summary>
+        /// 可能会抛异常，看上去似乎也用不到，暂时留着吧。
+        /// </summary>
+        /// <param name="value"></param>
         public static explicit operator BigInteger(MyNumber value)
         {
             return value.is_big ? value.big : (BigInteger)value.num;
@@ -266,6 +296,11 @@ namespace MyScript
         {
             if (left.is_big && right.is_big)
             {
+                if (right.big.IsZero)
+                {
+                    if (left.big.IsZero) return double.NaN;
+                    return left.big.Sign >= 0 ? double.PositiveInfinity : double.NegativeInfinity;
+                }
                 return left.big / right.big;
             }
             else
@@ -277,6 +312,10 @@ namespace MyScript
         {
             if (left.is_big && right.is_big)
             {
+                if (right.big.IsZero)
+                {
+                    return double.NaN;
+                }
                 return left.big % right.big;
             }
             else
@@ -434,28 +473,47 @@ namespace MyScript
         public bool IsInt32 => is_big ? (int.MinValue <= big && big <= int.MaxValue) : num == (int)num;
         public bool IsInt64 => is_big ? (long.MinValue <= big && big <= long.MaxValue) : num == (long)num;
 
-        public static MyNumber Divide(MyNumber dividend, MyNumber divisor)
+        /// <summary>
+        /// 整除
+        /// </summary>
+        /// <param name="dividend"></param>
+        /// <param name="divisor"></param>
+        /// <returns></returns>
+        public static MyNumber IntegerDivide(MyNumber dividend, MyNumber divisor)
         {
             if(dividend.is_big && divisor.is_big)
             {
-                return BigInteger.Divide(dividend.big, divisor.big);
+                if (divisor.big.IsZero)
+                {
+                    // @om 本来应该抛异常的，想想算了，不抛了。
+                    // 0/0 is PositiveInfinity
+                    return dividend.big.Sign >= 0 ? double.PositiveInfinity : double.NegativeInfinity;
+                }
+                var n = BigInteger.DivRem(dividend.big, divisor.big, out var remainder);
+                if(remainder.IsZero)
+                {
+                    return n;
+                }
+            }
+            var f = Math.Floor((double)dividend / (double)divisor);
+            if (double.IsFinite(f))
+            {
+                return (BigInteger)f;
             }
             else
             {
-                return (BigInteger)Math.Floor((double)dividend / (double)divisor);// @om 负数有bug，要不要处理？
+                return f;// 无穷或者NaN
             }
         }
         public static MyNumber Pow(MyNumber left, MyNumber right)
         {
-            // todo@om 后续不用这么测试
-            if(left.IsLimitInteger && right.IsInt32)
+            // 不按实际的值来处理，按意图来。
+            if(left.is_big && right.is_big)
             {
-                return BigInteger.Pow((BigInteger)left, (int)right);
+                if(right.big <= int.MaxValue && right.big >= int.MinValue)
+                    return BigInteger.Pow(left.big, (int)right.big);
             }
-            else
-            {
-                return Math.Pow((double)left, (double)right);
-            }
+            return Math.Pow((double)left, (double)right);
         }
     }
 } 

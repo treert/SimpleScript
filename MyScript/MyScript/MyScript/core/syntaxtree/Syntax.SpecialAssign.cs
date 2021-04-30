@@ -87,7 +87,7 @@ namespace MyScript
             else if (op == TokenType.DIVIDE_SELF)
             {
                 var n = exp.GetNumber(frame);
-                val = MyNumber.Divide(Utils.ToNumber(val) , n);
+                val = MyNumber.IntegerDivide(Utils.ToNumber(val) , n);
             }
             else if (op == TokenType.BIT_AND_SELF)
             {

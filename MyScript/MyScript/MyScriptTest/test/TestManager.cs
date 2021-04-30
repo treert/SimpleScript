@@ -21,13 +21,13 @@ namespace MyScript.Test
             ++_expect_true_count;
             if (!bool_)
             {
-                Error("the {0} expr is not true", _expect_true_count);
+                Error($"the {_expect_true_count} expr is not true");
             }
         }
 
-        public void Error(string err_msg, params object[] args)
+        public void Error(string err_msg)
         {
-            _errors.Add(String.Format(err_msg, args));
+            _errors.Add(err_msg);
         }
 
         public abstract void Run();

@@ -83,25 +83,39 @@ namespace MyScript
                 token_type == (int)'-' ||
                 token_type == (int)Keyword.NOT;
         }
+        /// <summary>
+        /// 二元运算符的优先级，和lua一样。不知为啥c++的比较运算优先级高于位运算。
+        /// > http://www.lua.org/manual/5.4/manual.html#3.4.8
+        /// > https://en.cppreference.com/w/cpp/language/operator_precedence
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         int GetOpPriority(Token t)
         {
             switch (t.m_type)
             {
-                case (int)'^': return 100;
-                case (int)'*':
-                case (int)'/':
-                case (int)'%': return 80;
-                case (int)'+':
-                case (int)'-': return 70;
-                case (int)TokenType.CONCAT: return 60;
-                case (int)'>':
-                case (int)'<':
-                case (int)TokenType.GE:
-                case (int)TokenType.LE:
+                case (int)Keyword.OR: return 10;
+                case (int)Keyword.AND: return 20;
                 case (int)TokenType.NE:
-                case (int)TokenType.EQ: return 50;
-                case (int)Keyword.AND: return 40;
-                case (int)Keyword.OR: return 30;
+                case (int)TokenType.EQ: // return 25;// 想了想，和lua保持一致吧
+                case '>':
+                case '<':
+                case (int)TokenType.GE:
+                case (int)TokenType.LE:return 30;
+                case '|': return 31;
+                case '~': return 32;
+                case '&':return 33;
+                case (int)TokenType.SHIFT_LEFT:
+                case (int)TokenType.SHIFT_RIGHT: return 40;
+                case (int)TokenType.CONCAT: return 50;
+                case '+':
+                case '-': return 80;
+                case '*':
+                case '/':
+                case (int)TokenType.DIVIDE:
+                case '%': return 90;
+                case '^': return 100;
+                
                 default: return 0;
             }
         }
@@ -178,7 +192,7 @@ namespace MyScript
 
         ExpSyntaxTree ParseConditionExp()
         {
-            // 想了想，这个就算了，不做限制了。
+            // @om 可能有沙雕写法，这样 if {a=true}.a { xxx }。想了想，算了，不做限制了，爱咋地咋地。
             //if (LookAhead().Match('{'))
             //{
             //    throw NewParserException("condition exp should not start with '{'", _look_ahead);
@@ -219,12 +233,14 @@ namespace MyScript
                 case (int)'[':
                     exp = ParseArrayConstructor();
                     break;
-                // unop exp priority is 90 less then ^
+                // unop exp priority is only less then ^ which is 100
                 case (int)'-':
                 case (int)Keyword.NOT:
+                case '+':
+                case '~':
                     var unexp = new UnaryExpression(LookAhead().m_line);
                     unexp.op = NextToken();
-                    unexp.exp = ParseExp(90);
+                    unexp.exp = ParseExp(95);
                     exp = unexp;
                     break;
                 default:

@@ -71,7 +71,7 @@ namespace MyScript
             }
             else if (op.Match(TokenType.DIVIDE))
             {
-                ret = MyNumber.Divide(left.GetNumber(frame), right.GetNumber(frame));
+                ret = MyNumber.IntegerDivide(left.GetNumber(frame), right.GetNumber(frame));
             }
             else if (op.Match('^'))
             {

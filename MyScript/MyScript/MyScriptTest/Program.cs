@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Numerics;
 using System.Diagnostics;
+using MyScriptTest;
 
 static class ExtClass
 {
@@ -38,19 +39,27 @@ class Program
 {
     static void Main(string[] args)
     {
-        //TestManager.RunTest();
+        TestManager.RunTest();
 
-        //TestMyScript();
+        TestMyScript();
 
         //TestMyNumber();
 
-        TestDouble();
+        //TestDouble();
 
         //TestEnum();
+
+        //TestStringFormat();
+
+        //TestThread.Test1();
     }
     static void TestStringFormat()
     {
-
+        Console.WriteLine($@"
+{string.Format("{0:000000}", 1234), -10}b
+{string.Format("{0:0#0####}", 1234)}
+{(1.5).ToString(".00")}
+");
     }
     enum EA
     {
@@ -182,7 +191,7 @@ class Program
         }
         catch (Exception e)
         {
-            Console.WriteLine($"Error Happen\n{e.Message}");
+            Console.WriteLine($"Error Happen: {e.Message}");
         }
         Console.WriteLine("================ Test MS End ===============");
     }
