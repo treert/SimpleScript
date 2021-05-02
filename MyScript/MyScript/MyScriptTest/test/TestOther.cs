@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using MyScript;
 using MyScript.Test;
 
-namespace MyScriptTest.test
+namespace MyScript.Test
 {
     class TestOther1 : TestBase
     {

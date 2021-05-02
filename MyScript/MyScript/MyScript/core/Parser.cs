@@ -233,14 +233,14 @@ namespace MyScript
                 case (int)'[':
                     exp = ParseArrayConstructor();
                     break;
-                // unop exp priority is only less then ^ which is 100
-                case (int)'-':
+                // these unop exp priority is only less then ^ which is 100，'not' has smallest priority.
                 case (int)Keyword.NOT:
+                case (int)'-':
                 case '+':
                 case '~':
                     var unexp = new UnaryExpression(LookAhead().m_line);
                     unexp.op = NextToken();
-                    unexp.exp = ParseExp(95);
+                    unexp.exp = ParseExp(unexp.op.Match(Keyword.NOT) ? 0 : 95);
                     exp = unexp;
                     break;
                 default:
@@ -389,7 +389,7 @@ namespace MyScript
             return index_access;
 
         }
-        FuncCall TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree idx = null)
+        FuncCall TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree? idx = null)
         {
             if (LookAhead().Match('('))
             {
@@ -878,15 +878,16 @@ namespace MyScript
         ParamList ParseParamList()
         {
             var statement = new ParamList(LookAhead().m_line);
-
             if (LookAhead().Match('('))
             {
                 NextToken();
+                bool has_param_before = false;
                 // a,b,c,d
                 while (LookAhead().Match(TokenType.NAME))
                 {
+                    has_param_before = true;
                     var token = NextToken();
-                    ExpSyntaxTree exp = null;
+                    ExpSyntaxTree? exp = null;
                     if (LookAhead().Match('='))
                     {
                         NextToken();
@@ -902,20 +903,75 @@ namespace MyScript
                         break;
                     }
                 }
-                if (LookAhead().Match('*'))
+                // *[Name]
+                if (LookAhead().Match('*') && LookAhead2().Match('*') == false)
                 {
-                    if (_current.Match(',') == false && statement.name_list.Count > 0)
+                    if (has_param_before && _current.Match(',') == false)
                     {
                         throw NewParserException("expect ',' before *", _current);
                     }
+                    has_param_before = true;
                     NextToken();
-                    if (NextToken().Match(TokenType.NAME) == false)
+                    if (LookAhead().Match(TokenType.NAME))
                     {
-                        throw NewParserException("expect <Name> after *", _current);
+                        statement.ls_name = NextToken();
                     }
-                    statement.kw_name = NextToken();
+                    if (LookAhead().Match(','))
+                    {
+                        NextToken();// eat it
+                    }
                 }
-
+                // **Name
+                if (LookAhead().Match('*'))
+                {
+                    if(LookAhead2().Match('*') == false)
+                    {
+                        throw NewParserException("expect '**' but get a '*'", _current);
+                    }
+                    if (has_param_before && _current.Match(',') == false)
+                    {
+                        throw NewParserException("expect ',' before '**'", _current);
+                    }
+                    has_param_before = true;
+                    NextToken(); NextToken();
+                    if (LookAhead().Match(TokenType.NAME))
+                    {
+                        statement.kw_name = NextToken();
+                    }
+                    else
+                    {
+                        throw NewParserException("expect <Name> after '**'", _current);
+                    }
+                    if (LookAhead().Match(','))
+                    {
+                        NextToken();// eat it
+                    }
+                }
+                // x,y,z
+                while (LookAhead().Match(TokenType.NAME))
+                {
+                    if (has_param_before && _current.Match(',') == false)
+                    {
+                        throw NewParserException("expect ',' before <Name>", _current);
+                    }
+                    var token = NextToken();
+                    ExpSyntaxTree? exp = null;
+                    if (LookAhead().Match('='))
+                    {
+                        NextToken();
+                        exp = ParseExp();
+                    }
+                    statement.kw_list.Add((token, exp));
+                    if (LookAhead().Match(','))
+                    {
+                        NextToken();
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                // )
                 if (NextToken().Match(')') == false)
                 {
                     throw NewParserException("expect ')' to end param-list", _current);

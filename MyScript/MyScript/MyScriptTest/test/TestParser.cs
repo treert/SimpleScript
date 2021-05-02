@@ -41,16 +41,7 @@ namespace MyScript.Test
             return null;
         }
     }
-    static class TestUtils
-    {
-        static Lex lex = new Lex();
-        static Parser parser = new Parser();
-        public static SyntaxTree Parse(string s)
-        {
-            lex.Init(s);
-            return parser.Parse(lex);
-        }
-    }
+
 
     class TestParser_exp1 : TestBase
     {
@@ -247,7 +238,13 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("fn f() {}");
+            CanParse("a = fn{}");
+            CanParse("fn f{}");
+            CanParse("fn f() {}");
+            CanParse("fn f(a,b,*,**t,x,z,) {}");
+            CanParse("fn f(*) {} fn f(*,) {}");
+            CanNotParse("fn f(*,,) {}");
+            CanNotParse("fn{}");
         }
     }
     class TestParser_parser14 : TestBase

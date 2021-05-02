@@ -12,10 +12,13 @@ namespace MyScript
     {
         public class GenBlock
         {
-            public Dictionary<string, LocalValue> values = new Dictionary<string, LocalValue>();
-            public List<IDisposable> scope_objs = null;
+            /// <summary>
+            /// Block 局部变量表，如果是null，表示是全局的
+            /// </summary>
+            public Dictionary<string, LocalValue?> values = new Dictionary<string, LocalValue?>();
+            public List<IDisposable>? scope_objs = null;
             public List<IDisposable> ScopeObjs => scope_objs ?? (scope_objs = new List<IDisposable>());
-            public GenBlock parent = null;
+            public GenBlock? parent = null;
         }
 
         public Function func;
@@ -45,10 +48,10 @@ namespace MyScript
             func.vm.global_table[name] = obj;
         }
 
-        public LocalValue GetName(string name, out bool is_global)
+        public LocalValue? GetName(string name, out bool is_global)
         {
-            GenBlock b = this.cur_block;
-            LocalValue ret = null;
+            GenBlock? b = this.cur_block;
+            LocalValue? ret = null;
             while(b != null)
             {
                 if(b.values.TryGetValue(name, out ret))
@@ -58,7 +61,7 @@ namespace MyScript
                 }
                 b = b.parent;
             }
-            is_global = this.func.upvalues.TryGetValue(name, out ret);
+            is_global = !this.func.upvalues.TryGetValue(name, out ret);
             return ret;
         }
 
@@ -77,7 +80,7 @@ namespace MyScript
             {
                 func.vm.global_table[name] = obj;
             }
-            else if (v)
+            else if (v is not null)
             {
                 v.obj = obj;
             }
@@ -88,15 +91,14 @@ namespace MyScript
             return obj;
         }
 
-        public object Read(string name)
+        public object? Read(string name)
         {
-            bool global;
-            var v = GetName(name, out global);
+            var v = GetName(name, out bool global);
             if (global)
             {
                 return func.vm.global_table[name];
             }
-            else if (v)
+            else if (v is not null)
             {
                 return v.obj;
             }
@@ -164,9 +166,9 @@ namespace MyScript
         }
 
         
-        public Dictionary<string, LocalValue> GetAllUpvalues()
+        public Dictionary<string, LocalValue?> GetAllUpvalues()
         {
-            var dic = new Dictionary<string, LocalValue>();
+            var dic = new Dictionary<string, LocalValue?>();
             var b = cur_block;
             while(b != null)
             {

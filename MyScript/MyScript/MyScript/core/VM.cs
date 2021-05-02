@@ -13,8 +13,8 @@ namespace MyScript
     /// </summary>
     public class VM
     {
-        public readonly Table global_table = new Table();
-        public readonly Dictionary<string, Dictionary<string, object>> modules = new Dictionary<string, Dictionary<string, object>>();
+        public readonly Table global_table = new();
+        public readonly Dictionary<string, Dictionary<string, object>> modules = new();
         public readonly Lex lex = new Lex();
         public readonly Parser parser = new Parser();
 
@@ -43,11 +43,12 @@ namespace MyScript
 
         public Table InitModule(FunctionBody tree)
         {
-            Function func = new Function();
-            func.vm = this;
-            func.module_table = new Table();
-            func.code = tree;
-            func.upvalues = new Dictionary<string, LocalValue>();
+            Function func = new Function() {
+                vm = this,
+                module_table = new Table(),
+                code = tree,
+                upvalues = new Dictionary<string, LocalValue?>(),
+            };
             func.Call();
             return func.module_table;
         }

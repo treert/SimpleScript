@@ -7,7 +7,8 @@ namespace MyScript.Test
     abstract class TestBase
     {
         private List<string> _errors = new List<string>();
-        private int _expect_true_count = 0;
+        int _expect_true_count = 0;
+        int _parse_count = 0;
         public List<string> GetErrors()
         {
             return _errors;
@@ -22,6 +23,36 @@ namespace MyScript.Test
             if (!bool_)
             {
                 Error($"the {_expect_true_count} expr is not true");
+            }
+        }
+        /// <summary>
+        /// 放在这儿似乎不妥，呃
+        /// </summary>
+        /// <param name="source"></param>
+        public void CanParse(string source)
+        {
+            ++_parse_count;
+            try
+            {
+                TestUtils.Parse(source);
+            }
+            catch (ParserException)
+            {
+                Error($"the {_parse_count} parse failed");
+            }
+        }
+
+        public void CanNotParse(string source)
+        {
+            ++_parse_count;
+            try
+            {
+                TestUtils.Parse(source);
+                Error($"the {_parse_count} parse has no exception");
+            }
+            catch (ParserException)
+            {
+                
             }
         }
 

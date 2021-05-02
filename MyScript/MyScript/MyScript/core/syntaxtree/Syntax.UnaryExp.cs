@@ -11,8 +11,10 @@ namespace MyScript
         {
             _line = line_;
         }
+#nullable disable
         public ExpSyntaxTree exp;
         public Token op;
+#nullable restore
 
         protected override object _GetResults(Frame frame)
         {

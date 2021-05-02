@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace MyScriptTest.test
+namespace MyScript.Test
 {
     class TestMyNumber1 : TestBase
     {

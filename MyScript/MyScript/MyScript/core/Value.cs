@@ -12,13 +12,13 @@ namespace MyScript
 {
     public interface IGetSet
     {
-        object Get(object key);
-        bool Set(object key, object val);
+        object? Get(object key);
+        bool Set(object key, object? val);
     }
 
     public interface ICall
     {
-        object Call(Args args);
+        object? Call(Args args);
         public static ICall Create(Func<Args, List<object>> func) => new CallWrap(func);
 
         public static ICall Create(Func<Args, object> func) => new CallWrap2(func);
@@ -56,7 +56,7 @@ namespace MyScript
         /// </summary>
         /// <param name="expect_cnt">expect_cnt 是为了能实现 for v in table {}, for k,v in table {}</param>
         /// <returns></returns>
-        IEnumerable<object[]> GetForEachItor(int expect_cnt = -1);
+        IEnumerable<object?> GetForEachItor(int expect_cnt = -1);
     }
 
     /// <summary>
@@ -64,11 +64,11 @@ namespace MyScript
     /// </summary>
     public class Function: ICall
     {
-        public VM vm;
+        public VM vm;// 保存住来自哪个vm，外部调用就方便好多了。
         public FunctionBody code;
-        public Table module_table = null;
+        public Table module_table;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
-        public Dictionary<string, LocalValue> upvalues;
+        public Dictionary<string, LocalValue?> upvalues;
         // 默认参数。有副作用，这些obj是常驻内存的，有可能被修改。
         public Dictionary<string, object> default_args = new Dictionary<string, object>();
 
@@ -97,7 +97,7 @@ namespace MyScript
             frame.AddLocalVal(Utils.MAGIC_THIS, args.that);
 
             int name_cnt = 0;
-            if (code.param_list)
+            if (code.param_list is not null)
             {
                 name_cnt = code.param_list.name_list.Count;
                 for (int i = 0; i < name_cnt; i++)
@@ -139,12 +139,15 @@ namespace MyScript
         }
     }
 
+    /// <summary>
+    /// 统一的参数格式
+    /// </summary>
     public class Args:IGetSet
     {
-        public object that = null;// this
+        public object? that = null;// this
         public Dictionary<string, object> name_args;
         public List<object> args;
-        public Frame frame = null;// VM 调用外部接口时，通过这个可以传递运行是环境，增加功能
+        public Frame? frame = null;// VM 调用外部接口时，通过这个可以传递运行是环境，增加功能
 
         public Args()
         {
@@ -207,7 +210,7 @@ namespace MyScript
             }
         }
 
-        public object Get(object key)
+        public object? Get(object? key)
         {
             if(key is string str)
             {
@@ -226,146 +229,10 @@ namespace MyScript
         }
     }
 
-    // 类似java的LinkedHashMap，内置Table。
-    // 简单的实现，不支持lua元表或者js原型。如果需要支持这种，自定义结构，实现接口就好，比如实现一个class。
-    public class Table: IGetSet, IForEach
-    {
-        internal class ItemNode
-        {
-            public object? key;
-            public object? value;
-            public ItemNode? next = null;
-            public ItemNode? prev = null;
-        }
 
-        internal ItemNode _itor_node = new ItemNode();
-
-        Dictionary<object, ItemNode> _key_map = new Dictionary<object, ItemNode>();
-
-        public Table()
-        {
-            _itor_node.prev = _itor_node;
-            _itor_node.next = _itor_node;
-        }
-
-        public object this[string idx]
-        {
-            get
-            {
-                return Get(idx);
-            }
-            set
-            {
-                Set(idx, value);
-            }
-        }
-
-        public int Len => _key_map.Count;
-
-        void _RemoveNode(ItemNode node)
-        {
-            _key_map.Remove(node.key);
-            node.prev.next = node.next;
-            node.next.prev = node.prev;
-        }
-
-        ItemNode _AddNodeAtLast(object key, object value)
-        {
-            ItemNode node = new ItemNode {
-                key = key,
-                value = value,
-                prev = _itor_node.prev,
-                next = _itor_node,
-            };
-            _itor_node.prev = node;
-            node.prev.next = node;
-            return node;
-        }
-
-        public bool Set(object key, object value)
-        {
-            if(key == null)
-            {
-                return false;// @om 就不报错了
-            }
-            key = PreConvertKey(key);
-            if (_key_map.TryGetValue(key, out var node))
-            {
-                if(value == null)
-                {
-                    _RemoveNode(node);
-                }
-                else
-                {
-                    node.value = value;
-                }
-            }
-            else
-            {
-                if(value != null)
-                {
-                    _key_map.Add(key, _AddNodeAtLast(key, value));
-                }
-                else
-                {
-                    return false;// 无事发生
-                }
-            }
-            return true;
-        }
-
-        public object Get(object key)
-        {
-            if (key == null)
-            {
-                return null;// @om 就不报错了
-            }
-            key = PreConvertKey(key);
-
-            if(_key_map.TryGetValue(key, out var node)){
-                return node.value;
-            }
-            return null;
-        }
-
-        // 数字类型的全部转换成MyNumber
-        public static object PreConvertKey(object key)
-        {
-            var n = MyNumber.TryConvertFrom(key);
-            return n ?? key;
-        }
-
-        public IEnumerable<object[]> GetForEachItor(int expect_cnt)
-        {
-            if(expect_cnt > 1)
-            {
-                var it = _itor_node.next;
-                while(it != _itor_node)
-                {
-                    yield return new object[] { it.key, it.value };
-                    it = it.next;
-                }
-            }
-            else
-            {
-                var it = _itor_node.next;
-                while (it != _itor_node)
-                {
-                    yield return new object[] {it.value };
-                    it = it.next;
-                }
-            }
-            yield break;
-        }
-    }
 
     public class LocalValue
     {
-        public object obj;
-
-        public static implicit operator bool(LocalValue exsit)
-        {
-            return exsit != null;
-        }
+        public object? obj;
     }
 }

@@ -66,8 +66,10 @@ namespace MyScript
         {
             _line = line_;
         }
-        public List<(Token token, ExpSyntaxTree exp)> name_list = new List<(Token, ExpSyntaxTree)>();
-        public Token kw_name = null;
+        public List<(Token token, ExpSyntaxTree? exp)> name_list = new List<(Token, ExpSyntaxTree?)>();
+        public Token? ls_name = null;
+        public Token? kw_name = null;
+        public List<(Token token, ExpSyntaxTree? exp)> kw_list = new List<(Token, ExpSyntaxTree?)>();
     }
 
 
@@ -77,9 +79,11 @@ namespace MyScript
         {
             _line = line_;
         }
-        public ParamList param_list;
+        public ParamList? param_list;
+#nullable disable
         public BlockTree block;
         public string source_name;
+#nullable restore
 
         protected override object _GetResults(Frame frame)
         {

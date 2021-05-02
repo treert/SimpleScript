@@ -48,7 +48,7 @@ namespace MyScript
         /// </summary>
         /// <param name="s"></param>
         /// <returns></returns>
-        public static MyNumber TryParse(string s)
+        public static MyNumber? TryParse(string s)
         {
             try
             {

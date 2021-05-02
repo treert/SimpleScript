@@ -1,10 +1,40 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace MyScript
 {
+    public static class ExtList
+    {
+        /// <summary>
+        /// https://stackoverflow.com/questions/12231569/is-there-in-c-sharp-a-method-for-listt-like-resize-in-c-for-vectort
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        /// <param name="size"></param>
+        /// <param name="element"></param>
+        public static void Resize<T>(this List<T?> list, int size, T? element = default(T))
+        {
+            int count = list.Count;
+            if(size <= 0)
+            {
+                list.Clear();
+            }
+            else if (size < count)
+            {
+                list.RemoveRange(size, count - size);
+            }
+            else if (size > count)
+            {
+                if (size > list.Capacity)   // Optimization
+                    list.Capacity = size;
+
+                list.AddRange(Enumerable.Repeat(element, size - count));
+            }
+        }
+    }
     public static class ExtMyNumber
     {
         public static bool HasValue(this MyNumber num) => num is not null;
