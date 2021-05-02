@@ -153,7 +153,7 @@ namespace MyScript
                     return Enum.Parse(target_type, str);// will three exception
                 }
                 var n = MyNumber.TryConvertFrom(obj);
-                if (n.HasValue)
+                if (n is not null && n.IsInt64)
                 {
                     ulong d = (ulong)n;
                     return Enum.ToObject(target_type, d);

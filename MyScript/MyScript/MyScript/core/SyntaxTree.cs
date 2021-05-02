@@ -95,20 +95,60 @@ namespace MyScript
             _line = line_;
         }
         public List<Token> names = new List<Token>();
+        public bool is_global = false;// 放在这儿有好处，可以直接指导NameList是不是global的。目前也没什么用途
 
-        public void AddLocals(Frame frame, params object[] objs)
+        public void DefineValues(Frame frame, object obj)
         {
-            for (int i = 0; i < names.Count; i++)
-            {
-                frame.AddLocalVal(names[i].m_string, objs.Length > i ? objs[i] : null);
-            }
+            if (is_global) DefineGlobalValues(frame, obj);
+            else DefineLocalValues(frame, obj);
         }
 
-        public void AddLocals(Frame frame, MyArray objs)
+        public void DefineGlobalValues(Frame frame, object obj)
         {
-            for (int i = 0; i < names.Count; i++)
+            if (names.Count == 1)
             {
-                frame.AddLocalVal(names[i].m_string, objs[i]);
+                frame.AddGlobalVal(names[0].m_string, obj);
+            }
+            else
+            {
+                if(obj is MyArray arr)
+                {
+                    for(int i = 0; i < names.Count; i++)
+                    {
+                        frame.AddGlobalVal(names[i].m_string, arr[i]);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < names.Count; i++)
+                    {
+                        frame.AddGlobalVal(names[i].m_string, i == 0 ? obj : null);
+                    }
+                }
+            }
+        }
+        public void DefineLocalValues(Frame frame, object obj)
+        {
+            if (names.Count == 1)
+            {
+                frame.AddLocalVal(names[0].m_string, obj);
+            }
+            else
+            {
+                if (obj is MyArray arr)
+                {
+                    for (int i = 0; i < names.Count; i++)
+                    {
+                        frame.AddLocalVal(names[i].m_string, arr[i]);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < names.Count; i++)
+                    {
+                        frame.AddLocalVal(names[i].m_string, i == 0 ? obj : null);
+                    }
+                }
             }
         }
     }

@@ -42,11 +42,6 @@ namespace MyScript
             }
         }
 
-        public object Get(object key)
-        {
-            throw new NotImplementedException();
-        }
-
         public IEnumerable<object[]> GetForEachItor(int expect_cnt)
         {
             if (expect_cnt > 1)
@@ -64,6 +59,11 @@ namespace MyScript
                 }
             }
             yield break;
+        }
+
+        public object Get(object key)
+        {
+            throw new NotImplementedException();
         }
 
         public bool Set(object key, object val)

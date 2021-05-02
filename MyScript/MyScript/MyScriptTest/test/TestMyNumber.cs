@@ -9,7 +9,7 @@ namespace MyScriptTest.test
     {
         public override void Run()
         {
-            ExpectTrue(MyScript.MyNumber.TryParse("0x1234").HasValue);
+            ExpectTrue(MyScript.MyNumber.TryParse("0x1234") is not null);
 
             //throw new NotImplementedException();
         }

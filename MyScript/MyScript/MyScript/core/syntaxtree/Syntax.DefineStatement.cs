@@ -28,6 +28,7 @@ namespace MyScript
             {
                 frame.AddLocalName(name.m_string);
             }
+            // 用这种方法可以实现local 递归函数
             var fn = func_body.GetResult(frame);
             frame.Write(name.m_string, fn);
         }
@@ -44,31 +45,7 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            if(name_list.names.Count == 1)
-            {
-                _DefineOne(frame, name_list.names[0], exp_list?.GetResult(frame));
-            }
-            else
-            {
-                MyArray arr = exp_list?.GetResultForSplit(frame);
-                for(int i = 0; i < name_list.names.Count; i++)
-                {
-                    _DefineOne(frame, name_list.names[i], arr?[i]);
-                }
-            }
-        }
-
-        void _DefineOne(Frame frame, Token name, object obj)
-        {
-            if (is_global)
-            {
-                frame.AddGlobalName(name.m_string);
-                frame.func.vm.global_table[name.m_string] = obj;
-            }
-            else
-            {
-                frame.AddLocalVal(name.m_string, obj);
-            }
+            name_list.DefineValues(frame, exp_list?.GetResult(frame));
         }
     }
 

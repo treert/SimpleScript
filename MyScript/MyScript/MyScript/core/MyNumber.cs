@@ -14,12 +14,12 @@ namespace MyScript
     /// 2. 整数退化成double后不可逆，简化逻辑
     /// 3. 数字是不可变的。
     /// 
-    /// @om 选择？：class还是struct？
+    /// @om 选择？：class还是struct？【选择class，选择有些不可逆，就这么愉快的决定了】
     /// - class可以避免装箱拆箱，struct可以减少垃圾回收。
-    /// - for int range 如果用class，会产生太多的对象
+    /// - for int range 如果用class，会产生太多的对象。【就算用struct，最终还是要装箱成object.】
     /// - MyScript 内置的是object，对于struct，会频繁的装箱拆箱
     /// </summary>
-    public struct MyNumber :IComparable<MyNumber>,IEquatable<MyNumber>
+    public class MyNumber : IComparable, IComparable<MyNumber>,IEquatable<MyNumber>
     {
         BigInteger big;
         double num;
@@ -36,12 +36,19 @@ namespace MyScript
             big = value;
             num = 0;
         }
+
+        public static bool TryParse(string s, out MyNumber n)
+        {
+            n = TryParse(s);
+            return n is not null;
+        }
+
         /// <summary>
-        /// 格式化字符串，发现还挺麻烦的。这儿采用简单的使用
+        /// 字符串转MyNumber，发现还挺麻烦的。
         /// </summary>
         /// <param name="s"></param>
         /// <returns></returns>
-        public static MyNumber? TryParse(string s)
+        public static MyNumber TryParse(string s)
         {
             try
             {
@@ -126,7 +133,7 @@ namespace MyScript
             {
                 n = TryConvertFrom(obj);
             }
-            return n.HasValue ? n.Value : NaN;
+            return n ?? NaN;
         }
         public static MyNumber? TryConvertFrom(object obj)
         {
@@ -418,16 +425,31 @@ namespace MyScript
                 return (double)left.big >= (double)right.big;
         }
 
-        public int CompareTo(MyNumber other)
+        /// <summary>
+        /// 特殊：标准定义里NaN参与比较，应该都返回false。
+        /// 但是为了方便实现排序，省的在MyScript里还有特殊判断，MyScript内部的比较最终使用 CompareTo 
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public int CompareTo(MyNumber? other)
         {
-            if(this.is_big && other.is_big)
+            if(this.is_big && other!.is_big)
             {
                 return this.big.CompareTo(other.big);
             }
             else
             {
-                return ((double)this).CompareTo((double)other);
+                return ((double)this).CompareTo((double)other!);
             }
+        }
+        public int CompareTo(object? obj)
+        {
+            if (obj == null) return 1;
+            if(obj is MyNumber n)
+            {
+                return CompareTo(n);
+            }
+            throw new ArgumentException("Argument Must Be MyNumber", nameof(obj));
         }
         #region 
         public static bool IsNAN(MyNumber n)
@@ -436,15 +458,15 @@ namespace MyScript
         }
 
         #endregion
-        public bool Equals(MyNumber other)
+        public bool Equals(MyNumber? other)
         {
-            if(this.is_big && other.is_big)
+            if(this.is_big && other!.is_big)
             {
                 return this.big.Equals(other.big);
             }
             else
             {
-                return ((double)this).Equals((double)other);
+                return ((double)this).Equals((double)other!);
             }
         }
         #region 定义值类型需要定义的一些函数，用于支持：Dictionary, Sort
@@ -452,7 +474,7 @@ namespace MyScript
         {
             return is_big ? big.GetHashCode() : num.GetHashCode();
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is MyNumber n)
             {

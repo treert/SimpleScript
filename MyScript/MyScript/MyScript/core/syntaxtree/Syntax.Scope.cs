@@ -20,18 +20,10 @@ namespace MyScript
         {
             if(block) frame.EnterBlock();
             {
-                var results = exp_list.GetResultForSplit(frame);
-                if (name_list)
-                {
-                    for (int i = 0; i < name_list.names.Count; i++)
-                    {
-                        var name = name_list.names[i];
-                        var obj = results[i];
-                        frame.AddLocalVal(name.m_string, obj);
-                    }
-                }
-                frame.AddScopeObjs(results);
-                if (block) block.Exec(frame);
+                var results = exp_list.GetResult(frame);
+                name_list?.DefineLocalValues(frame, results);
+                frame.AddScopeObj(results);
+                block?.Exec(frame);
             }
             if (block) frame.LeaveBlock();
         }

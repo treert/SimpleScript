@@ -56,6 +56,10 @@ namespace MyScript
         NE,// !=
         SHIFT_LEFT,// <<
         SHIFT_RIGHT,// >>
+
+        THREE_CMP, // <>，c++里是 <=>，MyScript模版，就简单的<>好了
+
+        // 自加运算系列
         SpecialAssignBegin,
         CONCAT_SELF,// .=
         ADD_SELF,// +=
@@ -72,6 +76,7 @@ namespace MyScript
         ADD_ONE,// ++
         DEC_ONE,// --
         SpecialAssignEnd,
+
         NUMBER,
         STRING_BEGIN,// 方便词法解析代码编写，字符串可能被$语法打断
         STRING,
@@ -230,14 +235,14 @@ namespace MyScript
                 _NextChar();
             }
 
-            MyNumber? num = MyNumber.TryParse(_buf.ToString());
-            if (num.HasValue == false)
+            MyNumber num = MyNumber.TryParse(_buf.ToString());
+            if (num is null)
             {
                 throw NewLexException($"{_buf} is not valid double");
             }
             else
             {
-                return new Token(num.Value);
+                return new Token(num);
             }
         }
 
@@ -726,6 +731,11 @@ namespace MyScript
                         {
                             _NextChar();
                             return new Token(TokenType.SHIFT_LEFT);
+                        }
+                        else if(_current == '>')
+                        {
+                            _NextChar();
+                            return new Token(TokenType.THREE_CMP);
                         }
                         return new Token('<');
                     case '>':

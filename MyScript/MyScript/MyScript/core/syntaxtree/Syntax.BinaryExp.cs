@@ -77,22 +77,21 @@ namespace MyScript
             {
                 ret = MyNumber.Pow(left.GetNumber(frame), right.GetNumber(frame));
             }
-            // 比较运算值局限于MyNumber，字符串的提供额外的函数
             else if (op.Match('<'))
             {
-                ret = left.GetNumber(frame) < right.GetNumber(frame);
+                ret = Utils.Compare(left.GetResult(frame), right.GetResult(frame)) < 0;
             }
             else if (op.Match('>'))
             {
-                ret = left.GetNumber(frame) > right.GetNumber(frame);
+                ret = Utils.Compare(left.GetResult(frame), right.GetResult(frame)) > 0;
             }
             else if (op.Match(TokenType.LE))
             {
-                ret = left.GetNumber(frame) <= right.GetNumber(frame);
+                ret = Utils.Compare(left.GetResult(frame), right.GetResult(frame)) <= 0;
             }
             else if (op.Match(TokenType.GE))
             {
-                ret = left.GetNumber(frame) >= right.GetNumber(frame);
+                ret = Utils.Compare(left.GetResult(frame), right.GetResult(frame)) >= 0;
             }
             else if (op.Match(TokenType.EQ))
             {
@@ -101,6 +100,10 @@ namespace MyScript
             else if (op.Match(TokenType.NE))
             {
                 ret = !Utils.CheckEquals(left.GetResult(frame), right.GetResult(frame));
+            }
+            else if (op.Match(TokenType.THREE_CMP))
+            {
+                ret = Utils.Compare(left.GetResult(frame), right.GetResult(frame));
             }
             else if (op.Match(TokenType.CONCAT))
             {

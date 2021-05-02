@@ -51,8 +51,12 @@ namespace MyScript
 
     public interface IForEach
     {
-        // expect_cnt 是为了能实现 for v in table {}, for k,v in table {}
-        IEnumerable<object[]> GetForEachItor(int expect_cnt);
+        /// <summary>
+        /// 支持 for in 语法，效率有点低哟，就这么着吧
+        /// </summary>
+        /// <param name="expect_cnt">expect_cnt 是为了能实现 for v in table {}, for k,v in table {}</param>
+        /// <returns></returns>
+        IEnumerable<object[]> GetForEachItor(int expect_cnt = -1);
     }
 
     /// <summary>
@@ -228,10 +232,10 @@ namespace MyScript
     {
         internal class ItemNode
         {
-            public object key;
-            public object value;
-            public ItemNode next = null;
-            public ItemNode prev = null;
+            public object? key;
+            public object? value;
+            public ItemNode? next = null;
+            public ItemNode? prev = null;
         }
 
         internal ItemNode _itor_node = new ItemNode();
@@ -328,7 +332,7 @@ namespace MyScript
         public static object PreConvertKey(object key)
         {
             var n = MyNumber.TryConvertFrom(key);
-            return n.HasValue ? n.Value : key;
+            return n ?? key;
         }
 
         public IEnumerable<object[]> GetForEachItor(int expect_cnt)

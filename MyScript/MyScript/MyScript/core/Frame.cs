@@ -39,6 +39,12 @@ namespace MyScript
             this.cur_block.values[name] = null;
         }
 
+        public void AddGlobalVal(string name, object obj)
+        {
+            AddGlobalName(name);
+            func.vm.global_table[name] = obj;
+        }
+
         public LocalValue GetName(string name, out bool is_global)
         {
             GenBlock b = this.cur_block;
@@ -137,7 +143,7 @@ namespace MyScript
             }
         }
 
-        void AddScopeObj(object obj)
+        public void AddScopeObj(object obj)
         {
             if (obj is IDisposable a)
             {

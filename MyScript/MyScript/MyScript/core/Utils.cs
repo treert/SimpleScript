@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 namespace MyScript
 {
@@ -14,7 +15,53 @@ namespace MyScript
         public static readonly List<object> EmptyResults = new List<object>();
 
         /// <summary>
-        /// 等性比较，非常重要。实现调用的C#的 Object.Equals ,所有NaN == NaN 是true。
+        /// MyScript内部使用的比较函数，可以用于支持 a <> b。
+        /// 1. 字符串，按UTF-16二进制方式比较
+        /// 2. 数字，正常比较，不过最小的是NaN。
+        /// 3. 其他的就有些随意了
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        public static int Compare(object a, object b)
+        {
+            if (a == b) return 0;
+            if (a == null) return -1;
+            if (b == null) return 1;
+
+            if (a is string sa && b is string sb)
+            {
+                return string.Compare(sa, sb, StringComparison.Ordinal);
+            }
+
+            // 需要对数字类型的特殊处理下
+            var fa = MyNumber.TryConvertFrom(a);
+            var fb = MyNumber.TryConvertFrom(b);
+            if (fa is not null && fb is not null)
+            {
+                return fa.CompareTo(fb);
+            }
+
+            if (a.Equals(b)) return 0;// 相等比较特殊处理下吧
+
+            // 不能使用直接使用 IComparable。大部分实现，遇到类型不一样，会抛异常。
+            var ta = a.GetType();
+            var tb = b.GetType();
+            if(ta == tb)
+            {
+                if (a is IComparable ia)
+                {
+                    return ia.CompareTo(b);
+                }
+            }
+            // 没办法了，随便比较下啦。选择HashCode，速度可能快些。用FullName也许会更稳定些。
+            // @om C# 的HashCode的实现方法还为找到确定位置，疑似发现一个，太复杂了点。
+            return ta.GetHashCode().CompareTo(tb.GetHashCode());
+        }
+
+        /// <summary>
+        /// 等性比较，非常重要。和Compare不一样，Compare == 0, 不一定相等。
+        /// 1. 数字类型特殊处理
         /// </summary>
         public static bool CheckEquals(object a, object b)
         {
@@ -24,9 +71,9 @@ namespace MyScript
             // 需要对数字类型的特殊处理下
             var fa = MyNumber.TryConvertFrom(a);
             var fb = MyNumber.TryConvertFrom(b);
-            if (fa.HasValue && fb.HasValue)
+            if (fa is not null && fb is not null)
             {
-                return fa.Value.Equals(fb.Value);
+                return fa.Equals(fb);
             }
             else
             {
@@ -52,7 +99,7 @@ namespace MyScript
         public static bool TryConvertToInt32(object obj, out int ret)
         {
             var n = MyNumber.TryConvertFrom(obj);
-            if (n.HasValue && n.Value.IsInt32)
+            if (n is not null && n.IsInt32)
             {
                 ret = (int)n;
                 return true;

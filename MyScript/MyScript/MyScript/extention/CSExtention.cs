@@ -5,7 +5,11 @@ using System.Text;
 
 namespace MyScript
 {
-
+    public static class ExtMyNumber
+    {
+        public static bool HasValue(this MyNumber num) => num is not null;
+        public static MyNumber Value(this MyNumber num) => num;
+    }
     public static class ExtSomeApi
     {
         public static T GetValueOrDefault<T>(this List<T> ls, int idx)

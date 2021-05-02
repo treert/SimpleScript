@@ -104,7 +104,7 @@ namespace MyScript
                     try
                     {
                         frame.EnterBlock();
-                        name_list.AddLocals(frame, it);
+                        name_list.DefineLocalValues(frame, it);
                         block.Exec(frame);
                     }
                     catch (ContineException)
@@ -128,14 +128,7 @@ namespace MyScript
                         try
                         {
                             frame.EnterBlock();
-                            if(results is MyArray arr)
-                            {
-                                name_list.AddLocals(frame, arr);
-                            }
-                            else
-                            {
-                                name_list.AddLocals(frame, results);
-                            }
+                            name_list.DefineLocalValues(frame, results);
                             block.Exec(frame);
                         }
                         catch (ContineException)
@@ -152,13 +145,13 @@ namespace MyScript
             // 想了想，统一支持下 IEnumerate
             else if (obj is IEnumerable)
             {
-                foreach (var a in (obj as IEnumerable))
+                foreach (var it in (obj as IEnumerable))
                 {
                     frame.CurrentBlock = cur_block;
                     try
                     {
                         frame.EnterBlock();
-                        name_list.AddLocals(frame, a);
+                        name_list.DefineLocalValues(frame, it);
                         block.Exec(frame);
                     }
                     catch (ContineException)

@@ -107,7 +107,7 @@ namespace MyScript
                 case '&':return 33;
                 case (int)TokenType.SHIFT_LEFT:
                 case (int)TokenType.SHIFT_RIGHT: return 40;
-                case (int)TokenType.CONCAT: return 50;
+                case (int)TokenType.CONCAT: return 50;// lua 把字符串连接的优先级放这儿，有什么特别考虑吗？感觉不合适呀
                 case '+':
                 case '-': return 80;
                 case '*':
@@ -683,8 +683,7 @@ namespace MyScript
             for (; ; )
             {
                 SyntaxTree statement = null;
-                var token_ahead = LookAhead();
-                switch (token_ahead.m_type)
+                switch (LookAhead().m_type)
                 {
                     case (int)';':
                         NextToken(); continue;
@@ -702,12 +701,7 @@ namespace MyScript
                         statement = ParseFunctionStatement(); break;
                     case (int)Keyword.LOCAL:
                     case (int)Keyword.GLOBAL:
-                        {
-                            var state = ParseDefineStatement();
-                            state.is_global = token_ahead.Match(Keyword.GLOBAL);
-                            statement = state;
-                            break;
-                        }
+                        statement = ParseDefineStatement(); break;
                     case (int)Keyword.SCOPE:
                         statement = ParseScopeStatement(); break;
                     case (int)Keyword.RETURN:
@@ -1024,15 +1018,16 @@ namespace MyScript
 
             if (LookAhead().Match(Keyword.FN))
                 return ParseDefineFunction();
-            else if (LookAhead().m_type == (int)TokenType.NAME)
+            else if (LookAhead().Match(TokenType.NAME))
                 return ParseDefineNameList();
             else
                 throw NewParserException("unexpect token after 'local' or 'global'", _look_ahead);
         }
         DefineFunctionStatement ParseDefineFunction()
         {
-            NextToken();
             var statement = new DefineFunctionStatement(_current.m_line);
+            statement.is_global = _current.Match(Keyword.GLOBAL);
+            NextToken();// Skip "fn"
 
             if (NextToken().m_type != (int)TokenType.NAME)
                 throw NewParserException("expect 'id' to name function", _current);
@@ -1044,6 +1039,7 @@ namespace MyScript
         DefineNameListStatement ParseDefineNameList()
         {
             var statement = new DefineNameListStatement(_current.m_line);
+            statement.is_global = _current.Match(Keyword.GLOBAL);
             statement.name_list = ParseNameList();
             if (LookAhead().m_type == '=')
             {
@@ -1052,9 +1048,10 @@ namespace MyScript
             }
             return statement;
         }
-        NameList ParseNameList()
+        NameList ParseNameList(bool is_global = false)
         {
             var statement = new NameList(LookAhead().m_line);
+            statement.is_global = is_global;
             statement.names.Add(NextToken());
             Debug.Assert(_current.m_type == (int)TokenType.NAME);
             while (LookAhead().m_type == ',')
