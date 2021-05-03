@@ -22,7 +22,7 @@ namespace MyScript
                 _AssginOne(frame, var_list[0], exp_list.GetResult(frame));
             }
             else
-            {
+            { 
                 MyArray results = exp_list.GetResultForSplit(frame);
                 for (int i = 0; i < var_list.Count; i++)
                 {

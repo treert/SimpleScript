@@ -81,6 +81,8 @@ namespace MyScript
                 token_type == (int)'{' ||
                 token_type == (int)'[' ||
                 token_type == (int)'-' ||
+                token_type == (int)'+' ||
+                token_type == (int)'~' ||
                 token_type == (int)Keyword.NOT;
         }
         /// <summary>
@@ -244,7 +246,7 @@ namespace MyScript
                     exp = unexp;
                     break;
                 default:
-                    throw NewParserException("unexpect token for main exp", _look_ahead);
+                    throw NewParserException("unexpect token to start main exp", _look_ahead);
             }
             return ParseTailExp(exp);
         }
@@ -320,7 +322,7 @@ namespace MyScript
             }
         }
 
-        ExpressionList ParseExpList(bool is_args = false)
+        ExpressionList ParseExpList()
         {
             var exp = new ExpressionList(LookAhead().m_line);
             bool split = LookAheadAndTryEatOne('*');
@@ -328,10 +330,11 @@ namespace MyScript
             while (LookAhead().Match(','))
             {
                 NextToken();
-                if (is_args && LookAhead().Match(')'))
-                {
-                    break;// func call args can have a extra ","
-                }
+                // 情况有些复杂哟，方便编码期间，不能支持了
+                //if (LookAhead().Match(')'))
+                //{
+                //    break;// func call args can have a extra ","
+                //}
                 split = LookAheadAndTryEatOne('*');
                 exp.AddExp(ParseExp(), split);
             }
@@ -359,14 +362,14 @@ namespace MyScript
         {
             NextToken();// skip "."
             int line_dot = _current.m_line;
-            ExpSyntaxTree idx = null;
             var tok = LookAhead();
+            ExpSyntaxTree idx;
             if (tok.CanBeNameString())
             {
                 // 当成字符串来用
                 idx = new Terminator(NextToken().ConvertToStringToken());
             }
-            else if(tok.Match(TokenType.STRING))
+            else if (tok.Match(TokenType.STRING))
             {
                 idx = new Terminator(NextToken());
             }
@@ -409,7 +412,7 @@ namespace MyScript
                     func_call.caller = caller;
                     func_call.idx = idx;
                     ArgsList args = new ArgsList(str.line);
-                    args.exp_list.Add(str);
+                    args.exp_list.Add((str,false));
                     func_call.args = args;
                     return func_call;
                 }
@@ -430,62 +433,52 @@ namespace MyScript
             return null;
         }
 
+        /// <summary>
+        /// arg,*arg,arg,**table,name=arg,name=arg,
+        /// </summary>
+        /// <returns></returns>
         ArgsList ParseArgs()
         {
             NextToken();// skip '('
             ArgsList list = new ArgsList(_current.m_line);
-            // arg,arg,*table,name=arg,name=arg,
+            bool split;
             bool has_args = false;
-            while (IsMainExpNext())
+            // arg,*arg,arg
+            for (; ; )
             {
+                if (LookAhead().Match(')')) break;
+                if (LookAhead().Match('*') && LookAhead2().Match('*')) break;
                 if (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('=')) break;
+                split = LookAheadAndTryEatOne('*');
+                list.exp_list.Add((ParseExp(), split));
                 has_args = true;
-                list.exp_list.Add(ParseExp());
-                if (LookAhead().Match(','))
-                {
-                    NextToken();
-                }
-                else
-                {
-                    break;
-                }
-            }
-
-            if (LookAhead().Match('*'))
+                if (LookAhead().Match(',')) NextToken();
+                else break;
+            } ;
+            // **table,name=arg,name=arg,
+            if(LookAhead().Match(')') == false)
             {
-                if (has_args && !_current.Match(','))
+                if (has_args && _current.Match(',') == false)
+                    throw NewParserException("expect ',' to split args",_current);
+                for(; ; )
                 {
-                    throw NewParserException("expect ',' to split args and *", _current);
-                }
-                has_args = true;
-                NextToken();
-                list.kw_table = ParseMainExp();
-                if (LookAhead().Match(','))
-                {
-                    NextToken();
-                }
-            }
-
-            if (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('='))
-            {
-                if (has_args && !_current.Match(','))
-                {
-                    throw NewParserException("expect ',' to split args and name_args", _current);
-                }
-                while (LookAhead().Match(TokenType.NAME) && LookAhead2().Match('='))
-                {
-                    ArgsList.KW kw = new ArgsList.KW();
-                    kw.k = NextToken();
-                    NextToken();
-                    kw.w = ParseExp();
-                    list.kw_exp_list.Add(kw);
-                    if (LookAhead().Match(','))
+                    if (LookAhead().Match('*') && LookAhead2().Match('*'))
                     {
-                        NextToken();
+                        NextToken();NextToken();
+                        list.kw_list.Add((null, ParseExp()));
+                    }
+                    else if(LookAhead().Match(TokenType.NAME) && LookAhead2().Match('='))
+                    {
+                        var name = NextToken();NextToken();
+                        list.kw_list.Add((name, ParseExp()));
+                    }
+                    else if (LookAhead().Match(')'))
+                    {
+                        break;
                     }
                     else
                     {
-                        break;
+                        throw NewParserException("expect args or ')'", _look_ahead);
                     }
                 }
             }
@@ -702,7 +695,7 @@ namespace MyScript
                     case (int)Keyword.LOCAL:
                     case (int)Keyword.GLOBAL:
                         statement = ParseDefineStatement(); break;
-                    case (int)Keyword.SCOPE:
+                    case (int)Keyword.USING:
                         statement = ParseScopeStatement(); break;
                     case (int)Keyword.RETURN:
                         statement = ParseReturnStatement(); break;
@@ -1037,8 +1030,8 @@ namespace MyScript
         }
 
         /// <summary>
-        /// scope namelist = explist {  }
-        /// scope = explist {  }
+        /// scope namelist = explist
+        /// scope = explist
         /// 修改了下语法，可以用LL(2)解析
         /// </summary>
         /// <returns></returns>
@@ -1051,7 +1044,7 @@ namespace MyScript
                 NextToken();
                 statement.exp_list = ParseExpList();
             }
-            else if(LookAhead().CanBeNameString())
+            else if(LookAhead().Match(TokenType.NAME))
             {
                 statement.name_list = ParseNameList();
                 if(NextToken().Match('=') == false)
@@ -1062,9 +1055,8 @@ namespace MyScript
             }
             else
             {
-                throw NewParserException("expect '=' or <name> to after 'scope'", _current);
+                throw NewParserException("expect '=' or <name> to after 'using'", _current);
             }
-            statement.block = ParseBlock();
             return statement;
         }
 

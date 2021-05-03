@@ -10,13 +10,15 @@ namespace MyScript
     // 简单的实现，不支持lua元表或者js原型。如果需要支持这种，自定义结构，实现接口就好，比如实现一个class。
     public class Table : IGetSet, IForEach
     {
+#nullable disable
         internal class ItemNode
         {
-            public object? key;
-            public object? value;
-            public ItemNode? next;
-            public ItemNode? prev;
+            public object key;
+            public object value;
+            public ItemNode next;
+            public ItemNode prev;
         }
+#nullable restore
 
         internal ItemNode _itor_node = new();
 
@@ -26,6 +28,25 @@ namespace MyScript
         {
             _itor_node.prev = _itor_node;
             _itor_node.next = _itor_node;
+        }
+
+        public void Add(Table other)
+        {
+            var it = other._itor_node.next;
+            while (it != other._itor_node)
+            {
+                _AddNode(it.key, it.value);
+                it = it.next;
+            }
+        }
+
+        internal IEnumerable<ItemNode> GetItemNodeItor()
+        {
+            ItemNode it = _itor_node.next;
+            while (it != _itor_node)
+            {
+                yield return it;
+            }
         }
 
         public object this[string idx]
@@ -60,40 +81,40 @@ namespace MyScript
             return node;
         }
 
-        public bool Set(object key, object? value)
+        private void _AddNode(object key, object value)
+        {
+            if (_key_map.TryGetValue(key, out var node))
+            {
+                node.value = value;
+            }
+            else
+            {
+                _key_map.Add(key, _AddNodeAtLast(key, value));
+            }
+        }
+
+        public void Set(object key, object? value)
         {
             // todo@om 应该不会出现这种情况
             if (key == null)
             {
-                return false;// @om 就不报错了
+                return;// @om 就不报错了
             }
             key = PreConvertKey(key);
-            if (_key_map.TryGetValue(key, out var node))
+            if(value == null)
             {
-                if (value == null)
+                if(_key_map.TryGetValue(key, out var node))
                 {
                     _RemoveNode(node);
-                }
-                else
-                {
-                    node.value = value;
                 }
             }
             else
             {
-                if (value != null)
-                {
-                    _key_map.Add(key, _AddNodeAtLast(key, value));
-                }
-                else
-                {
-                    return false;// 无事发生
-                }
+                _AddNode(key, value);
             }
-            return true;
         }
 
-        public object? Get(object? key)
+        public object? Get(object key)
         {
             if (key == null)
             {
@@ -115,7 +136,7 @@ namespace MyScript
             return n ?? key;
         }
 
-        public IEnumerable<object> GetForEachItor(int expect_cnt)
+        public IEnumerable<object?> GetForEachItor(int expect_cnt)
         {
             if (expect_cnt > 1)
             {
@@ -123,7 +144,6 @@ namespace MyScript
                 while (it != _itor_node)
                 {
                     yield return new MyArray { it.key, it.value };
-                    yield return new object[] { it.key, it.value };
                     it = it.next;
                 }
             }
@@ -132,7 +152,7 @@ namespace MyScript
                 var it = _itor_node.next;
                 while (it != _itor_node)
                 {
-                    yield return new object[] { it.value };
+                    yield return it.value;
                     it = it.next;
                 }
             }

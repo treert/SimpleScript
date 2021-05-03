@@ -65,7 +65,7 @@ namespace MyScript
             return ret;
         }
 
-        public LocalValue AddLocalVal(string name, object obj)
+        public LocalValue AddLocalVal(string name, object? obj)
         {
             var v = AddLocalName(name);
             v.obj = obj;

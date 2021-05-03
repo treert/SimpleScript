@@ -540,15 +540,9 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("scope = xx.yy.zz(){ }");
-        }
-    }
-
-    class TestParser_scope_11 : TestBase
-    {
-        public override void Run()
-        {
-            TestUtils.Parse("scope xx,yy = xx,yy.zz(){ }");
+            CanParse("using = xx.yy.zz()");
+            CanParse("using xx,yy = xx,yy.zz()");
+            CanParse("using xx,yy = xx,yy.zz();");
         }
     }
 
@@ -556,25 +550,8 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            try
-            {
-                TestUtils.Parse("scope{ }");
-                Error("no exception");
-            }
-            catch (ParserException) { }
-        }
-    }
-
-    class TestParser_scope_22 : TestBase
-    {
-        public override void Run()
-        {
-            try
-            {
-                TestUtils.Parse("scope xx = { }");
-                Error("no exception");
-            }
-            catch (ParserException) { }
+            CanNotParse("using{ }");
+            CanNotParse("using xx = ;");
         }
     }
 }

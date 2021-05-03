@@ -51,47 +51,42 @@ namespace MyScript
         {
             _line = line_;
         }
-        public class KW
-        {
-            public Token k;
-            public ExpSyntaxTree w;
-        }
-        public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
-        public ExpSyntaxTree kw_table = null;
-        public List<KW> kw_exp_list = new List<KW>();
+
+        public List<(ExpSyntaxTree exp, bool split)> exp_list = new();
+        // name == null when **exp
+        public List<(Token? name, ExpSyntaxTree exp)> kw_list = new();
 
         public Args GetArgs(Frame frame)
         {
             Args args = new Args(frame);
-            for (int i = 0; i < exp_list.Count; i++)
+            foreach(var it in exp_list)
             {
-                args.args.Add(exp_list[i].GetResult(frame));
+                args.args.AddItem(it.exp.GetResult(frame), it.split);
             }
-            if (kw_table != null)
+            foreach(var it in kw_list)
             {
-                // todo@om 这个实现不好
-                Table table = kw_table.GetResult(frame) as Table;
-                if (table != null)
+                var ret = it.exp.GetResult(frame);
+                if(it.name is null)
                 {
-                    var it = table._itor_node.next;
-                    while (it != table._itor_node)
+                    if(ret is Table t)
                     {
-                        if (it.key is string str)
+                        foreach(var item in t.GetItemNodeItor())
                         {
-                            args.name_args[str] = it.value;
+                            if(item.key is string str)
+                            {
+                                args.name_args[str] = item.value;
+                            }
                         }
-                        it = it.next;
+                    }
+                    else
+                    {
+                        // todo@om do nothing?
                     }
                 }
                 else
                 {
-                    // todo@om warning log
+                    args.name_args[it.name.m_string!] = ret;
                 }
-            }
-            foreach (var kw in kw_exp_list)
-            {
-                var val = kw.w.GetResult(frame);
-                args.name_args[kw.k.m_string] = val;
             }
             return args;
         }

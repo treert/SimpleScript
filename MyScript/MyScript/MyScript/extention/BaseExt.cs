@@ -37,7 +37,7 @@ namespace MyScript
             return Utils.EmptyResults;
         }
 
-        public bool Set(object key, object val)
+        public void Set(object key, object? val)
         {
             throw new NotImplementedException();
         }

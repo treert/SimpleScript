@@ -7,10 +7,9 @@ namespace MyScript
 {
     public class MyArray : IGetSet, IForEach, IEnumerable
     {
-        List<object?> m_items = new List<object?>();
+        public List<object?> m_items = new List<object?>();
         public int Count => m_items.Count;
-
-        public void AddItem(object obj, bool split)
+        public void AddItem(object? obj, bool split)
         {
             if (split && obj is MyArray arr)
             {
@@ -71,7 +70,7 @@ namespace MyScript
             throw new NotImplementedException();
         }
 
-        public bool Set(object key, object? val)
+        public void Set(object key, object? val)
         {
             throw new NotImplementedException();
         }

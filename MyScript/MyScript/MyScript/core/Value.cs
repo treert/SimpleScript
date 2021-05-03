@@ -13,7 +13,7 @@ namespace MyScript
     public interface IGetSet
     {
         object? Get(object key);
-        bool Set(object key, object? val);
+        void Set(object key, object? val);
     }
 
     public interface ICall
@@ -78,7 +78,7 @@ namespace MyScript
             return Call(args);
         }
 
-        public object Call(Dictionary<string, object> name_args, params object[] objs)
+        public object Call(Table name_args, params object[] objs)
         {
             Args args = new Args(name_args, objs);
             return Call(args);
@@ -97,25 +97,42 @@ namespace MyScript
             frame.AddLocalVal(Utils.MAGIC_THIS, args.that);
 
             int name_cnt = 0;
-            if (code.param_list is not null)
+            if (code.param_list is ParamList param)
             {
-                name_cnt = code.param_list.name_list.Count;
+                name_cnt = param.name_list.Count;
                 for (int i = 0; i < name_cnt; i++)
                 {
-                    var name = code.param_list.name_list[i].token.m_string;
-                    object obj = null;
-                    if (args.TryGetValue(i, name, out obj))
+                    var name = param.name_list[i].token.m_string;
+                    object? obj;
+                    _ = args.TryGetValue(i, name, out obj) || default_args.TryGetValue(name, out obj);
+                    frame.AddLocalVal(name, obj);
+                }
+                if(param.ls_name != null)
+                {
+                    string ls_name = param.ls_name.m_string!;
+                    MyArray arr = new MyArray();
+                    for(int i = name_cnt; i < args.args.Count; i++)
                     {
+                        arr.Add(args.args[i]);// 截断下
                     }
-                    else if(default_args != null && default_args.TryGetValue(name, out obj))
-                    {
-                    }
+                }
+                foreach(var it in param.kw_list)
+                {
+                    var name = it.token.m_string!;
+                    object? obj;
+                    _ = args.name_args.TryGetValue(name, out obj) || default_args.TryGetValue(name, out obj);
                     frame.AddLocalVal(name, obj);
                 }
 
-                if (code.param_list.kw_name)
+                if (param.kw_name != null)
                 {
-                    frame.AddLocalVal(code.param_list.kw_name.m_string, args);// 直接获取所有参数好了
+                    // @om 取所有命名参数好了
+                    Table t = new Table();
+                    foreach(var it in args.name_args)
+                    {
+                        t.Set(it.Key, it.Value);
+                    }
+                    frame.AddLocalVal(param.kw_name.m_string!, t);// 直接获取所有参数好了
                 }
             }
             try
@@ -145,31 +162,24 @@ namespace MyScript
     public class Args:IGetSet
     {
         public object? that = null;// this
-        public Dictionary<string, object> name_args;
-        public List<object> args;
+        public Dictionary<string,object?> name_args = new();
+        public MyArray args = new MyArray();
         public Frame? frame = null;// VM 调用外部接口时，通过这个可以传递运行是环境，增加功能
 
-        public Args()
-        {
-            name_args = new Dictionary<string, object>();
-            args = new List<object>();
-        }
-
-        public Args(Frame frame): this()
+        public Args(Frame frame)
         {
             this.frame = frame;
         }
 
         public Args(params object[] args)
         {
-            name_args = new Dictionary<string, object>();
-            this.args = new List<object>(args);
+            this.args.m_items.AddRange(args);
         }
 
-        public Args(Dictionary<string, object> name_args, params object[] args)
+        public Args(Dictionary<string, object?> name_args, params object[] args)
         {
             this.name_args = name_args;
-            this.args = new List<object>(args);
+            this.args.m_items.AddRange(args);
         }
 
         public bool TryGetValue(int idx, string name, out object ret)
@@ -223,7 +233,7 @@ namespace MyScript
             return null;
         }
 
-        public bool Set(object key, object val)
+        public void Set(object key, object val)
         {
             throw new Exception("can not modify Args");
         }

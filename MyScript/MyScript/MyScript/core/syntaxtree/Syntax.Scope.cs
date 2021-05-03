@@ -7,25 +7,20 @@ namespace MyScript
     // 实现类似c# using 的功能
     public class ScopeStatement:SyntaxTree
     {
+#nullable disable
         public ScopeStatement(int line_)
         {
             _line = line_;
         }
-
-        public NameList name_list;
+#nullable restore
+        public NameList? name_list;
         public ExpressionList exp_list;
-        public BlockTree block;
 
         protected override void _Exec(Frame frame)
         {
-            if(block) frame.EnterBlock();
-            {
-                var results = exp_list.GetResult(frame);
-                name_list?.DefineLocalValues(frame, results);
-                frame.AddScopeObj(results);
-                block?.Exec(frame);
-            }
-            if (block) frame.LeaveBlock();
+            var results = exp_list.GetResult(frame);
+            name_list?.DefineLocalValues(frame, results);
+            frame.AddScopeObj(results);
         }
     }
 }

@@ -39,7 +39,7 @@ namespace MyScript
             _GetResults(frame);
         }
 
-        public object GetResult(Frame frame)
+        public object? GetResult(Frame frame)
         {
             // @om 要不要做异常行号计算？
             return _GetResults(frame);
@@ -63,7 +63,7 @@ namespace MyScript
             return MyNumber.ForceConvertFrom(x);
         }
 
-        protected abstract object _GetResults(Frame frame);
+        protected abstract object? _GetResults(Frame frame);
     }
 
     public class BlockTree : SyntaxTree

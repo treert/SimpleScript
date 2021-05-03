@@ -117,11 +117,11 @@ namespace MyScript
                     }
                 }
             }
-            else if (obj is Function)
+            else if (obj is Function func)
             {
                 for (; ; )
                 {
-                    var results = (obj as Function).Call();
+                    var results = func.Call();
                     if (results != null)
                     {
                         frame.CurrentBlock = cur_block;

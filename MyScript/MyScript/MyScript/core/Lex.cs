@@ -28,11 +28,11 @@ namespace MyScript
         // 之所以不想用function，一是长，二是function是名词。
         FN,
         GLOBAL,
-        SCOPE,// like c# using(var st = FileStream(path)){ ... }
+        USING,// like c# using(var st = FileStream(path)){ ... }
         IF,
         IN,
         LOCAL,
-        NIL,// use null
+        NIL,
         NOT,
         OR,
         RETURN,

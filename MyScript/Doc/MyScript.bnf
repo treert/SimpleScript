@@ -26,8 +26,7 @@ stat ::= block
       |  'continue' 
       |  'try' block ['catch' [Name] block] ['finally' block] 
       |  'throw' [explist] 
-      |  scope_block
-      |  scope_line
+      |  scope_statement
       |  'fn' funcname funcbody
       |  'return' [explist] 
       |  ('global'|'local') namelist ['=' explist] 
@@ -37,9 +36,7 @@ stat ::= block
       |  funccall
 
 # 这样设计可以简化解析代码
-scope_block ::= 'using' [namelist] '=' explist block
-
-scope_line ::= 'using' namelist '=' explist ';'
+scope_statement ::= 'using' [namelist] '=' explist
 
 # 语法糖，支持一部分吧，先预留着
 self_assign ::= '+=' | '-=' | '*=' | '/=' | '%=' | '//=' | '&=' | '|=' | '~=' | '^=' | '.='
@@ -89,7 +86,7 @@ function ::= 'fn' funcbody
 
 index ::= '[' exp ']' | '.' Name | '.' String
 
-args ::=  '(' [$concat($join(exp) , $join('*' exp) , $join('**' exp), $join(Name '=' exp)) [','] ] ')' | String
+args ::=  '(' [$concat($join(['*'] exp) , $join( ('**' exp| Name '=' exp) )) [','] ] ')' | String
 
 # 这儿是按优先级排序的，除了 ^ 其他都是左结合
 binop ::= 'or'

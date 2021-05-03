@@ -28,7 +28,7 @@ namespace MyScript
                 {
                     obj = frame.Write(names[0].m_string, new Table());
                 }
-                if (obj is Table == false)
+                if (obj is not Table)
                 {
                     throw frame.NewRunException(line, $"{names[0].m_string} is not Table which expect to be");
                 }
@@ -38,7 +38,8 @@ namespace MyScript
                     var tt = t.Get(names[i].m_string);
                     if (tt == null)
                     {
-                        tt = t.Set(names[i].m_string, new Table());
+                        tt = new Table();
+                        t.Set(names[i].m_string, tt);
                     }
                     if (tt is Table == false)
                     {
