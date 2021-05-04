@@ -16,15 +16,14 @@ namespace MyScript
         public ExpSyntaxTree idx;// caller() or caller.idx(args)
         public ArgsList args;
 
-        protected override object _GetResults(Frame frame)
+        protected override object? _GetResults(Frame frame)
         {
             if (idx == null)
             {
-                ICall func = caller.GetResult(frame) as ICall;
-                Func<Args,object> xx = func.Call;
+                ICall? func = caller.GetResult(frame) as ICall;
                 if (func == null)
                 {
-                    throw frame.NewRunException(caller.line, "expect something can call");
+                    throw frame.NewRunException(caller.line, "expect ICall to call");
                 }
                 var args = this.args.GetArgs(frame);
                 return func.Call(args);
@@ -33,10 +32,10 @@ namespace MyScript
             {
                 var t = caller.GetResult(frame);
                 var idx = this.idx.GetResult(frame);
-                ICall func = ExtUtils.Get(t, idx) as ICall;
+                ICall? func = ExtUtils.Get(t, idx) as ICall;
                 if (func == null)
                 {
-                    throw frame.NewRunException(caller.line, "expect something can call");
+                    throw frame.NewRunException(caller.line, "expect ICall to call");
                 }
                 var args = this.args.GetArgs(frame);
                 args.that = t;

@@ -46,9 +46,9 @@ namespace MyScript
     }
     public enum TokenType
     {
-        EOS = 256,
+        EOS = 0,
 
-        DIVIDE, // // 整除
+        DIVIDE = 256, // // 整除
         CONCAT,// .. string concat
         EQ,// ==
         GE,// >=
@@ -89,7 +89,8 @@ namespace MyScript
     public enum StringBlockType
     {
         Begin,
-
+        CircleBracket,
+        SquareBracket,
         BigBracket,
 
         StringBegin,
@@ -615,6 +616,30 @@ namespace MyScript
                         _NextChar();// 空行过滤
                         line = _line; column = _column;
                         break;
+                    case '[':
+                        _NextChar();
+                        _block_stack.Push(StringBlockType.SquareBracket);
+                        return new Token('[');
+                    case ']':
+                        if (_block_stack.Peek() != StringBlockType.SquareBracket)
+                        {
+                            throw NewLexException("unexpect ']', miss corresponding '['");
+                        }
+                        _NextChar();
+                        _block_stack.Pop();
+                        return new Token(']');
+                    case '(':
+                        _NextChar();
+                        _block_stack.Push(StringBlockType.CircleBracket);
+                        return new Token('(');
+                    case ')':
+                        if (_block_stack.Peek() != StringBlockType.CircleBracket)
+                        {
+                            throw NewLexException("unexpect ')', miss corresponding '('");
+                        }
+                        _NextChar();
+                        _block_stack.Pop();
+                        return new Token(')');
                     case '{':
                         _NextChar();
                         _block_stack.Push(StringBlockType.BigBracket);
@@ -931,8 +956,8 @@ namespace MyScript
             return _source_name;
         }
 
-        private string _source_name;
-        private string _source;
+        private string _source_name = String.Empty;
+        private string _source = String.Empty;
         private char _current;
         private int _pos;
         private int _line;
@@ -952,6 +977,7 @@ namespace MyScript
                 ++_line;
                 _column = 0;
             }
+            // todo@om 源文件里出现'\0'的情况就不判断，爱咋地咋地
             return _current;
         }
 
@@ -981,5 +1007,7 @@ namespace MyScript
             _block_stack.Push(StringBlockType.Begin);
             _NextChar();
         }
+
+        public bool IsEnded => _pos >= _source.Length;
     }
 }

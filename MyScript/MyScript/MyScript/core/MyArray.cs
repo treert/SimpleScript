@@ -67,6 +67,14 @@ namespace MyScript
 
         public object? Get(object key)
         {
+            MyNumber? num = MyNumber.TryConvertFrom(key);
+            if (num is not null)
+            {
+                if (num.IsInt32)
+                {
+                    return this[(int)num];
+                }
+            }
             throw new NotImplementedException();
         }
 

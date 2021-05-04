@@ -21,7 +21,7 @@ namespace MyScript
 
         public object? DoString(string str, Table module)
         {
-            var tree = Parse(str);
+            FunctionBody tree = Parse(str);
             var func = tree.CreateFunction(this, module);
             return func.Call();
         }

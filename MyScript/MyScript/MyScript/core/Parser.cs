@@ -523,9 +523,17 @@ namespace MyScript
             // 没什么限制，基本可以随意写些MainExp
             // 重点处理的是一些赋值类语句，赋值类语句的左值必须是var类型的
             // SS还增加几个语法支持，+=，-=，++，--
-            if (IsMainExpNext() == false) return null;
-
-            ExpSyntaxTree exp = ParseMainExp();
+            // todo@om 随便啦，放得这么宽，不要自己作死的好。这样有利于交互命令行的实现。
+            //if (IsMainExpNext() == false)
+            //{
+            //    return ParseExp();
+            //}
+            //ExpSyntaxTree exp = ParseMainExp();
+            if (LookAhead().Match(TokenType.EOS))
+            {
+                return null;
+            }
+            ExpSyntaxTree exp = ParseExp();
             if (LookAhead().Match('=') || LookAhead().Match(','))
             {
                 // assign statement
@@ -564,7 +572,7 @@ namespace MyScript
                 return special_statement;
             }
 
-            return exp;// 不限制了
+            return exp;// todo@om 要不要限制一下，只允许函数调用。
         }
         TableField ParseTableIndexField()
         {

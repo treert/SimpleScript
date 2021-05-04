@@ -2,59 +2,78 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
+using System.Text;
 using MyScript;
 
 namespace MyScriptConsole
 {
-    struct A
-    {
-        public int aa;
-        public A(int x)
-        {
-            aa = x;
-        }
-        public A(bool xx)
-        {
-            this = new A(123);
-        }
-    }
-
     class Program
     {
+        static bool IsComplete(string source)
+        {
+            Lex lex = new Lex();
+            lex.Init(source);
+            try
+            {
+                Token tk = lex.GetNextToken();
+                while (lex.IsEnded == false)
+                {
+                    tk = lex.GetNextToken();
+                }
+                return lex.CurStringType == StringBlockType.Begin && tk.Match(',') == false;
+            }
+            catch (LexUnexpectEndException)
+            {
+                return false;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error: {e.GetType().Name} {e.Message}");
+            }
+            return true;
+        }
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
-            var ls1 = Enum.GetValues(typeof(Keyword));
-            var ls2 = Enum.GetNames(typeof(Keyword));
-            Keyword key = 0;
-            var xx = Enum.TryParse<Keyword>("in",true, out key);
-
+            Console.CursorVisible = true;
+            Console.WriteLine("MyScript 0.9");
+            VM vm = new VM();
+            vm.global_table["echo"] = new MyConsole();
+            Table module = new Table();
+            StringBuilder sb = new StringBuilder();
+            for(; ; )
             {
-                Dictionary<object, string> map = new Dictionary<object, string>() {
-                    {12,"12" },
-                    {12.0,"12.0" },
-                    {(BigInteger)12,"big 12" },
-                    {(short)12, "short 12" },
-                    {13.3, "double 13.3" },
-                    {13.3f, "13.3f" },
-                };
-                foreach(var it in map)
+                if (sb.Length > 0) Console.Write('>');
+                Console.Write("> ");
+                string line = Console.ReadLine();
+                if (line == null) return;
+                sb.AppendLine(line);
+                var source = sb.ToString();
+                if (IsComplete(source) == false)
                 {
-                    Console.WriteLine($"{it.Key} {it.Key.GetType().Name} {it.Value}");
+                    continue;
                 }
+                try
                 {
-                    object num = (Int16)12;
-                    var it = map[num];
-                    Console.WriteLine($"{it}");
+                    FunctionBody tree = vm.Parse(source);
+                    if(tree.block.statements.Count == 1 && tree.block.statements[0] is ExpSyntaxTree)
+                    {
+                        source = "return " + source;
+                        tree = vm.Parse(source);
+                        var func = tree.CreateFunction(vm, module);
+                        var obj = func.Call();
+                        if (obj is not null) Console.WriteLine($"{obj}");
+                    }
+                    else
+                    {
+                        vm.DoString(source, module);
+                    }
                 }
-                
+                catch(Exception e)
+                {
+                    Console.WriteLine($"Error: {e.Message}");
+                }
+                sb.Clear();
             }
-
-
-            BigInteger a = BigInteger.Parse("5566656765756463542436657565765");
-            BigInteger b = -1;
-            BigInteger c = a ^ b;
-            Console.WriteLine(c);
         }
     }
 }
