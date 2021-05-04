@@ -134,7 +134,7 @@ nil not or return true while");
         {
             var lex = new Lex();
             lex.Init(@"""${name..\[ haha ha ]
-..''''
+..""'""
 ..\[ls -l]
 ..\[bash `lalala`
 ]
@@ -148,7 +148,7 @@ nil not or return true while");
                 ExpectTrue(lex.GetNextToken().Match(TokenType.STRING));
                 ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
                 ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
-                ExpectTrue(lex.CurStringType == StringBlockType.SingleQuotation);
+                ExpectTrue(lex.CurStringType == StringBlockType.DoubleQuotation);
                 ExpectTrue(lex.GetNextToken().m_string == "'");
                 ExpectTrue(lex.GetNextToken().Match(TokenType.CONCAT));
                 ExpectTrue(lex.GetNextToken().m_string == "ls -l");

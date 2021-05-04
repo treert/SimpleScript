@@ -94,8 +94,10 @@ namespace MyScript
 
         StringBegin,
 
-        SingleQuotation,// ' $x '' x '
+        SingleQuotation,// ' $x x ' 就不支持 '' 语法了
         DoubleQuotation,// " $x \n \" \t "
+        ThreeSingleQuotation,// '''  'abc'   '''
+        ThreeDoubleQuotation,// """  "\xx" """
     }
 
     public class Token
@@ -366,7 +368,7 @@ namespace MyScript
                 {
                     _NextChar();// $$ => $
                 }
-                _buf.Append('$');
+                _buf.Append('$'); // 稍微支持下吧
             }
 
             switch (_block_stack.Peek())
@@ -374,19 +376,22 @@ namespace MyScript
                 case StringBlockType.SingleQuotation:
                     _ReadStringInSingleQuotation();
                     break;
+                case StringBlockType.ThreeSingleQuotation:
+                    _ReadStringInThreeSingleQuotation();
+                    break;
                 case StringBlockType.DoubleQuotation:
                     _ReadStringInDoubleQuotation();
                     break;
+                case StringBlockType.ThreeDoubleQuotation:
+                    _ReadStringInThreeDoubleQuotation();
+                    break;
             }
-            if (_current == '\0' && IsStringEnded == false)
-            {
-                _block_stack.Pop();// 文件尾也可以用于表示字符串结束
-            }
-
+            if (_current == '\0' && IsStringEnded == false) 
+                throw NewUnexpectEndException("unexpect <eof> when define string");
             return new Token(_buf.ToString());
         }
 
-        void _ReadStringInSingleQuotation()
+        void _ReadStringInThreeSingleQuotation()
         {
             while (_current != '\0' && _current != '$')
             {
@@ -396,14 +401,15 @@ namespace MyScript
                     if (_current == '\'')
                     {
                         _NextChar();
-                        _buf.Append('\'');// '' => '
+                        if(_current == '\'')
+                        {
+                            _NextChar();
+                            _block_stack.Pop();// complete
+                            return;
+                        }
+                        _buf.Append('\'');
                     }
-                    else
-                    {
-                        // complete
-                        _block_stack.Pop();
-                        return;
-                    }
+                    _buf.Append('\'');
                 }
                 else
                 {
@@ -413,6 +419,54 @@ namespace MyScript
             }
         }
 
+        void _ReadStringInSingleQuotation()
+        {
+            while (_current != '\0' && _current != '$')
+            {
+                if (_current == '\'')
+                {
+                    _NextChar();
+                    _block_stack.Pop();// complete
+                    return;
+                }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
+            }
+        }
+        void _ReadStringInThreeDoubleQuotation()
+        {
+            while (_current != '\0' && _current != '$')
+            {
+                if (_current == '\\')
+                {
+                    _PutSpecialCharInBuf();
+                }
+                else if (_current == '\"')
+                {
+                    _NextChar();
+                    if (_current == '\"')
+                    {
+                        _NextChar();
+                        if (_current == '\"')
+                        {
+                            _NextChar();
+                            _block_stack.Pop();// complete
+                            return;
+                        }
+                        _buf.Append('\"');
+                    }
+                    _buf.Append('\"');
+                }
+                else
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
+            }
+        }
         void _ReadStringInDoubleQuotation()
         {
             while (_current != '\0' && _current != '$')
@@ -465,7 +519,7 @@ namespace MyScript
                 for(; ; )
                 {
                     _NextChar();
-                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
                     if (_current == ']')
                     {
                         _NextChar();
@@ -485,7 +539,7 @@ namespace MyScript
                 for(; ; )
                 {
                     _NextChar();
-                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
                     if(_current == '[')
                     {
                         xxx = _buf.ToString();
@@ -501,7 +555,7 @@ namespace MyScript
                 for(; ; )
                 {
                     _NextChar();
-                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
                     if(_current == ']')
                     {
                         _NextChar();
@@ -513,7 +567,7 @@ namespace MyScript
                                 _NextChar();
                                 if (xxx[i] != _current) break;
                             }
-                            if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                            if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
                             if (i == xxx.Length && _current == ']')
                             {
                                 _NextChar();
@@ -534,7 +588,7 @@ namespace MyScript
             {
                 for (; ; )
                 {
-                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
                     if (_current == ']')
                     {
                         _NextChar();
@@ -786,11 +840,35 @@ namespace MyScript
                         return new Token('>');
                     case '\'':
                         _NextChar();
-                        _block_stack.Push(StringBlockType.SingleQuotation);
+                        if(_current == '\'')
+                        {
+                            _NextChar();
+                            if(_current == '\'')
+                            {
+                                _block_stack.Push(StringBlockType.ThreeSingleQuotation);
+                            }
+                            return new Token("");
+                        }
+                        else
+                        {
+                            _block_stack.Push(StringBlockType.SingleQuotation);
+                        }
                         return new Token(TokenType.STRING_BEGIN);
                     case '"':
                         _NextChar();
-                        _block_stack.Push(StringBlockType.DoubleQuotation);
+                        if (_current == '\"')
+                        {
+                            _NextChar();
+                            if (_current == '\"')
+                            {
+                                _block_stack.Push(StringBlockType.ThreeDoubleQuotation);
+                            }
+                            return new Token("");
+                        }
+                        else
+                        {
+                            _block_stack.Push(StringBlockType.DoubleQuotation);
+                        }
                         return new Token(TokenType.STRING_BEGIN);
                     default:
                         if (char.IsWhiteSpace(_current))
@@ -843,7 +921,7 @@ namespace MyScript
             return new LexException(_source_name, _line, _column, msg);
         }
 
-        LexUnexpectEndException NewUnexpectException(string msg)
+        LexUnexpectEndException NewUnexpectEndException(string msg)
         {
             return new LexUnexpectEndException(_source_name, _line, _column, msg);
         }
