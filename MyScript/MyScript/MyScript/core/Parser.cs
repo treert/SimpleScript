@@ -970,7 +970,11 @@ namespace MyScript
                     throw NewParserException("expect ')' to end param-list", _current);
                 }
             }
-
+            var msg = statement.Check();
+            if(msg is not null)
+            {
+                throw NewParserException(msg, _current);
+            }
             return statement;
         }
         SyntaxTree ParseForStatement()

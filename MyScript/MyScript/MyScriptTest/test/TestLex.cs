@@ -133,11 +133,11 @@ nil not or return true while");
         public override void Run()
         {
             var lex = new Lex();
-            lex.Init(@"""${name..` haha ha `
+            lex.Init(@"""${name..\[ haha ha ]
 ..''''
-..`ls -l`
-..```bash `lalala`
-```
+..\[ls -l]
+..\[bash `lalala`
+]
 } \n \t end""");
             ExpectTrue(lex.GetNextToken().Match(TokenType.STRING_BEGIN));
             ExpectTrue(lex.CurStringType == StringBlockType.DoubleQuotation);

@@ -97,6 +97,14 @@ namespace MyScript
         }
     }
 
+    public class LexUnexpectEndException : LexException
+    {
+        public LexUnexpectEndException(string source_, int line_, int column_, string msg)
+            : base(source_, line_, column_, msg)
+        {
+        }
+    }
+
     public class ParserException : ScriptException
     {
         public ParserException(string source_, int line_, int column_, string msg)

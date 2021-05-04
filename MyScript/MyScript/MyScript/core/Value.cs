@@ -69,28 +69,28 @@ namespace MyScript
         public Table module_table;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
         public Dictionary<string, LocalValue?> upvalues;
-        // 默认参数。有副作用，这些obj是常驻内存的，有可能被修改。
-        public Dictionary<string, object> default_args = new Dictionary<string, object>();
+        // 默认参数。有副作用，这些obj是常驻内存的，有可能被修改。给所有的参数都加上好了，方便实现裁剪出**name
+        public Dictionary<string, object?> default_args = new Dictionary<string, object?>();
 
-        public object Call(params object[] objs)
+        public object? Call(params object[] objs)
         {
             Args args = new Args(objs);
             return Call(args);
         }
 
-        public object Call(Table name_args, params object[] objs)
+        public object? Call(Table name_args, params object[] objs)
         {
             Args args = new Args(name_args, objs);
             return Call(args);
         }
 
-        public object Call()
+        public object? Call()
         {
             Args args = new Args();
             return Call(args);
         }
 
-        public object Call(Args args)
+        public object? Call(Args args)
         {
             Frame frame = new Frame(this);
             // 先填充个this

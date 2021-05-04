@@ -235,7 +235,7 @@ namespace MyScript
                 _NextChar();
             }
 
-            MyNumber num = MyNumber.TryParse(_buf.ToString());
+            MyNumber? num = MyNumber.TryParse(_buf.ToString());
             if (num is null)
             {
                 throw NewLexException($"{_buf} is not valid double");
@@ -440,9 +440,9 @@ namespace MyScript
         void _ReadComment()
         {
             _NextChar();
-            if(_current == '`')
+            if(_current == '[')
             {
-                _ReadStringInBackQuotation();
+                _ReadStringInRaw();
             }
             else
             {
@@ -455,64 +455,93 @@ namespace MyScript
             }
         }
 
-        void _ReadStringInBackQuotation()
+        void _ReadStringInRaw()
         {
-            Debug.Assert(_current == '`');
+            Debug.Assert(_current == '[');
             _NextChar();
             _buf.Clear();
-            if(_current == '`')
+            if (_current == '[')// [[ ... ]]
             {
-                _NextChar();
-                if(_current == '`')
+                for(; ; )
                 {
                     _NextChar();
-                    // 多重反引号
-                    int cnt = 3;
-                    while(_current == '`')
+                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if (_current == ']')
                     {
                         _NextChar();
-                        cnt++;
-                    }
-                    if(_current == '\n')
-                    {
-                        _NextChar();// skip first line
-                    }
-                    while(_current != '\0')
-                    {
-                        if(_current == '`')
+                        if (_current == ']')
                         {
                             _NextChar();
-                            int num = 1;
-                            while(num < cnt && _current == '`')
-                            {
-                                num++;
-                                _NextChar();
-                            }
-                            if(num == cnt)
-                            {
-                                return;// complete string
-                            }
-                            _buf.Append('`', num);
-                            if (_current == '\0') return;
+                            return;
                         }
-                        _buf.Append(_current);
-                        _NextChar();
+                        _buf.Append(']');
                     }
-                }
-                return;// 空串
-            }
-            else
-            {
-                // 单反引号串
-                while(_current != '\0')
-                {
                     _buf.Append(_current);
+                }
+            }
+            else if (_current == '=')// [=xxx[ ... ]=xxx]
+            {
+                string xxx;
+                for(; ; )
+                {
                     _NextChar();
-                    if(_current == '`')
+                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if(_current == '[')
+                    {
+                        xxx = _buf.ToString();
+                        _buf.Clear();
+                        break;
+                    }
+                    else if (char.IsWhiteSpace(_current))
+                    {
+                        throw NewLexException("[=xxx[ do not support whitespace to be xxx");
+                    }
+                    _buf.Append(_current);
+                }
+                for(; ; )
+                {
+                    _NextChar();
+                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if(_current == ']')
                     {
                         _NextChar();
-                        return;// complete string
+                        if(_current == '=')
+                        {
+                            int i = 0;
+                            for(; i < xxx.Length; i++)
+                            {
+                                _NextChar();
+                                if (xxx[i] != _current) break;
+                            }
+                            if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                            if (i == xxx.Length && _current == ']')
+                            {
+                                _NextChar();
+                                return;
+                            }
+                            _buf.Append(']'); _buf.Append('=');
+                            _buf.Append(xxx, 0, i);
+                        }
+                        else
+                        {
+                            _buf.Append(']');
+                        }
                     }
+                    _buf.Append(_current);
+                }
+            }
+            else// [...] 顺带支持吧，也挺简单的
+            {
+                for (; ; )
+                {
+                    if (_current == '\0') throw NewUnexpectException("unexpect <end>");
+                    if (_current == ']')
+                    {
+                        _NextChar();
+                        return;
+                    }
+                    _buf.Append(_current);
+                    _NextChar();
                 }
             }
         }
@@ -552,8 +581,12 @@ namespace MyScript
                             line = _line; column = _column;
                             break;
                         }
-                        // todo@om
-                        throw new Exception();
+                        else if(_current == '[')
+                        {
+                            _ReadStringInRaw();
+                            return new Token(_buf.ToString());
+                        }
+                        throw NewLexException("single '\\' do not support");
                     case '+':
                         _NextChar();
                         if (_current == '+')
@@ -759,9 +792,6 @@ namespace MyScript
                         _NextChar();
                         _block_stack.Push(StringBlockType.DoubleQuotation);
                         return new Token(TokenType.STRING_BEGIN);
-                    case '`':
-                        _ReadStringInBackQuotation();
-                        return new Token(_buf.ToString());
                     default:
                         if (char.IsWhiteSpace(_current))
                         {
@@ -813,6 +843,11 @@ namespace MyScript
             return new LexException(_source_name, _line, _column, msg);
         }
 
+        LexUnexpectEndException NewUnexpectException(string msg)
+        {
+            return new LexUnexpectEndException(_source_name, _line, _column, msg);
+        }
+
         public string GetSourceName()
         {
             return _source_name;
@@ -824,7 +859,7 @@ namespace MyScript
         private int _pos;
         private int _line;
         private int _column;
-        private void _NextChar()
+        private char _NextChar()
         {
             var ch = __NextChar();
 
@@ -839,6 +874,7 @@ namespace MyScript
                 ++_line;
                 _column = 0;
             }
+            return _current;
         }
 
         char __NextChar()

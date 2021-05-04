@@ -71,6 +71,44 @@ namespace MyScript
         public Token? ls_name = null;
         public Token? kw_name = null;
         public List<(Token token, ExpSyntaxTree? exp)> kw_list = new List<(Token, ExpSyntaxTree?)>();
+
+        public string? Check()
+        {
+            HashSet<string> set = new HashSet<string>();
+            foreach(var it in name_list)
+            {
+                if (set.Contains(it.token.m_string))
+                {
+                    return $"arg '{it.token.m_string}' name duplicate";
+                }
+                set.Add(it.token.m_string);
+            }
+            if(ls_name != null)
+            {
+                if (set.Contains(ls_name.m_string))
+                {
+                    return $"arg '{ls_name.m_string}' name duplicate";
+                }
+                set.Add(ls_name.m_string);
+            }
+            if (kw_name != null)
+            {
+                if (set.Contains(kw_name.m_string))
+                {
+                    return $"arg '{kw_name.m_string}' name duplicate";
+                }
+                set.Add(kw_name.m_string);
+            }
+            foreach (var it in kw_list)
+            {
+                if (set.Contains(it.token.m_string))
+                {
+                    return $"arg '{it.token.m_string}' name duplicate";
+                }
+                set.Add(it.token.m_string);
+            }
+            return null;
+        }
     }
 
 
@@ -88,13 +126,40 @@ namespace MyScript
 
         protected override object _GetResults(Frame frame)
         {
+            return CreateFunction(frame.func.vm, frame.func.module_table, frame);
+        }
+
+        /// <summary>
+        /// 直接构建Function
+        /// 1. loadfile 加载源码文件。module == null and frame == null
+        /// 2. cmdline，一行行执行。frame == null
+        /// 3. loadstring 加载字符串。和2效果一样。frame == null
+        /// 4. 内置解析。
+        /// </summary>
+        /// <param name="vm"></param>
+        /// <returns></returns>
+        public Function CreateFunction(VM vm, Table? module = null, Frame? frame = null)
+        {
             Function fn = new Function();
             fn.code = this;
-            fn.vm = frame.func.vm;
-            fn.module_table = frame.func.module_table;
-            fn.upvalues = frame.GetAllUpvalues();
+            fn.vm = vm;
+            fn.module_table = module ?? new Table();
+            fn.upvalues = frame != null ? frame.GetAllUpvalues() : new Dictionary<string, LocalValue?>();
+
+            frame ??= new Frame(fn);
 
             // 默认参数
+            if (param_list is not null)
+            {
+                foreach (var it in param_list.name_list)
+                {
+                    fn.default_args[it.token.m_string!] = it.exp?.GetResult(frame);
+                }
+                foreach (var it in param_list.kw_list)
+                {
+                    fn.default_args[it.token.m_string!] = it.exp?.GetResult(frame);
+                }
+            }
 
             return fn;
         }
