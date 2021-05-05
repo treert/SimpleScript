@@ -10,16 +10,15 @@ namespace MyScript
         {
             _line = line_;
         }
-        public List<ExpSyntaxTree> fileds = new List<ExpSyntaxTree>();
+        public List<(ExpSyntaxTree exp, bool split)> fileds = new();
         protected override object _GetResults(Frame frame)
         {
             MyArray ret = new MyArray();
             foreach(var f in fileds)
             {
-                var val = f.GetResult(frame);
-                ret.Add(val);
+                var val = f.exp.GetResult(frame);
+                ret.AddItem(val, f.split);
             }
-
             return ret;
         }
     }

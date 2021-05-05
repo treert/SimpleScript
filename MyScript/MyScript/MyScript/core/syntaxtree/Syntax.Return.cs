@@ -10,12 +10,12 @@ namespace MyScript
         {
             _line = line_;
         }
-        public ExpressionList exp_list;
+        public ExpressionList? exp_list;
 
         protected override object _GetResults(Frame frame)
         {
             ReturnException ep = new ReturnException();
-            if (exp_list)
+            if (exp_list is not null)
             {
                 ep.result = exp_list.GetResult(frame);
             }

@@ -16,8 +16,7 @@ namespace MyScript
             /// Block 局部变量表，如果是null，表示是全局的
             /// </summary>
             public Dictionary<string, LocalValue?> values = new Dictionary<string, LocalValue?>();
-            public List<IDisposable>? scope_objs = null;
-            public List<IDisposable> ScopeObjs => scope_objs ?? (scope_objs = new List<IDisposable>());
+            public List<IDisposable> scope_objs = new List<IDisposable>();
             public GenBlock? parent = null;
         }
 
@@ -123,14 +122,12 @@ namespace MyScript
 
         public void LeaveBlock()
         {
-            if(cur_block.scope_objs != null)
+            // todo@om 这儿如果抛异常了，就难受了。
+            foreach(var obj in cur_block.scope_objs)
             {
-                foreach(var obj in cur_block.scope_objs)
-                {
-                    obj.Dispose();
-                }
+                obj.Dispose();
             }
-            this.cur_block = this.cur_block.parent;
+            this.cur_block = this.cur_block.parent!;
         }
 
         public GenBlock CurrentBlock
@@ -145,11 +142,11 @@ namespace MyScript
             }
         }
 
-        public void AddScopeObj(object obj)
+        public void AddScopeObj(object? obj)
         {
             if (obj is IDisposable a)
             {
-                cur_block.ScopeObjs.Add(a);
+                cur_block.scope_objs.Add(a);
             }
             else if (obj is MyArray b)
             {

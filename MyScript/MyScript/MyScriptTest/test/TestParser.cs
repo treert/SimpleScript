@@ -136,14 +136,14 @@ namespace MyScript.Test
     {
         public override void Run()
         {
-            TestUtils.Parse("a = -123 ^ 2 ^ -2 * 1 / 2 % 2 * 2 ^ 10 + 10 - 5 .. 'str' == 'str' and true or false or not not false");
+            CanParse("a = -123 ^ 2 ^ -2 * 1 / 2 % 2 * 2 ^ 10 + 10 - 5 .. 'str' == 'str' and true or false or not not false");
         }
     }
     class TestParser_parser2 : TestBase
     {
         public override void Run()
         {
-            TestUtils.Parse("fn f(a, b, c){ t.a, t.b, t.c = a, b, c return a, b, c; }");
+            CanParse("fn f(a, b, c){ t.a, t.b, t.c = a, b, c return a, b, c; }");
         }
     }
     class TestParser_parser3 : TestBase

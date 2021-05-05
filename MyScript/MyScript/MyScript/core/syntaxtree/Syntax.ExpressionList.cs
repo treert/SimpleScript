@@ -35,7 +35,7 @@ namespace MyScript
             }
         }
 
-        public object GetResult(Frame frame)
+        public object? GetResult(Frame frame)
         {
             if (exp_list.Count == 1)
             {

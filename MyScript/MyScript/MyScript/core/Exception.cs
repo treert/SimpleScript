@@ -39,7 +39,7 @@ namespace MyScript
     public class ReturnException : Exception
     {
 
-        public object result = null;
+        public object? result = null;
     }
 
     /// <summary>

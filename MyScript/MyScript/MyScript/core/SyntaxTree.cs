@@ -127,7 +127,7 @@ namespace MyScript
                 }
             }
         }
-        public void DefineLocalValues(Frame frame, object obj)
+        public void DefineLocalValues(Frame frame, object? obj)
         {
             if (names.Count == 1)
             {

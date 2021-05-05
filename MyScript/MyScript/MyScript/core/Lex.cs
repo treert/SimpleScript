@@ -46,9 +46,9 @@ namespace MyScript
     }
     public enum TokenType
     {
-        EOS = 0,
+        EOS = 256,// 不设置成0了，源码里不能有0
 
-        DIVIDE = 256, // // 整除
+        DIVIDE, // // 整除
         CONCAT,// .. string concat
         EQ,// ==
         GE,// >=
@@ -193,8 +193,20 @@ namespace MyScript
 
         public override string ToString()
         {
-            return string.Format("token_type:{0},\tstring:{1},\tnumber:{2}",
-                m_type, m_string, m_number);
+            string str = "";
+            if(m_type <= 255)
+            {
+                str = ((char)m_type).ToString();
+            }
+            else if(m_type <= (int)TokenType.NAME)
+            {
+                str = ((TokenType)m_type).ToString();
+            }
+            else
+            {
+                str = ((Keyword)m_type).ToString();
+            }
+            return $"token_type:{m_type}={str},\tstring:{m_string},\tnumber:{m_number}";
         }
 
         public static implicit operator bool(Token exsit)

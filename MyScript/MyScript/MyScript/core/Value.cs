@@ -135,6 +135,7 @@ namespace MyScript
                     frame.AddLocalVal(param.kw_name.m_string!, t);// 直接获取所有参数好了
                 }
             }
+            var cur_block = frame.CurrentBlock;
             try
             {
                 code.block.Exec(frame);
@@ -151,6 +152,11 @@ namespace MyScript
             {
                 throw new RunException(code.source_name, ep.line, "unexpect break");
             }
+            finally
+            {
+                frame.CurrentBlock = cur_block;// 保证释放下 using 里的东西。 
+            }
+
             // 其他的异常就透传出去好了。
             return null;
         }

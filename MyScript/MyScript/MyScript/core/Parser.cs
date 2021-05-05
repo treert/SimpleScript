@@ -533,7 +533,7 @@ namespace MyScript
             //    return ParseExp();
             //}
             //ExpSyntaxTree exp = ParseMainExp();
-            if (LookAhead().Match(TokenType.EOS))
+            if (LookAhead().Match(TokenType.EOS) || LookAhead().Match('}'))
             {
                 return null;
             }
@@ -652,8 +652,9 @@ namespace MyScript
             ArrayDefine arr = new ArrayDefine(_current.m_line);
             while(LookAhead().Match(']') == false)
             {
+                bool split = LookAheadAndTryEatOne('*');
                 var exp = ParseExp();
-                arr.fileds.Add(exp);
+                arr.fileds.Add((exp,split));
                 if (LookAhead().Match(','))
                 {
                     NextToken();// 不支持[,,]这种
@@ -761,6 +762,8 @@ namespace MyScript
             }
             return statement;
         }
+
+
 
         ReturnStatement ParseReturnStatement()
         {
