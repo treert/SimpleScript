@@ -34,6 +34,9 @@ namespace MyScriptConsole
         }
         static void Main(string[] args)
         {
+            // 失望
+            Console.InputEncoding = Encoding.Unicode;
+            Console.OutputEncoding = Encoding.Unicode;
             Console.CursorVisible = true;
             Console.WriteLine("MyScript 0.9");
             VM vm = new VM();

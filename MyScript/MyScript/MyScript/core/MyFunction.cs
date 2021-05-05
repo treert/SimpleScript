@@ -11,13 +11,16 @@ namespace MyScript
     /// </summary>
     public class MyFunction : ICall
     {
+#nullable disable
         public VM vm;// 保存住来自哪个vm，外部调用就方便好多了。
         public FunctionBody code;
         public MyTable module_table;
         // 环境闭包值，比较特殊的是：当Value == null，指这个变量是全局变量。
-        public Dictionary<string, LocalValue?> upvalues;
+        public Dictionary<string, LocalValue> upvalues;
+#nullable restore
         // 默认参数。有副作用，这些obj是常驻内存的，有可能被修改。给所有的参数都加上好了，方便实现裁剪出**name
         public Dictionary<string, object?> default_args = new Dictionary<string, object?>();
+
 
         public object? Call(params object[] objs)
         {

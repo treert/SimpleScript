@@ -6,16 +6,18 @@ namespace MyScript
 {
     public class FunctionStatement : SyntaxTree
     {
+#nullable disable
         public FunctionStatement(int line_)
         {
             _line = line_;
         }
+#nullable restore
         public FunctionName func_name;
         public FunctionBody func_body;
 
         protected override void _Exec(Frame frame)
         {
-            var fn = func_body.GetResult(frame);
+            var fn = func_body.GetResult(frame)!;
             if (func_name.names.Count == 1)
             {
                 frame.Write(func_name.names[0].m_string, fn);
@@ -28,11 +30,12 @@ namespace MyScript
                 {
                     obj = frame.Write(names[0].m_string, new MyTable());
                 }
-                if (obj is not MyTable)
+                if (obj is not IGetSet)
                 {
-                    throw frame.NewRunException(line, $"{names[0].m_string} is not Table which expect to be");
+                    throw frame.NewRunException(line, $"{names[0].m_string} is not IGetSet which expect to be");
                 }
-                MyTable t = obj as MyTable;
+#nullable disable
+                IGetSet t = obj as IGetSet;
                 for (int i = 1; i < names.Count - 1; i++)
                 {
                     var tt = t.Get(names[i].m_string);
@@ -41,13 +44,14 @@ namespace MyScript
                         tt = new MyTable();
                         t.Set(names[i].m_string, tt);
                     }
-                    if (tt is MyTable == false)
+                    if (tt is IGetSet == false)
                     {
                         throw frame.NewRunException(names[i].m_line, $"expect {names[i].m_string} to be a IGetSet");
                     }
-                    t = tt as MyTable;
+                    t = tt as IGetSet;
                 }
                 t.Set(names[names.Count - 1].m_string, fn);
+#nullable restore
             }
         }
     }

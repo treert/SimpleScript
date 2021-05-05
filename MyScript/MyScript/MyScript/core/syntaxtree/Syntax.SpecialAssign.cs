@@ -7,10 +7,12 @@ namespace MyScript
 {
     public class SpecialAssginStatement : SyntaxTree
     {
+#nullable disable
         public SpecialAssginStatement(int line_)
         {
             _line = line_;
         }
+#nullable restore
         public ExpSyntaxTree var;
         public ExpSyntaxTree exp;// ++ or -- when exp is null
         public TokenType op;

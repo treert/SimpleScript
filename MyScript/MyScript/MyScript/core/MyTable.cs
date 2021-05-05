@@ -49,7 +49,7 @@ namespace MyScript
             }
         }
 
-        public object this[string idx]
+        public object? this[string idx]
         {
             get {
                 return Get(idx);

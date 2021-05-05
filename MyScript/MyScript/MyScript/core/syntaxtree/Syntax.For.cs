@@ -7,10 +7,12 @@ namespace MyScript
 {
     public class ForStatement : SyntaxTree
     {
+#nullable disable
         public ForStatement(int line_)
         {
             _line = line_;
         }
+#nullable restore
         public Token name;
         public ExpSyntaxTree exp1;
         public ExpSyntaxTree exp2;
@@ -81,10 +83,12 @@ namespace MyScript
 
     public class ForInStatement : SyntaxTree
     {
+#nullable disable
         public ForInStatement(int line_)
         {
             _line = line_;
         }
+#nullable restore
         public NameList name_list;
         public ExpSyntaxTree exp;
         public BlockTree block;
@@ -95,9 +99,8 @@ namespace MyScript
             if (obj == null) return;// 无事发生，虽然按理应该报个错啥的。
 
             var cur_block = frame.CurrentBlock;
-            if (obj is IForEach)
+            if (obj is IForEach iter)
             {
-                var iter = obj as IForEach;
                 foreach(var it in iter.GetForEachItor(name_list.names.Count))
                 {
                     frame.CurrentBlock = cur_block;
@@ -143,9 +146,9 @@ namespace MyScript
                 }
             }
             // 想了想，统一支持下 IEnumerate
-            else if (obj is IEnumerable)
+            else if (obj is IEnumerable ie)
             {
-                foreach (var it in (obj as IEnumerable))
+                foreach (var it in ie)
                 {
                     frame.CurrentBlock = cur_block;
                     try

@@ -41,7 +41,7 @@ namespace MyScript
             this.cur_block.values[name] = null;
         }
 
-        public void AddGlobalVal(string name, object obj)
+        public void AddGlobalVal(string name, object? obj)
         {
             AddGlobalName(name);
             func.vm.global_table[name] = obj;

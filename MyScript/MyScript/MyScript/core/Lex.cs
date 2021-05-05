@@ -113,6 +113,7 @@ namespace MyScript
         public int m_line;
         public int m_column;
 
+#nullable disable
         public Token()
         {
             m_type = (int)TokenType.EOS;
@@ -150,6 +151,7 @@ namespace MyScript
                 }
             }
         }
+#nullable restore
 
         public Token ConvertToStringToken()
         {
@@ -938,7 +940,7 @@ namespace MyScript
             return new Token();
         }
 
-        string _GetName()
+        string? _GetName()
         {
             if (_current == '_' || char.IsLetter(_current))
             {

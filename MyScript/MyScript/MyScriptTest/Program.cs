@@ -52,6 +52,8 @@ class Program
         //TestStringFormat();
 
         //TestThread.Test1();
+
+        TestTypeCast();
     }
     static void TestStringFormat()
     {
@@ -194,6 +196,24 @@ class Program
             Console.WriteLine($"Error Happen: {e.Message}");
         }
         Console.WriteLine("================ Test MS End ===============");
+    }
+
+    static void TestTypeCast()
+    {
+        Console.WriteLine("===== TestTypeCast Start =======");
+        Console.WriteLine(typeof(List<object>).IsAssignableFrom(typeof(List<MyFunction>)));
+        Console.WriteLine(typeof(List<object>).IsAssignableFrom(typeof(List<int>)));
+        Console.WriteLine(typeof(List<object>).IsAssignableFrom(typeof(List<DateTime>)));
+        Console.WriteLine(typeof(List<object>).IsAssignableFrom(typeof(List<BigInteger>)));
+        Console.WriteLine(typeof(object[]));
+        Console.WriteLine(typeof(object[]).IsAssignableFrom(typeof(int[])));
+        Console.WriteLine(typeof(int[]).IsAssignableFrom(typeof(uint[])));// True
+        Console.WriteLine(typeof(int[]).IsAssignableFrom(typeof(short[])));
+        Console.WriteLine(typeof(List<>).IsAssignableFrom(typeof(List<int>)));// False
+        Console.WriteLine(typeof(List<>).IsAssignableFrom(typeof(List<object>)));// False
+        Console.WriteLine(typeof(List<SyntaxTree>).IsAssignableFrom(typeof(List<ExpSyntaxTree>)));// False
+        Console.WriteLine(typeof(System.Collections.IList).IsAssignableFrom(typeof(List<object>)));
+        Console.WriteLine("===== End Start =======");
     }
 
     static void TestMyNumber()

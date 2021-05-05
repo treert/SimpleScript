@@ -37,7 +37,7 @@ namespace MyScript
             num = 0;
         }
 
-        public static bool TryParse(string s, out MyNumber n)
+        public static bool TryParse(string s, out MyNumber? n)
         {
             n = TryParse(s);
             return n is not null;
@@ -122,7 +122,7 @@ namespace MyScript
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static MyNumber ForceConvertFrom(object obj)
+        public static MyNumber ForceConvertFrom(object? obj)
         {
             MyNumber? n = null;
             if(obj is string str)
@@ -135,7 +135,7 @@ namespace MyScript
             }
             return n ?? NaN;
         }
-        public static MyNumber? TryConvertFrom(object obj)
+        public static MyNumber? TryConvertFrom(object? obj)
         {
             // @om 应该有性能更好的写法
             switch (obj)
@@ -453,10 +453,12 @@ namespace MyScript
             throw new ArgumentException("Argument Must Be MyNumber", nameof(obj));
         }
         #region 
-        public static bool IsNAN(MyNumber n)
+        public static bool IsNaN(MyNumber n)
         {
             return !n.is_big && double.IsNaN(n.num);
         }
+
+        public bool IsNaN() => !is_big && double.IsNaN(num);
 
         #endregion
         public bool Equals(MyNumber? other)

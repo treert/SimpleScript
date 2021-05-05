@@ -81,12 +81,24 @@ namespace MyScript
             }
         }
 
-        public static bool ToBool(object obj)
+        public static bool ToBool(object? obj)
         {
             if (obj == null) return false;
             if (obj is bool b)
             {
                 return b;
+            }
+            if (obj is MyNumber num)
+            {
+                return num.IsNaN();
+            }
+            if (obj is double d)
+            {
+                return double.IsNaN(d);
+            }
+            if (obj is float f)
+            {
+                return float.IsNaN(f);
             }
             return true;
         }
@@ -108,9 +120,9 @@ namespace MyScript
             return false;
         }
 
-        public static string ToString(object obj)
+        public static string ToString(object? obj)
         {
-            return obj == null ? "" : obj.ToString();
+            return obj == null ? "" : (obj.ToString()??string.Empty);
         }
 
         public static string ToString(object obj, string format, int len)

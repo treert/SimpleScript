@@ -35,14 +35,31 @@ namespace MyScript
             }
         }
     }
-    public static class ExtMyNumber
+
+#nullable disable
+    public static class DictionaryExtensions
     {
-        public static bool HasValue(this MyNumber num) => num is not null;
-        public static MyNumber Value(this MyNumber num) => num;
+        public static Dictionary<TKey, TValue> AddRange<TKey, TValue>(this Dictionary<TKey, TValue> source, IEnumerable<(TKey, TValue)> kvps)
+        {
+            foreach (var kvp in kvps)
+            {
+                source[kvp.Item1] = kvp.Item2;
+            }
+            return source;
+        }
+        public static Dictionary<TKey, TValue> AddRange<TKey, TValue>(this Dictionary<TKey, TValue> source, IEnumerable<KeyValuePair<TKey, TValue>> kvps)
+        {
+            foreach (var kvp in kvps)
+            {
+                source[kvp.Key] = kvp.Value;
+            }
+            return source;
+        }
     }
+#nullable restore
     public static class ExtSomeApi
     {
-        public static object GetByIdx(this IList ls, int idx)
+        public static object? GetByIdx(this IList ls, int idx)
         {
             if (ls.Count == 0) return null;// 没得办法
             // 对索引做循环处理

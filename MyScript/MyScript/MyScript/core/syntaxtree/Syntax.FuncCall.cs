@@ -8,10 +8,12 @@ namespace MyScript
 {
     public class FuncCall : ExpSyntaxTree
     {
+#nullable disable
         public FuncCall(int line_)
         {
             _line = line_;
         }
+#nullable restore
         public ExpSyntaxTree caller;
         public ExpSyntaxTree? idx;// caller() or caller.idx(args)
         public ArgsList args;

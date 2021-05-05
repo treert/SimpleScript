@@ -15,13 +15,15 @@ namespace MyScript
 
         static bool IsVar(SyntaxTree t)
         {
-            return t is TableAccess || (t is Terminator && (t as Terminator).token.Match(TokenType.NAME));
+            return t is TableAccess || (t is Terminator ter && ter.token.Match(TokenType.NAME));
         }
-
+#nullable disable
         Lex _lex;
         Token _current;
         Token _look_ahead;
         Token _look_ahead2;
+#nullable restore
+
         public Token CurrentToken
         {
             get
@@ -410,7 +412,7 @@ namespace MyScript
             {
                 // 这个语法糖想了想，在这儿支持吧，和lua一样，写出的代码可能会很诡异。
                 var str = TryGetStringExp();
-                if (str)
+                if (str is not null)
                 {
                     var func_call = new FuncCall(str.line);
                     func_call.caller = caller;
@@ -424,7 +426,7 @@ namespace MyScript
             return null;
         }
 
-        ExpSyntaxTree TryGetStringExp()
+        ExpSyntaxTree? TryGetStringExp()
         {
             if (LookAhead().Match(TokenType.STRING))
             {
@@ -595,7 +597,7 @@ namespace MyScript
         {
             NextToken();
             var table = new TableDefine(_current.m_line);
-            TableField last_field = null;
+            TableField last_field;
             while (LookAhead().m_type != '}')
             {
                 if (LookAhead().m_type == (int)'[')
@@ -606,7 +608,7 @@ namespace MyScript
                 {
                     last_field = new TableField(LookAhead().m_line);
                     var str = TryGetStringExp();
-                    if (str)
+                    if (str is not null)
                     {
                         last_field.index = str;
                     }
@@ -826,7 +828,7 @@ namespace MyScript
             statement.false_branch = false_branch;
             return statement;
         }
-        SyntaxTree ParseFalseBranchStatement()
+        SyntaxTree? ParseFalseBranchStatement()
         {
             if (LookAhead().Match(Keyword.ELSEIF))
             {

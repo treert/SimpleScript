@@ -47,7 +47,7 @@ namespace MyScript
             return false;
         }
 
-        public object this[int idx]
+        public object? this[int idx]
         {
             get {
                 if (idx >= 0 && idx < args.Count)

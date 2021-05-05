@@ -14,6 +14,7 @@ namespace MyScript
     public class VM
     {
         public readonly MyTable global_table = new();
+        public readonly ExtMgr ext_mgr = new();
         // todo@om
         public readonly Dictionary<string, MyTable> file_modules = new();
         public readonly Lex lex = new Lex();

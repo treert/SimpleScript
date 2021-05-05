@@ -22,19 +22,19 @@ namespace MyScript
         {
             m_items.Add("test", ICall.Create(Test));
         }
-        public object Get(object key)
+        public object? Get(object key)
         {
-            if(m_items.TryGetValue(key, out ICall ret))
+            if(m_items.TryGetValue(key, out ICall? ret))
             {
                 return ret;
             }
             throw new Exception($"unexport key {key}");
         }
 
-        public List<object> Test(MyArgs args)
+        public object? Test(MyArgs args)
         {
             Console.WriteLine($"test {args.args.Count}");
-            return Utils.EmptyResults;
+            return null;
         }
 
         public void Set(object key, object? val)

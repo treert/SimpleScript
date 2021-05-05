@@ -69,8 +69,8 @@ namespace MyScript
     public class ThrowException : Exception
     {
         public int line;
-        public string source_name;
-        public object obj;
+        public string source_name = string.Empty;
+        public object? obj;
         public override string Message
         {
             get

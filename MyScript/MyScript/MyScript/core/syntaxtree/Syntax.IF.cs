@@ -12,12 +12,12 @@ namespace MyScript
         }
         public ExpSyntaxTree exp;
         public BlockTree true_branch;
-        public SyntaxTree false_branch;
+        public SyntaxTree? false_branch;
 
         protected override void _Exec(Frame frame)
         {
-            var obj = exp.GetResult(frame);
-            if (Utils.ToBool(obj))
+            var ret = exp.GetBool(frame);
+            if (ret)
             {
                 true_branch.Exec(frame);
             }
