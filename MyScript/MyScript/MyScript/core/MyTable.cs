@@ -8,7 +8,7 @@ namespace MyScript
 {
     // 类似java的LinkedHashMap，内置Table。
     // 简单的实现，不支持lua元表或者js原型。如果需要支持这种，自定义结构，实现接口就好，比如实现一个class。
-    public class Table : IGetSet, IForEach
+    public class MyTable : IGetSet, IForEach
     {
 #nullable disable
         internal class ItemNode
@@ -24,13 +24,13 @@ namespace MyScript
 
         Dictionary<object, ItemNode> _key_map = new();
 
-        public Table()
+        public MyTable()
         {
             _itor_node.prev = _itor_node;
             _itor_node.next = _itor_node;
         }
 
-        public void Add(Table other)
+        public void Add(MyTable other)
         {
             var it = other._itor_node.next;
             while (it != other._itor_node)

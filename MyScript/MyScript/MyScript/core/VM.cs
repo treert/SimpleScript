@@ -13,13 +13,13 @@ namespace MyScript
     /// </summary>
     public class VM
     {
-        public readonly Table global_table = new();
+        public readonly MyTable global_table = new();
         // todo@om
-        public readonly Dictionary<string, Table> file_modules = new();
+        public readonly Dictionary<string, MyTable> file_modules = new();
         public readonly Lex lex = new Lex();
         public readonly Parser parser = new Parser();
 
-        public object? DoString(string str, Table module)
+        public object? DoString(string str, MyTable module)
         {
             FunctionBody tree = Parse(str);
             var func = tree.CreateFunction(this, module);
@@ -31,7 +31,7 @@ namespace MyScript
         /// </summary>
         /// <param name="file"></param>
         /// <returns></returns>
-        public Table DoFile(string file)
+        public MyTable DoFile(string file)
         {
             var path = Path.GetFullPath(file);
             var source = File.ReadAllText(path);
@@ -41,7 +41,7 @@ namespace MyScript
             return func.module_table;
         }
 
-        public Table Import(string module_name)
+        public MyTable Import(string module_name)
         {
             return null;
         }

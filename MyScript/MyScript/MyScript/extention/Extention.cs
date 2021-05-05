@@ -120,7 +120,7 @@ namespace MyScript
         }
 
         // 方法被调用
-        public virtual object Call(Args args)
+        public virtual object Call(MyArgs args)
         {
             throw new Exception("I am not a function, can not be call.");
         }
@@ -228,7 +228,7 @@ namespace MyScript
             }
         }
 
-        public override object Call(Args args)
+        public override object Call(MyArgs args)
         {
             object that = null;
             object[] target_args = new object[param_arr.Length];
@@ -324,7 +324,7 @@ namespace MyScript
             param_arr = ctor.GetParameters();
         }
 
-        public override object Call(Args args)
+        public override object Call(MyArgs args)
         {
             object[] target_args = new object[param_arr.Length];
             for (int idx = 0; idx < param_arr.Length; idx++)

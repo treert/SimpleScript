@@ -20,10 +20,10 @@ namespace MyScript
             public GenBlock? parent = null;
         }
 
-        public Function func;
+        public MyFunction func;
         GenBlock cur_block;
 
-        public Frame(Function func)
+        public Frame(MyFunction func)
         {
             this.func = func;
             this.cur_block = new GenBlock();

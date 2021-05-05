@@ -402,12 +402,6 @@ class Program
             Console.WriteLine($"null={null}.");
         }
         {
-            List<object> a = new List<object>() { 1, 2, 3 };
-            Console.WriteLine($"={a.GetValueOrDefault(1)}");
-            a = null;
-            Console.WriteLine($"={a.GetValueOrDefault(1)}");
-        }
-        {
             Console.WriteLine(Utils.CheckEquals(1, 1.0));
             Console.WriteLine(Utils.CheckEquals(1f, 1.0));
         }

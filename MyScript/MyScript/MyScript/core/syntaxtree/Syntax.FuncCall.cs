@@ -55,9 +55,9 @@ namespace MyScript
         // name == null when **exp
         public List<(Token? name, ExpSyntaxTree exp)> kw_list = new();
 
-        public Args GetArgs(Frame frame)
+        public MyArgs GetArgs(Frame frame)
         {
-            Args args = new Args(frame);
+            MyArgs args = new MyArgs(frame);
             foreach(var it in exp_list)
             {
                 args.args.AddItem(it.exp.GetResult(frame), it.split);
@@ -67,7 +67,7 @@ namespace MyScript
                 var ret = it.exp.GetResult(frame);
                 if(it.name is null)
                 {
-                    if(ret is Table t)
+                    if(ret is MyTable t)
                     {
                         foreach(var item in t.GetItemNodeItor())
                         {

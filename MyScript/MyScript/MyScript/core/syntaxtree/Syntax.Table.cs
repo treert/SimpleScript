@@ -14,7 +14,7 @@ namespace MyScript
 
         protected override object _GetResults(Frame frame)
         {
-            Table ret = new Table();
+            MyTable ret = new MyTable();
             for (var i = 0; i < fields.Count; i++)
             {
                 var f = fields[i];
@@ -78,12 +78,12 @@ namespace MyScript
                 throw frame.NewRunException(line, "table index can not be null");
             }
 
-            if (t is Table t2)
+            if (t is MyTable t2)
             {
                 var ret = t2.Get(idx);
                 if(ret == null)
                 {
-                    ret = new Table();
+                    ret = new MyTable();
                     t2.Set(idx, ret);
                 }
                 return ret;

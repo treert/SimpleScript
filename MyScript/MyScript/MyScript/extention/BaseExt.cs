@@ -8,7 +8,7 @@ namespace MyScript
 {
     public class MyConsole : ICall, IGetSet
     {
-        public object Call(Args args)
+        public object Call(MyArgs args)
         {
             for(var i = 0; i < args.args.Count; i++)
             {
@@ -31,7 +31,7 @@ namespace MyScript
             throw new Exception($"unexport key {key}");
         }
 
-        public List<object> Test(Args args)
+        public List<object> Test(MyArgs args)
         {
             Console.WriteLine($"test {args.args.Count}");
             return Utils.EmptyResults;

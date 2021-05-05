@@ -153,9 +153,9 @@ namespace MyScript
         {
             if (obj == null || key == null) return;
 
-            if (obj is Table)
+            if (obj is MyTable)
             {
-                (obj as Table).Set(key, val);
+                (obj as MyTable).Set(key, val);
             }
             else if (obj is IDictionary)
             {

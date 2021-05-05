@@ -117,7 +117,7 @@ namespace MyScript
                     }
                 }
             }
-            else if (obj is Function func)
+            else if (obj is MyFunction func)
             {
                 for (; ; )
                 {

@@ -26,26 +26,26 @@ namespace MyScript
                 var obj = frame.Read(names[0].m_string);
                 if (obj == null)
                 {
-                    obj = frame.Write(names[0].m_string, new Table());
+                    obj = frame.Write(names[0].m_string, new MyTable());
                 }
-                if (obj is not Table)
+                if (obj is not MyTable)
                 {
                     throw frame.NewRunException(line, $"{names[0].m_string} is not Table which expect to be");
                 }
-                Table t = obj as Table;
+                MyTable t = obj as MyTable;
                 for (int i = 1; i < names.Count - 1; i++)
                 {
                     var tt = t.Get(names[i].m_string);
                     if (tt == null)
                     {
-                        tt = new Table();
+                        tt = new MyTable();
                         t.Set(names[i].m_string, tt);
                     }
-                    if (tt is Table == false)
+                    if (tt is MyTable == false)
                     {
                         throw frame.NewRunException(names[i].m_line, $"expect {names[i].m_string} to be a IGetSet");
                     }
-                    t = tt as Table;
+                    t = tt as MyTable;
                 }
                 t.Set(names[names.Count - 1].m_string, fn);
             }
@@ -138,12 +138,12 @@ namespace MyScript
         /// </summary>
         /// <param name="vm"></param>
         /// <returns></returns>
-        public Function CreateFunction(VM vm, Table? module = null, Frame? frame = null)
+        public MyFunction CreateFunction(VM vm, MyTable? module = null, Frame? frame = null)
         {
-            Function fn = new Function();
+            MyFunction fn = new MyFunction();
             fn.code = this;
             fn.vm = vm;
-            fn.module_table = module ?? new Table();
+            fn.module_table = module ?? new MyTable();
             fn.upvalues = frame != null ? frame.GetAllUpvalues() : new Dictionary<string, LocalValue?>();
 
             frame ??= new Frame(fn);
