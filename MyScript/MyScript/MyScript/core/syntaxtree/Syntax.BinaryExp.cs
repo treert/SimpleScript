@@ -38,9 +38,9 @@ namespace MyScript
             }
         }
 
-        protected override object _GetResults(Frame frame)
+        protected override object? _GetResults(Frame frame)
         {
-            object ret = null;
+            object? ret = null;
             if (op.Match(Keyword.AND))
             {
                 ret = left.GetBool(frame) && right.GetBool(frame);

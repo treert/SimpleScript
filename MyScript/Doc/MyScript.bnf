@@ -20,7 +20,7 @@ stat ::= block
       |  'while' exp block 
       |  'do' block 'while' exp 
       |  'for' Name '=' exp ',' exp [',' exp] block 
-      |  'for' Name [',' Name]* [','] 'in' exp block 
+      |  'for' namelist 'in' exp block 
       |  'for' block 
       |  'break' 
       |  'continue' 
@@ -33,7 +33,8 @@ stat ::= block
       |  ('global'|'local') 'fn' Name funcbody 
       |  varlist '=' explist 
       |  var self_assign exp
-      |  funccall
+      | exp # 放松管控，随便啦
+      # |  funccall
 
 # 这样设计可以简化解析代码
 scope_statement ::= 'using' [namelist] '=' explist
@@ -42,13 +43,13 @@ scope_statement ::= 'using' [namelist] '=' explist
 self_assign ::= '+=' | '-=' | '*=' | '/=' | '%=' | '//=' | '&=' | '|=' | '~=' | '^=' | '.='
 
 # 单个name或者var时，可以在后面追加一个',' 用于说明需要解散 MyArray，其他情况，看赋值语句，前后数量多少
-namelist ::= Name {',' Name} [',']
+namelist ::= Name {',' Name}
 
 varlist ::= $join('*' var) [',']
 
 var ::= Name [{index | args } index]
 
-funccall ::= Name {index | args} args
+# funccall ::= Name {index | args} args
 
 funcname ::= Name {'.' Name}
 
@@ -76,7 +77,8 @@ primary_exp ::= 'nil' | 'false' | 'true' | Number | String
     | '(' exp ')'
     | Name
 
-main_exp ::= primary_exp {index | args}
+# 字符串常量作为函数参数的情况做些限制。支持 Name String 或者 xxx.Name String
+main_exp ::= primary_exp {index | args} [&Name String]
 
 # q_exp ::= exp '?' exp ':' exp_or_stat | exp '?:' exp_or_stat | exp '??' exp_or_stat
 # 方便编码，似乎没什么不妥
@@ -84,9 +86,10 @@ q_exp ::= exp '?' [exp] (':'|'?') exp_or_stat
 
 function ::= 'fn' funcbody
 
-index ::= '[' exp ']' | '.' Name | '.' String
+# 稍微支持下 ! 语法，用于判空，MyScript 默认实现是抛异常的，慎重。
+index ::= '!' ('[' exp ']' | '.' Name | '.' String)
 
-args ::=  '(' [$concat($join(['*'] exp) , $join( ('**' exp| Name '=' exp) )) [','] ] ')' | String
+args ::=  ['!'] '(' [$concat($join(['*'] exp) , $join( ('**' exp| Name '=' exp) )) [','] ] ')'
 
 # 这儿是按优先级排序的，除了 ^ 其他都是左结合
 binop ::= 'or'

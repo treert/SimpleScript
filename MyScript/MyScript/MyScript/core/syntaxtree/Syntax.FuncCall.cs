@@ -13,7 +13,7 @@ namespace MyScript
             _line = line_;
         }
         public ExpSyntaxTree caller;
-        public ExpSyntaxTree idx;// caller() or caller.idx(args)
+        public ExpSyntaxTree? idx;// caller() or caller.idx(args)
         public ArgsList args;
 
         protected override object? _GetResults(Frame frame)

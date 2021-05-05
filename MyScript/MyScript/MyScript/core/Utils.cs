@@ -23,7 +23,7 @@ namespace MyScript
         /// <param name="a"></param>
         /// <param name="b"></param>
         /// <returns></returns>
-        public static int Compare(object a, object b)
+        public static int Compare(object? a, object? b)
         {
             if (a == b) return 0;
             if (a == null) return -1;
@@ -63,7 +63,7 @@ namespace MyScript
         /// 等性比较，非常重要。和Compare不一样，Compare == 0, 不一定相等。
         /// 1. 数字类型特殊处理
         /// </summary>
-        public static bool CheckEquals(object a, object b)
+        public static bool CheckEquals(object? a, object? b)
         {
             if (a == b) return true;
             if (a == null || b == null) return false;

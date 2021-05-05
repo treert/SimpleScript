@@ -205,6 +205,7 @@ namespace MyScript
         ExpSyntaxTree ParseMainExp()
         {
             ExpSyntaxTree exp;
+            bool str_call_valid = false;
             switch (LookAhead().m_type)
             {
                 case (int)Keyword.NIL:
@@ -215,6 +216,7 @@ namespace MyScript
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.NAME:
+                    str_call_valid = true;
                     exp = new Terminator(NextToken());
                     break;
                 case (int)TokenType.STRING_BEGIN:
@@ -248,7 +250,7 @@ namespace MyScript
                 default:
                     throw NewParserException("unexpect token to start main exp", _look_ahead);
             }
-            return ParseTailExp(exp);
+            return ParseTailExp(exp, str_call_valid);
         }
 
         private ComplexString ParseComplexString()
@@ -364,9 +366,11 @@ namespace MyScript
             int line_dot = _current.m_line;
             var tok = LookAhead();
             ExpSyntaxTree idx;
+            bool str_arg_enable = false;
             if (tok.CanBeNameString())
             {
                 // 当成字符串来用
+                str_arg_enable = true;
                 idx = new Terminator(NextToken().ConvertToStringToken());
             }
             else if (tok.Match(TokenType.STRING))
@@ -381,8 +385,8 @@ namespace MyScript
             {
                 throw NewParserException("expect Name or String after '.'", tok);
             }
-            var call = TryGetFuncCallExp(exp, idx);
-            if (call)
+            var call = TryGetFuncCallExp(exp, idx, str_arg_enable);
+            if (call is not null)
             {
                 return call;
             }
@@ -392,7 +396,7 @@ namespace MyScript
             return index_access;
 
         }
-        FuncCall TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree? idx = null)
+        FuncCall? TryGetFuncCallExp(ExpSyntaxTree caller, ExpSyntaxTree? idx = null, bool str_call_valid = false)
         {
             if (LookAhead().Match('('))
             {
@@ -402,7 +406,7 @@ namespace MyScript
                 func_call.args = ParseArgs();
                 return func_call;
             }
-            else
+            else if(str_call_valid)
             {
                 // 这个语法糖想了想，在这儿支持吧，和lua一样，写出的代码可能会很诡异。
                 var str = TryGetStringExp();
@@ -504,8 +508,8 @@ namespace MyScript
                 }
                 else
                 {
-                    var call = TryGetFuncCallExp(exp, null);
-                    if (call)
+                    var call = TryGetFuncCallExp(exp, null, str_call_valid);
+                    if (call is not null)
                     {
                         exp = call;
                     }
@@ -518,7 +522,7 @@ namespace MyScript
             return exp;
         }
 
-        SyntaxTree ParseOtherStatement()
+        SyntaxTree? ParseOtherStatement()
         {
             // 没什么限制，基本可以随意写些MainExp
             // 重点处理的是一些赋值类语句，赋值类语句的左值必须是var类型的
@@ -683,7 +687,7 @@ namespace MyScript
         {
             for (; ; )
             {
-                SyntaxTree statement = null;
+                SyntaxTree? statement = null;
                 switch (LookAhead().m_type)
                 {
                     case (int)';':

@@ -308,12 +308,13 @@ namespace MyScript
                     if (left.big.IsZero) return double.NaN;
                     return left.big.Sign >= 0 ? double.PositiveInfinity : double.NegativeInfinity;
                 }
-                return left.big / right.big;
+                var n = BigInteger.DivRem(left.big, right.big, out var remainder);
+                if (remainder.IsZero)
+                {
+                    return n;
+                }
             }
-            else
-            {
-                return (double)left / (double)right;
-            }
+            return (double)left / (double)right;
         }
         public static MyNumber operator %(MyNumber left, MyNumber right)
         {
@@ -494,6 +495,7 @@ namespace MyScript
         public bool IsLimitInteger => is_big || (!double.IsInfinity(num) && num == Math.Floor(num));
         public bool IsInt32 => is_big ? (int.MinValue <= big && big <= int.MaxValue) : num == (int)num;
         public bool IsInt64 => is_big ? (long.MinValue <= big && big <= long.MaxValue) : num == (long)num;
+        public bool IsBig => is_big;
 
         /// <summary>
         /// 整除
@@ -508,14 +510,11 @@ namespace MyScript
                 if (divisor.big.IsZero)
                 {
                     // @om 本来应该抛异常的，想想算了，不抛了。
-                    // 0/0 is PositiveInfinity
+                    if (dividend.big.IsZero) return double.NaN;
                     return dividend.big.Sign >= 0 ? double.PositiveInfinity : double.NegativeInfinity;
                 }
                 var n = BigInteger.DivRem(dividend.big, divisor.big, out var remainder);
-                if(remainder.IsZero)
-                {
-                    return n;
-                }
+                return n;
             }
             var f = Math.Floor((double)dividend / (double)divisor);
             if (double.IsFinite(f))
