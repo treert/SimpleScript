@@ -9,7 +9,7 @@ namespace MyScript
     {
         public ComplexString(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
         public List<ExpSyntaxTree> list = new List<ExpSyntaxTree>();
 
@@ -27,9 +27,10 @@ namespace MyScript
     public class ComplexStringItem : ExpSyntaxTree
     {
 #nullable disable
-        public ComplexStringItem(int line_)
+        public ComplexStringItem(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public ExpSyntaxTree exp;

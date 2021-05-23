@@ -157,7 +157,7 @@ namespace MyScript
         QuestionExp TryParseQuestionExp(ExpSyntaxTree exp)
         {
             NextToken();// skip ?
-            var qa = new QuestionExp(exp.line);
+            var qa = new QuestionExp(exp.Line, _lex.SourceName);
             qa.a = exp;
             if (LookAhead().Match(':', '?') == false)
             {
@@ -215,11 +215,11 @@ namespace MyScript
                 case (int)Keyword.TRUE:
                 case (int)TokenType.NUMBER:
                 case (int)TokenType.STRING:
-                    exp = new Terminator(NextToken());
+                    exp = new Terminator(NextToken(), _lex.SourceName);
                     break;
                 case (int)TokenType.NAME:
                     str_call_valid = true;
-                    exp = new Terminator(NextToken());
+                    exp = new Terminator(NextToken(), _lex.SourceName);
                     break;
                 case (int)TokenType.STRING_BEGIN:
                     exp = ParseComplexString();
@@ -244,7 +244,7 @@ namespace MyScript
                 case (int)'-':
                 case '+':
                 case '~':
-                    var unexp = new UnaryExpression(LookAhead().m_line);
+                    var unexp = new UnaryExpression(LookAhead().m_line, _lex.SourceName);
                     unexp.op = NextToken();
                     unexp.exp = ParseExp(unexp.op.Match(Keyword.NOT) ? 0 : 95);
                     exp = unexp;
@@ -265,7 +265,7 @@ namespace MyScript
                 NextToken();
                 if (_current.Match(TokenType.STRING) || _current.Match(TokenType.NAME))
                 {
-                    var term = new Terminator(_current);
+                    var term = new Terminator(_current, _lex.SourceName);
                     exp.list.Add(term);
                 }
                 else if (_current.Match('{'))
@@ -283,7 +283,7 @@ namespace MyScript
 
         ComplexStringItem ParseComplexItem()
         {
-            var item = new ComplexStringItem(_current.m_line);
+            var item = new ComplexStringItem(_current.m_line, _lex.SourceName);
             item.exp = ParseExp();
             var next = NextToken();
             if (next.Match(','))
@@ -328,7 +328,7 @@ namespace MyScript
 
         ExpressionList ParseExpList()
         {
-            var exp = new ExpressionList(LookAhead().m_line);
+            var exp = new ExpressionList(LookAhead().m_line, _lex.SourceName);
             bool split = LookAheadAndTryEatOne('*');
             exp.AddExp(ParseExp(), split);
             while (LookAhead().Match(','))
@@ -354,7 +354,7 @@ namespace MyScript
             NextToken();// skip '['
             Debug.Assert(_current.Match('['));
 
-            var index_access = new TableAccess(_current.m_line);
+            var index_access = new TableAccess(_current.m_line, _lex.SourceName);
             index_access.table = table;
             index_access.index = ParseExp();
             if (NextToken().Match(']') == false)
@@ -373,11 +373,11 @@ namespace MyScript
             {
                 // 当成字符串来用
                 str_arg_enable = true;
-                idx = new Terminator(NextToken().ConvertToStringToken());
+                idx = new Terminator(NextToken().ConvertToStringToken(), _lex.SourceName);
             }
             else if (tok.Match(TokenType.STRING))
             {
-                idx = new Terminator(NextToken());
+                idx = new Terminator(NextToken(), _lex.SourceName);
             }
             else if (tok.Match(TokenType.STRING_BEGIN))
             {
@@ -392,7 +392,7 @@ namespace MyScript
             {
                 return call;
             }
-            var index_access = new TableAccess(line_dot);
+            var index_access = new TableAccess(line_dot, _lex.SourceName);
             index_access.table = exp;
             index_access.index = idx;
             return index_access;
@@ -402,7 +402,7 @@ namespace MyScript
         {
             if (LookAhead().Match('('))
             {
-                var func_call = new FuncCall(LookAhead().m_line);
+                var func_call = new FuncCall(LookAhead().m_line, _lex.SourceName);
                 func_call.caller = caller;
                 func_call.idx = idx;
                 func_call.args = ParseArgs();
@@ -414,10 +414,10 @@ namespace MyScript
                 var str = TryGetStringExp();
                 if (str is not null)
                 {
-                    var func_call = new FuncCall(str.line);
+                    var func_call = new FuncCall(str.Line, _lex.SourceName);
                     func_call.caller = caller;
                     func_call.idx = idx;
-                    ArgsList args = new ArgsList(str.line);
+                    ArgsList args = new ArgsList(str.Line);
                     args.exp_list.Add((str,false));
                     func_call.args = args;
                     return func_call;
@@ -430,7 +430,7 @@ namespace MyScript
         {
             if (LookAhead().Match(TokenType.STRING))
             {
-                return new Terminator(NextToken());
+                return new Terminator(NextToken(), _lex.SourceName);
             }
             else if (LookAhead().Match(TokenType.STRING_BEGIN))
             {
@@ -545,7 +545,7 @@ namespace MyScript
                 // assign statement
                 if (!IsVar(exp))
                     throw NewParserException("expect var for assign statement", _current);
-                var assign_statement = new AssignStatement(LookAhead().m_line);
+                var assign_statement = new AssignStatement(LookAhead().m_line, _lex.SourceName);
                 assign_statement.var_list.Add(exp);
                 while (LookAhead().m_type != (int)'=')
                 {
@@ -568,7 +568,7 @@ namespace MyScript
             {
                 if (!IsVar(exp))
                     throw NewParserException("expect var here", _current);
-                var special_statement = new SpecialAssginStatement(_current.m_line);
+                var special_statement = new SpecialAssginStatement(_current.m_line, _lex.SourceName);
                 special_statement.var = exp;
                 special_statement.op = type;
                 if (SpecialAssginStatement.IsSelfMode(type))
@@ -596,7 +596,7 @@ namespace MyScript
         TableDefine ParseTableConstructor()
         {
             NextToken();
-            var table = new TableDefine(_current.m_line);
+            var table = new TableDefine(_current.m_line, _lex.SourceName);
             TableField last_field;
             while (LookAhead().m_type != '}')
             {
@@ -614,7 +614,7 @@ namespace MyScript
                     }
                     else if (LookAhead().CanBeNameString())
                     {
-                        last_field.index = new Terminator(NextToken().ConvertToStringToken());
+                        last_field.index = new Terminator(NextToken().ConvertToStringToken(), _lex.SourceName);
                     }
                     else
                     {
@@ -651,7 +651,7 @@ namespace MyScript
         ArrayDefine ParseArrayConstructor()
         {
             NextToken();
-            ArrayDefine arr = new ArrayDefine(_current.m_line);
+            ArrayDefine arr = new ArrayDefine(_current.m_line, _lex.SourceName);
             while(LookAhead().Match(']') == false)
             {
                 bool split = LookAheadAndTryEatOne('*');
@@ -678,7 +678,7 @@ namespace MyScript
             if (!NextToken().Match('{'))
                 throw NewParserException("expect '{' to begin block", _current);
 
-            var block = new BlockTree(_current.m_line);
+            var block = new BlockTree(_current.m_line, _lex.SourceName);
             ParseStatements(block.statements);
 
             if (!NextToken().Match('}'))
@@ -735,7 +735,7 @@ namespace MyScript
         ThrowStatement ParseThrowStatement()
         {
             NextToken();
-            var statement = new ThrowStatement(_current.m_line);
+            var statement = new ThrowStatement(_current.m_line, _lex.SourceName);
             if (IsMainExpNext())
             {
                 statement.exp = ParseExp();
@@ -746,7 +746,7 @@ namespace MyScript
         private TryStatement ParseTryStatement()
         {
             NextToken();
-            var statement = new TryStatement(_current.m_line);
+            var statement = new TryStatement(_current.m_line, _lex.SourceName);
             statement.block = ParseBlock();
             if (LookAhead().Match(Keyword.CATCH))
             {
@@ -770,7 +770,7 @@ namespace MyScript
         ReturnStatement ParseReturnStatement()
         {
             NextToken();
-            var statement = new ReturnStatement(_current.m_line);
+            var statement = new ReturnStatement(_current.m_line, _lex.SourceName);
             if (IsMainExpNext())
             {
                 statement.exp_list = ParseExpList();
@@ -780,18 +780,18 @@ namespace MyScript
         BreakStatement ParseBreakStatement()
         {
             NextToken();
-            return new BreakStatement(_current.m_line);
+            return new BreakStatement(_current.m_line, _lex.SourceName);
         }
         ContinueStatement ParseContinueStatement()
         {
             NextToken();
-            return new ContinueStatement(_current.m_line);
+            return new ContinueStatement(_current.m_line, _lex.SourceName);
         }
 
         WhileStatement ParseWhileStatement()
         {
             NextToken();// skip 'while'
-            var statement = new WhileStatement(_current.m_line);
+            var statement = new WhileStatement(_current.m_line, _lex.SourceName);
 
             var exp = ParseConditionExp();
             var block = ParseBlock();
@@ -804,7 +804,7 @@ namespace MyScript
         DoWhileStatement ParseDoStatement()
         {
             NextToken();// skip 'do'
-            var statement = new DoWhileStatement(_current.m_line);
+            var statement = new DoWhileStatement(_current.m_line, _lex.SourceName);
             statement.block = ParseBlock();
             if(NextToken().Match(Keyword.WHILE) == false)
             {
@@ -817,7 +817,7 @@ namespace MyScript
         IfStatement ParseIfStatement()
         {
             NextToken();// skip 'if' or 'elseif'
-            var statement = new IfStatement(_current.m_line);
+            var statement = new IfStatement(_current.m_line, _lex.SourceName);
 
             var exp = ParseConditionExp();
             var true_branch = ParseBlock();
@@ -854,7 +854,7 @@ namespace MyScript
         {
             NextToken();
 
-            var statement = new FunctionStatement(_current.m_line);
+            var statement = new FunctionStatement(_current.m_line, _lex.SourceName);
             statement.func_name = ParseFunctionName();
             statement.func_body = ParseFunctionBody();
             return statement;
@@ -878,10 +878,9 @@ namespace MyScript
         }
         FunctionBody ParseFunctionBody()
         {
-            var statement = new FunctionBody(_current.m_line);
+            var statement = new FunctionBody(_current.m_line, _lex.SourceName);
             statement.param_list = ParseParamList();
             statement.block = ParseBlock();
-            statement.source_name = _lex.GetSourceName();
 
             return statement;
         }
@@ -999,7 +998,7 @@ namespace MyScript
             NextToken();// skip 'for'
             if (LookAhead().Match('{'))
             {
-                var statement = new ForeverStatement(_current.m_line);
+                var statement = new ForeverStatement(_current.m_line, _lex.SourceName);
                 statement.block = ParseBlock();
                 return statement;
             }
@@ -1015,7 +1014,7 @@ namespace MyScript
         }
         ForStatement ParseForNumStatement()
         {
-            var statement = new ForStatement(_current.m_line);
+            var statement = new ForStatement(_current.m_line, _lex.SourceName);
             var name = NextToken();
             Debug.Assert(_current.m_type == (int)TokenType.NAME);
             NextToken();// skip '='
@@ -1038,7 +1037,7 @@ namespace MyScript
         }
         ForInStatement ParseForInStatement()
         {
-            var statement = new ForInStatement(_current.m_line);
+            var statement = new ForInStatement(_current.m_line, _lex.SourceName);
             statement.name_list = ParseNameList();
             if (NextToken().Match(Keyword.IN) == false)
                 throw NewParserException("expect 'in' in for-in-statement", _current);
@@ -1059,7 +1058,7 @@ namespace MyScript
         ScopeStatement ParseScopeStatement()
         {
             NextToken();
-            var statement = new ScopeStatement(_current.m_line);
+            var statement = new ScopeStatement(_current.m_line, _lex.SourceName);
             if (LookAhead().Match('='))
             {
                 NextToken();
@@ -1094,7 +1093,7 @@ namespace MyScript
         }
         DefineFunctionStatement ParseDefineFunction()
         {
-            var statement = new DefineFunctionStatement(_current.m_line);
+            var statement = new DefineFunctionStatement(_current.m_line, _lex.SourceName);
             statement.is_global = _current.Match(Keyword.GLOBAL);
             NextToken();// Skip "fn"
 
@@ -1135,18 +1134,17 @@ namespace MyScript
         private ParserException NewParserException(string msg, Token token)
         {
             Debug.Assert(token != null);
-            return new ParserException(_lex.GetSourceName(), token.m_line, token.m_column, msg);
+            return new ParserException(_lex.SourceName, token.m_line, token.m_column, msg);
         }
 
         FunctionBody ParseModule()
         {
-            var block = new BlockTree(LookAhead().m_line);
+            var block = new BlockTree(LookAhead().m_line, _lex.SourceName);
             ParseStatements(block.statements);
             if (NextToken().m_type != (int)TokenType.EOS)
                 throw NewParserException("expect <eof>", _current);
 
-            FunctionBody fn = new FunctionBody(1);
-            fn.source_name = _lex.GetSourceName();
+            FunctionBody fn = new FunctionBody(1, _lex.SourceName);
             fn.block = block;
 
             return fn;

@@ -11,10 +11,13 @@ namespace MyScript
 
     public class DefineFunctionStatement : DefineStatement
     {
-        public DefineFunctionStatement(int line_)
+#nullable disable
+        public DefineFunctionStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
 
         public Token name;
         public FunctionBody func_body;
@@ -38,7 +41,7 @@ namespace MyScript
     {
         public DefineNameListStatement(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
         public NameList name_list;
         public ExpressionList exp_list;

@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class TableDefine : ExpSyntaxTree
     {
-        public TableDefine(int line_)
+#nullable disable
+        public TableDefine(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public List<TableField> fields = new List<TableField>();
 
         protected override object _GetResults(Frame frame)
@@ -22,7 +25,7 @@ namespace MyScript
                 object key = f.index.GetResult(frame);
                 if (key == null)
                 {
-                    throw frame.NewRunException(f.line, "Table key can not be nil");
+                    throw frame.NewRunException(f.Line, "Table key can not be nil");
                 }
                 ret.Set(key, f.value.GetResult(frame));
             }
@@ -34,7 +37,7 @@ namespace MyScript
     {
         public TableField(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
         public ExpSyntaxTree index;
         public ExpSyntaxTree value;
@@ -42,10 +45,13 @@ namespace MyScript
 
     public class TableAccess : ExpSyntaxTree
     {
-        public TableAccess(int line_)
+#nullable disable
+        public TableAccess(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpSyntaxTree table;
         public ExpSyntaxTree index;
 
@@ -55,7 +61,7 @@ namespace MyScript
             var idx = index.GetResult(frame);
             if (idx == null)
             {
-                throw frame.NewRunException(index.line, "table index can not be null");
+                throw frame.NewRunException(index.Line, "table index can not be null");
             }
             var ret = ExtUtils.Get(t, idx);
             return ret;
@@ -75,7 +81,7 @@ namespace MyScript
             var idx = index.GetResult(frame);
             if (idx == null)
             {
-                throw frame.NewRunException(line, "table index can not be null");
+                throw frame.NewRunException(Line, "table index can not be null");
             }
 
             if (t is MyTable t2)
@@ -109,7 +115,7 @@ namespace MyScript
             var idx = index.GetResult(frame);
             if (idx == null)
             {
-                throw frame.NewRunException(line, "table index can not be null");
+                throw frame.NewRunException(Line, "table index can not be null");
             }
             ExtUtils.Set(t, idx, val);
         }

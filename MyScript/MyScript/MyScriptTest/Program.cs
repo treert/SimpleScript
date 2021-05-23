@@ -42,7 +42,7 @@ class Program
     {
         TestManager.RunTest();
 
-        //TestMyScript();
+        TestMyScript();
 
         //TestMyNumber();
 
@@ -60,7 +60,7 @@ class Program
 
         //TestStruct();
 
-        TestIO();
+        //TestIO();
     }
 
     /// <summary>

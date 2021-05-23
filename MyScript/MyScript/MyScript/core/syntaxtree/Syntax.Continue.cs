@@ -6,14 +6,15 @@ namespace MyScript
 {
     public class ContinueStatement : ExpSyntaxTree
     {
-        public ContinueStatement(int line_)
+        public ContinueStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 
         protected override object _GetResults(Frame frame)
         {
-            throw new ContineException(_line);
+            throw new ContineException(Line);
         }
     }
 }

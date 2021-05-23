@@ -8,9 +8,10 @@ namespace MyScript
     public class SpecialAssginStatement : SyntaxTree
     {
 #nullable disable
-        public SpecialAssginStatement(int line_)
+        public SpecialAssginStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public ExpSyntaxTree var;
@@ -36,12 +37,12 @@ namespace MyScript
                 var table = access.table.GetResult(frame);
                 if (table == null)
                 {
-                    throw frame.NewRunException(access.table.line, "table can not be null when do self-assign op");
+                    throw frame.NewRunException(access.table.Line, "table can not be null when do self-assign op");
                 }
                 var idx = access.index.GetResult(frame);
                 if (idx == null)
                 {
-                    throw frame.NewRunException(access.index.line, "index can not be null when do self-assign op");
+                    throw frame.NewRunException(access.index.Line, "index can not be null when do self-assign op");
                 }
                 var val = ExtUtils.Get(table, idx);
                 val = _Calculate(frame, val);

@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class ExpressionList : SyntaxTree
     {
-        public ExpressionList(int line_)
+#nullable disable
+        public ExpressionList(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public List<ExpSyntaxTree> exp_list = new List<ExpSyntaxTree>();
         public List<bool> split_flag_list = new List<bool>();
 

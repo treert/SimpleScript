@@ -512,7 +512,7 @@ namespace MyScript.Test
                 TestUtils.Parse("local a }");
                 Error("no exception");
             }
-            catch (ScriptException) { }
+            catch (MyBaseException) { }
         }
     }
     class TestParser_parser37 : TestBase

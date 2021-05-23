@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class ReturnStatement : ExpSyntaxTree
     {
-        public ReturnStatement(int line_)
+#nullable disable
+        public ReturnStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpressionList? exp_list;
 
         protected override object _GetResults(Frame frame)

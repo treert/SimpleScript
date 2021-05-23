@@ -7,9 +7,10 @@ namespace MyScript
     public class FunctionStatement : SyntaxTree
     {
 #nullable disable
-        public FunctionStatement(int line_)
+        public FunctionStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public FunctionName func_name;
@@ -32,7 +33,7 @@ namespace MyScript
                 }
                 if (obj is not IGetSet)
                 {
-                    throw frame.NewRunException(line, $"{names[0].m_string} is not IGetSet which expect to be");
+                    throw frame.NewRunException(Line, $"{names[0].m_string} is not IGetSet which expect to be");
                 }
 #nullable disable
                 IGetSet t = obj as IGetSet;
@@ -60,7 +61,7 @@ namespace MyScript
     {
         public FunctionName(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
         public List<Token> names = new List<Token>();
     }
@@ -69,7 +70,7 @@ namespace MyScript
     {
         public ParamList(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
         public List<(Token token, ExpSyntaxTree? exp)> name_list = new List<(Token, ExpSyntaxTree?)>();
         public Token? ls_name = null;
@@ -118,15 +119,15 @@ namespace MyScript
 
     public class FunctionBody : ExpSyntaxTree
     {
-        public FunctionBody(int line_)
-        {
-            _line = line_;
-        }
-        public ParamList? param_list;
 #nullable disable
-        public BlockTree block;
-        public string source_name;
+        public FunctionBody(int line_, string source)
+        {
+            Line = line_;
+            Source = source;
+        }
 #nullable restore
+        public ParamList? param_list;
+        public BlockTree block;
 
         protected override object _GetResults(Frame frame)
         {

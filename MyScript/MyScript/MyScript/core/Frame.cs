@@ -184,7 +184,7 @@ namespace MyScript
 
         public RunException NewRunException(int line, string msg)
         {
-            return new RunException(func.code.source_name, line, msg);
+            return new RunException(func.code.Source, line, msg);
         }
     }
 }

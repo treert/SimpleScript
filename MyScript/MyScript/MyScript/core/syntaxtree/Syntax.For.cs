@@ -8,9 +8,10 @@ namespace MyScript
     public class ForStatement : SyntaxTree
     {
 #nullable disable
-        public ForStatement(int line_)
+        public ForStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public Token name;
@@ -27,7 +28,7 @@ namespace MyScript
                 var step = exp3 ? exp3.GetNumber(frame) : 1;
                 if (step <= 0)
                 {
-                    throw frame.NewRunException(line, $"for step {step} should greater than 0, or will cause forerver loop");
+                    throw frame.NewRunException(Line, $"for step {step} should greater than 0, or will cause forerver loop");
                 }
                 var cur_block = frame.CurrentBlock;
                 for (MyNumber it = start; it <= end; it += step)
@@ -55,7 +56,7 @@ namespace MyScript
                 var step = exp3 ? exp3.GetNumber(frame) : -1;
                 if (step >= 0)
                 {
-                    throw frame.NewRunException(line, $"for step {step} should less than 0, or will cause forerver loop");
+                    throw frame.NewRunException(Line, $"for step {step} should less than 0, or will cause forerver loop");
                 }
                 var cur_block = frame.CurrentBlock;
                 for (var it = start; it >= end; it += step)
@@ -84,9 +85,10 @@ namespace MyScript
     public class ForInStatement : SyntaxTree
     {
 #nullable disable
-        public ForInStatement(int line_)
+        public ForInStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public NameList name_list;
@@ -169,7 +171,7 @@ namespace MyScript
             }
             else
             {
-                throw frame.NewRunException(exp.line, $"for in does not support type {obj.GetType().FullName}");
+                throw frame.NewRunException(exp.Line, $"for in does not support type {obj.GetType().FullName}");
             }
             frame.CurrentBlock = cur_block;
         }
@@ -177,10 +179,13 @@ namespace MyScript
 
     public class ForeverStatement : SyntaxTree
     {
-        public ForeverStatement(int line_)
+#nullable disable
+        public ForeverStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public BlockTree block;
 
         protected override void _Exec(Frame frame)

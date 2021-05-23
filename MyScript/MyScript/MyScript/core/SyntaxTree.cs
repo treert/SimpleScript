@@ -9,12 +9,16 @@ namespace MyScript
 {
     public abstract class SyntaxTree
     {
-        protected int _line = -1;
-        public int line
+        public int Line
         {
-            // set { _line = value; }
-            get { return _line; }
-        }
+            get;
+            internal set;
+        } = -1;
+        public string Source
+        {
+            get;
+            internal set;
+        } = string.Empty;
 
         public static implicit operator bool(SyntaxTree exsit)
         {
@@ -23,9 +27,17 @@ namespace MyScript
 
         public void Exec(Frame frame)
         {
-            //try
+            try
             {
                 _Exec(frame);
+            }
+            catch (MyBaseException)
+            {
+                throw;
+            }
+            catch(Exception e)
+            {
+                throw new MyWrapException(e, Source, Line);
             }
         }
 
@@ -41,8 +53,18 @@ namespace MyScript
 
         public object? GetResult(Frame frame)
         {
-            // @om 要不要做异常行号计算？
-            return _GetResults(frame);
+            try
+            {
+                return _GetResults(frame);
+            }
+            catch (MyBaseException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new MyWrapException(e, Source, Line);
+            }
         }
 
         public bool GetBool(Frame frame)
@@ -68,9 +90,10 @@ namespace MyScript
 
     public class BlockTree : SyntaxTree
     {
-        public BlockTree(int line_)
+        public BlockTree(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
         public List<SyntaxTree> statements = new List<SyntaxTree>();
 
@@ -92,7 +115,7 @@ namespace MyScript
     {
         public NameList(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
         public List<Token> names = new List<Token>();
         public bool is_global = false;// 放在这儿有好处，可以直接指导NameList是不是global的。目前也没什么用途

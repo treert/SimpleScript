@@ -97,11 +97,11 @@ namespace MyScript
             }
             catch (ContineException ep)
             {
-                throw new RunException(code.source_name, ep.line, "unexpect contine");
+                throw new RunException(code.Source, ep.line, "unexpect contine");
             }
             catch (BreakException ep)
             {
-                throw new RunException(code.source_name, ep.line, "unexpect break");
+                throw new RunException(code.Source, ep.line, "unexpect break");
             }
             finally
             {

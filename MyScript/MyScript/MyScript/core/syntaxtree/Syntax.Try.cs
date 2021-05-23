@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class TryStatement : SyntaxTree
     {
-        public TryStatement(int line_)
+#nullable disable
+        public TryStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public BlockTree block;
         public Token catch_name;
         public BlockTree catch_block;

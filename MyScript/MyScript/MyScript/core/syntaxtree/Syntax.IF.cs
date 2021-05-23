@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class IfStatement : SyntaxTree
     {
-        public IfStatement(int line_)
+#nullable disable
+        public IfStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpSyntaxTree exp;
         public BlockTree true_branch;
         public SyntaxTree? false_branch;

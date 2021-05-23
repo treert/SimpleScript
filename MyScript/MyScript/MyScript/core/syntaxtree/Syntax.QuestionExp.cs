@@ -13,10 +13,13 @@ namespace MyScript
     /// </summary>
     public class QuestionExp : ExpSyntaxTree
     {
-        public QuestionExp(int line_)
+#nullable disable
+        public QuestionExp(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpSyntaxTree a;// exp = a ? b : c
         public ExpSyntaxTree b;
         public ExpSyntaxTree c;

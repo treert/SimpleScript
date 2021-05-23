@@ -7,11 +7,14 @@ namespace MyScript
 {
     public class AssignStatement : SyntaxTree
     {
-        public AssignStatement(int line_)
+#nullable disable
+        public AssignStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
-        
+#nullable restore
+
         public List<ExpSyntaxTree> var_list = new List<ExpSyntaxTree>();
         public ExpressionList exp_list;
 

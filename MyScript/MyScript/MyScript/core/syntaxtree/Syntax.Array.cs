@@ -6,9 +6,10 @@ namespace MyScript
 {
     public class ArrayDefine : ExpSyntaxTree
     {
-        public ArrayDefine(int line_)
+        public ArrayDefine(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
         public List<(ExpSyntaxTree exp, bool split)> fileds = new();
         protected override object _GetResults(Frame frame)

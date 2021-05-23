@@ -9,9 +9,10 @@ namespace MyScript
     public class FuncCall : ExpSyntaxTree
     {
 #nullable disable
-        public FuncCall(int line_)
+        public FuncCall(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public ExpSyntaxTree caller;
@@ -60,7 +61,7 @@ namespace MyScript
     {
         public ArgsList(int line_)
         {
-            _line = line_;
+            Line = line_;
         }
 
         public List<(ExpSyntaxTree exp, bool split)> exp_list = new();

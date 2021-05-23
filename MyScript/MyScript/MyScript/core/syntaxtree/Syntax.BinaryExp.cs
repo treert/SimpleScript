@@ -15,25 +15,27 @@ namespace MyScript
             left = left_;
             op = op_;
             right = right_;
-            _line = op_.m_line;
+            
+            Line = op_.m_line;
+            Source = left_.Source;
         }
 
         void CheckNumberType(object l, object r, Frame frame, bool check_right_zero = false)
         {
             if (l is double == false)
             {
-                throw frame.NewRunException(left.line, "expect bin_op left to be a number");
+                throw frame.NewRunException(left.Line, "expect bin_op left to be a number");
             }
             if (r is double == false)
             {
-                throw frame.NewRunException(right.line, "expect bin_op right to be a number");
+                throw frame.NewRunException(right.Line, "expect bin_op right to be a number");
             }
             if (check_right_zero)
             {
                 var t = (double)r;
                 if (t == 0)
                 {
-                    throw frame.NewRunException(right.line, "bin_op right value is zero");
+                    throw frame.NewRunException(right.Line, "bin_op right value is zero");
                 }
             }
         }

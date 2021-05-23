@@ -17,7 +17,7 @@ namespace MyScript
         {
             s_func_map = new Dictionary<string, ICall>(StringComparer.OrdinalIgnoreCase) {
                 { "sub",ICall.Create(Sub) },
-                { "Join",ICall.Create(Join) },
+                { "join",ICall.Create(Join) },
             };
         }
         public static object? Get(string str, object key)

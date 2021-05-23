@@ -966,10 +966,7 @@ namespace MyScript
             return new LexUnexpectEndException(_source_name, _line, _column, msg);
         }
 
-        public string GetSourceName()
-        {
-            return _source_name;
-        }
+        public string SourceName => _source_name;
 
         private string _source_name = String.Empty;
         private string _source = String.Empty;

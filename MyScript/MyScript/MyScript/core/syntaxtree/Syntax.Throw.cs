@@ -6,21 +6,18 @@ namespace MyScript
 {
     public class ThrowStatement : ExpSyntaxTree
     {
-        public ThrowStatement(int line)
+#nullable disable
+        public ThrowStatement(int line_, string source)
         {
-            _line = line;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpSyntaxTree exp;
 
         protected override object _GetResults(Frame frame)
         {
-            ThrowException ep = new ThrowException();
-            ep.line = _line;
-            ep.source_name = frame.func.code.source_name;
-            if (exp)
-            {
-                ep.obj = exp.GetResult(frame);
-            }
+            ThrowException ep = new ThrowException(Source, Line, exp?.GetResult(frame));
             throw ep;
         }
     }

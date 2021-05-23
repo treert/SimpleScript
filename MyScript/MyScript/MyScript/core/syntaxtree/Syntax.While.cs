@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class WhileStatement : SyntaxTree
     {
-        public WhileStatement(int line_)
+#nullable disable
+        public WhileStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpSyntaxTree exp;
         public BlockTree block;
 

@@ -6,14 +6,15 @@ namespace MyScript
 {
     public class BreakStatement : ExpSyntaxTree
     {
-        public BreakStatement(int line_)
+        public BreakStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 
         protected override object _GetResults(Frame frame)
         {
-            throw new BreakException(_line);
+            throw new BreakException(Line);
         }
     }
 }

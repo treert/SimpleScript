@@ -8,10 +8,11 @@ namespace MyScript
     public class Terminator : ExpSyntaxTree
     {
         public Token token;
-        public Terminator(Token token_)
+        public Terminator(Token token_, string source)
         {
             token = token_;
-            _line = token_.m_line;
+            Line = token_.m_line;
+            Source = source;
         }
 
         protected override object _GetResults(Frame frame)

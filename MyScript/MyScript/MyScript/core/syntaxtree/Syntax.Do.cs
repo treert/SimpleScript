@@ -6,10 +6,13 @@ namespace MyScript
 {
     public class DoWhileStatement : SyntaxTree
     {
-        public DoWhileStatement(int line_)
+#nullable disable
+        public DoWhileStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
+#nullable restore
         public ExpSyntaxTree exp;
         public BlockTree block;
 

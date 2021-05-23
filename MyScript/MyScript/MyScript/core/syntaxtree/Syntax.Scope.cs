@@ -8,9 +8,10 @@ namespace MyScript
     public class ScopeStatement:SyntaxTree
     {
 #nullable disable
-        public ScopeStatement(int line_)
+        public ScopeStatement(int line_, string source)
         {
-            _line = line_;
+            Line = line_;
+            Source = source;
         }
 #nullable restore
         public NameList? name_list;
