@@ -582,6 +582,7 @@ namespace MyScript
                                 _NextChar();
                                 if (xxx[i] != _current) break;
                             }
+                            _NextChar();
                             if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
                             if (i == xxx.Length && _current == ']')
                             {
