@@ -92,6 +92,7 @@ namespace MyScript
         CircleBracket,
         SquareBracket,
         BigBracket,
+        BigBracketInString,
 
         StringBegin,
 
@@ -221,6 +222,7 @@ namespace MyScript
 
     public class Lex
     {
+        bool _colon_string_work = false;// 和c#保持一致支持 "{1,2: haha .00 }"
         Stack<StringBlockType> _block_stack = new Stack<StringBlockType>();
 
         StringBuilder _buf = new StringBuilder();
@@ -235,7 +237,7 @@ namespace MyScript
             {
                 _buf.Append(_current);
                 _NextChar();
-            } while (char.IsDigit(_current) || '.' == _current);
+            } while (char.IsDigit(_current) || '.' == _current || '_' == _current);
             if (_current == 'e' || _current == 'E')
             {
                 _buf.Append(_current);
@@ -246,7 +248,7 @@ namespace MyScript
                     _NextChar();
                 }
             }
-            while (char.IsLetterOrDigit(_current))
+            while (char.IsLetterOrDigit(_current) || '_' == _current)
             {
                 _buf.Append(_current);
                 _NextChar();
@@ -370,7 +372,7 @@ namespace MyScript
                 if (_current == '{')
                 {
                     _NextChar();
-                    _block_stack.Push(StringBlockType.BigBracket);
+                    _block_stack.Push(StringBlockType.BigBracketInString);
                     column++;
                     return new Token('{');
                 }
@@ -534,7 +536,7 @@ namespace MyScript
                 for(; ; )
                 {
                     _NextChar();
-                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
+                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>, expect ']]'");
                     if (_current == ']')
                     {
                         _NextChar();
@@ -604,7 +606,7 @@ namespace MyScript
             {
                 for (; ; )
                 {
-                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>");
+                    if (_current == '\0') throw NewUnexpectEndException("unexpect <end>, expect ']' to close literal string");
                     if (_current == ']')
                     {
                         _NextChar();
@@ -618,6 +620,21 @@ namespace MyScript
 
         Token _GetNextToken(ref int line, ref int column)
         {
+            if (_colon_string_work)
+            {
+                _buf.Clear();
+                while(_current != '\0' && _current != '}')
+                {
+                    _buf.Append(_current);
+                    _NextChar();
+                }
+                if(_current != '}')
+                {
+                    throw NewUnexpectEndException("unexpect <eof>,expect '}'");
+                }
+                _colon_string_work = false;
+                return new Token(_buf.ToString());
+            }
             if (_block_stack.Peek() > StringBlockType.StringBegin)
             {
                 return _GetNextTokenInString(ref line, ref column);
@@ -660,13 +677,23 @@ namespace MyScript
                         _block_stack.Push(StringBlockType.BigBracket);
                         return new Token('{');
                     case '}':
-                        if (_block_stack.Peek() != StringBlockType.BigBracket)
                         {
-                            throw NewLexException("unexpect '}', miss corresponding '{'");
+                            var t = _block_stack.Peek();
+                            if(t != StringBlockType.BigBracket && t != StringBlockType.BigBracketInString)
+                            {
+                                throw NewLexException("unexpect '}', miss corresponding '{'");
+                            }
                         }
                         _NextChar();
                         _block_stack.Pop();
                         return new Token('}');
+                    case ':':
+                        if(_block_stack.Peek() == StringBlockType.BigBracketInString)
+                        {
+                            _colon_string_work = true;
+                        }
+                        _NextChar();
+                        return new Token(':');
                     case '\\':
                         _NextChar();
                         if (_current == '\\')
@@ -1017,6 +1044,7 @@ namespace MyScript
             _column = 0;
             _block_stack.Clear();
             _block_stack.Push(StringBlockType.Begin);
+            _colon_string_work = false;
             _NextChar();
         }
 

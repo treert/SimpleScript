@@ -289,30 +289,39 @@ namespace MyScript
             if (next.Match(','))
             {
                 next = NextToken();
+                int sign = 1;
+                if (next.Match('-'))
+                {
+                    sign = -1;
+                    next = NextToken();
+                }
                 if (next.Match(TokenType.NUMBER))
                 {
-                    item.len = (int)next.m_number;
-                    if (item.len != next.m_number)
+                    if (next.m_number.IsInt32)
                     {
-                        throw NewParserException($"complex string item len must be int, now is {next.m_number}", next);
+                        item.len = sign * (int)next.m_number;
+                    }
+                    else
+                    {
+                        throw NewParserException($"complex string item len must be int32, now is {next.m_number}", next);
                     }
                 }
                 else
                 {
-                    throw NewParserException($"complex string item len must be int type", next);
+                    throw NewParserException($"complex string item len must be int32 literal", next);
                 }
                 next = NextToken();
             }
             if (next.Match(':'))
             {
                 next = NextToken();
-                if (next.Match(TokenType.NAME))
+                if(next.Match(TokenType.STRING))
                 {
                     item.format = next.m_string;
                 }
                 else
                 {
-                    throw NewParserException($"complex string item format must be a string", next);
+                    throw NewParserException($"complex string item format must be a string, should not happend!!!", next);
                 }
                 next = NextToken();
             }

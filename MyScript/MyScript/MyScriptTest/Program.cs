@@ -50,7 +50,7 @@ class Program
 
         //TestEnum();
 
-        //TestStringFormat();
+        TestStringFormat();
 
         //TestThread.Test1();
 
@@ -83,8 +83,9 @@ class Program
     {
         Console.WriteLine($@"
 {string.Format("{0:000000}", 1234), -10}b
-{string.Format("{0:0#0####}", 1234)}
-{(1.5).ToString(".00")}
+{string.Format("{0: 哈哈 0#0####}", 1234)}
+{1.5:哈哈 \n .00}
+{(1.5).ToString("哈哈 .00")}
 ");
     }
     enum EA

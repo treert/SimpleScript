@@ -50,6 +50,7 @@ namespace MyScript
                 obj = MyNumber.TryConvertFrom(obj) ?? obj;
                 if(format != null && obj is IFormattable formater)
                 {
+                    //ret = formater.ToString(format, System.Globalization.CultureInfo.InvariantCulture);
                     ret = formater.ToString(format, null);
                 }
                 else
@@ -60,11 +61,11 @@ namespace MyScript
             // padding
             if (len > ret.Length)
             {
-                ret = ret.PadLeft(len - ret.Length);
+                ret = ret.PadLeft(len);
             }
             else if (len < -ret.Length)
             {
-                ret = ret.PadRight(-len - ret.Length);
+                ret = ret.PadRight(-len);
             }
             return ret;
         }

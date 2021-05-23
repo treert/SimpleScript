@@ -19,7 +19,7 @@ namespace MyScript
     /// - for int range 如果用class，会产生太多的对象。【就算用struct，最终还是要装箱成object.】
     /// - MyScript 内置的是object，对于struct，会频繁的装箱拆箱
     /// </summary>
-    public class MyNumber : IComparable, IComparable<MyNumber>,IEquatable<MyNumber>
+    public class MyNumber : IComparable, IComparable<MyNumber>,IEquatable<MyNumber>, IFormattable
     {
         BigInteger big;
         double num;
@@ -543,6 +543,18 @@ namespace MyScript
                     return BigInteger.Pow(left.big, (int)right.big);
             }
             return Math.Pow((double)left, (double)right);
+        }
+
+        public string ToString(string? format, IFormatProvider? formatProvider)
+        {
+            if (is_big)
+            {
+                return big.ToString(format, formatProvider);
+            }
+            else
+            {
+                return num.ToString(format, formatProvider);
+            }
         }
     }
 } 
