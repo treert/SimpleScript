@@ -8,7 +8,7 @@ namespace MyScript
 {
     public class MyConsole : ICall, IGetSet
     {
-        public object Call(MyArgs args)
+        public object? Call(MyArgs args)
         {
             for(var i = 0; i < args.args.Count; i++)
             {

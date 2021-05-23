@@ -29,39 +29,47 @@ namespace MyScript
 
         protected override void _Exec(Frame frame)
         {
-            object table = null, idx = null, val;
-            string name = null;
             // 读
-            if (var is TableAccess)
+            if (var is TableAccess access)
             {
-                var access = var as TableAccess;
-                table = access.table.GetResult(frame);
+                // to
+                var table = access.table.GetResult(frame);
                 if (table == null)
                 {
-                    throw frame.NewRunException(access.table.line, "table can not be null when run TableAccess");
+                    throw frame.NewRunException(access.table.line, "table can not be null when do self-assign op");
                 }
-                idx = access.index.GetResult(frame);
+                var idx = access.index.GetResult(frame);
                 if (idx == null)
                 {
-                    throw frame.NewRunException(access.index.line, "index can not be null when run TableAccess");
+                    throw frame.NewRunException(access.index.line, "index can not be null when do self-assign op");
                 }
-                val = ExtUtils.Get(table, idx);
+                var val = ExtUtils.Get(table, idx);
+                val = _Calculate(frame, val);
+                ExtUtils.Set(table, idx, val);
+            }
+            else if(var is Terminator ter)
+            {
+                Debug.Assert(ter.token.Match(TokenType.NAME));
+                var name = ter.token.m_string;
+                var val = frame.Read(name);
+                val = _Calculate(frame, val);
+                frame.Write(name, val);
             }
             else
             {
-                var ter = var as Terminator;
-                Debug.Assert(ter.token.Match(TokenType.NAME));
-                name = ter.token.m_string;
-                val = frame.Read(name);
+                Debug.Assert(false);
             }
+        }
+
+        object? _Calculate(Frame frame, object? val)
+        {
             // 运算
             if (op == TokenType.CONCAT_SELF)
             {
-                // .=
                 string str = exp.GetString(frame);
                 val = Utils.ToString(val) + str;
             }
-            else if(op == TokenType.ADD_SELF)
+            else if (op == TokenType.ADD_SELF)
             {
                 var n = exp.GetNumber(frame);
                 val = Utils.ToNumber(val) + n;
@@ -89,7 +97,7 @@ namespace MyScript
             else if (op == TokenType.DIVIDE_SELF)
             {
                 var n = exp.GetNumber(frame);
-                val = MyNumber.IntegerDivide(Utils.ToNumber(val) , n);
+                val = MyNumber.IntegerDivide(Utils.ToNumber(val), n);
             }
             else if (op == TokenType.BIT_AND_SELF)
             {
@@ -111,27 +119,19 @@ namespace MyScript
                 var n = exp.GetNumber(frame);
                 val = MyNumber.Pow(Utils.ToNumber(val), n);
             }
-            else if(op == TokenType.ADD_ONE)
+            else if (op == TokenType.ADD_ONE)
             {
                 val = Utils.ToNumber(val) + MyNumber.One;
             }
-            else if(op == TokenType.DEC_ONE)
+            else if (op == TokenType.DEC_ONE)
             {
                 val = Utils.ToNumber(val) - MyNumber.One;
             }
-            else{
-                Debug.Assert(false);
-            }
-
-            // 写
-            if (var is TableAccess)
-            {
-                ExtUtils.Set(table, idx, val);
-            }
             else
             {
-                frame.Write(name, val);
+                Debug.Assert(false);
             }
+            return val;
         }
     }
 

@@ -103,7 +103,7 @@ namespace MyScript
             return true;
         }
 
-        public static MyNumber ToNumber(object obj)
+        public static MyNumber ToNumber(object? obj)
         {
             return MyNumber.ForceConvertFrom(obj);
         }

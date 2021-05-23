@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Numerics;
 using System.Diagnostics;
 using MyScriptTest;
+using System.Runtime.InteropServices;
 
 static class ExtClass
 {
@@ -41,7 +42,7 @@ class Program
     {
         TestManager.RunTest();
 
-        TestMyScript();
+        //TestMyScript();
 
         //TestMyNumber();
 
@@ -53,8 +54,31 @@ class Program
 
         //TestThread.Test1();
 
-        TestTypeCast();
+        //TestTypeCast();
+
+        //TestDelegate();
+
+        //TestStruct();
+
+        TestIO();
     }
+
+    /// <summary>
+    /// 一些结论：
+    /// 1. Directory.GetFiles 的结果的前缀和传入的dir是一模一样的。
+    /// </summary>
+    static void TestIO()
+    {
+        Console.WriteLine("============== TestIO Start ===============");
+        Console.WriteLine(System.IO.Directory.GetFiles(@"C:\").FirstOrDefault());
+        Console.WriteLine(System.IO.Directory.GetFiles(@"./").FirstOrDefault());
+        Console.WriteLine(System.IO.Directory.GetFiles(@".///").FirstOrDefault());// ? 返回路径包含了.///
+        Console.WriteLine(System.IO.Directory.GetFiles(@".").FirstOrDefault());
+        Console.WriteLine(System.IO.Directory.GetFiles(@"./bin\.././").FirstOrDefault());
+        //Console.WriteLine(System.IO.Directory.GetFiles(@"xyzd").FirstOrDefault());// exception
+        Console.WriteLine("============== TestIO Start ===============");
+    }
+
     static void TestStringFormat()
     {
         Console.WriteLine($@"
@@ -180,6 +204,31 @@ class Program
         Console.WriteLine("============== TestDouble End ===============");
     }
 
+    [StructLayout(LayoutKind.Explicit)]
+    struct BadStruct
+    {
+        [FieldOffset(0)]
+        public bool i;  //1Byte
+        [FieldOffset(0)]
+        public double c;//8byte
+        [FieldOffset(0)]
+        public bool b;  //1byte
+    }
+
+    static void TestStruct()
+    {
+        Console.WriteLine("============== TestStruct Start ===============");
+        unsafe
+        {
+            
+            Console.WriteLine(sizeof(BadStruct));
+        }
+
+        Console.WriteLine(System.Text.Encoding.UTF32.Preamble.Length);
+         
+        Console.WriteLine("============== TestStruct End ===============");
+    }
+
     static void TestMyScript()
     {
         Console.WriteLine("============== Start Test MS ===============");
@@ -213,7 +262,19 @@ class Program
         Console.WriteLine(typeof(List<>).IsAssignableFrom(typeof(List<object>)));// False
         Console.WriteLine(typeof(List<SyntaxTree>).IsAssignableFrom(typeof(List<ExpSyntaxTree>)));// False
         Console.WriteLine(typeof(System.Collections.IList).IsAssignableFrom(typeof(List<object>)));
-        Console.WriteLine("===== End Start =======");
+        Console.WriteLine("===== TestTypeCast End =======");
+    }
+
+    static void TestDelegate()
+    {
+        Console.WriteLine("===== TestDelegate End =======");
+        Action da = () => { Console.WriteLine("A"); };
+        Action db = () => { Console.WriteLine("B"); };
+        (da + db)();
+        var d1 = da + db + da + db;
+        (d1 - da)();
+
+        Console.WriteLine("===== TestDelegate End =======");
     }
 
     static void TestMyNumber()

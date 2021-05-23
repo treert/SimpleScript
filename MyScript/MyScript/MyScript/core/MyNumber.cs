@@ -135,6 +135,12 @@ namespace MyScript
             }
             return n ?? NaN;
         }
+
+        public static bool TryConvertFrom(object? obj, out MyNumber? num)
+        {
+            num = TryConvertFrom(obj);
+            return num is not null;
+        }
         public static MyNumber? TryConvertFrom(object? obj)
         {
             // @om 应该有性能更好的写法

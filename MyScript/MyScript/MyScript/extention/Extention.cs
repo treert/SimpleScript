@@ -1,9 +1,14 @@
 ﻿/*
- * 支持扩展
- * 1. 往 SS 里注入Api
+ * 扩展的思路1.0，极度简化版
+ * 1. 手动扩展，实现IGetSet和IForEach接口。
+ *     - 只支持有限的类型，不提供方便的反射支持。类型转换什么的也不支持了。
+ *     - 慢慢手撸扩展库。
+ * 2. 不提供类继承系统的支持，有需要，以后可以搞一个class库来。
+ * 3. 提供一些工具反射函数，可以在ms里使用字符串查询方式获取接口来调用。【方便测试.Net功能啥的】
+ * 4. 一些非常基础的功能：tonumber,tostring,tobool+string本身方法的支持，再想想。
+ *     - 准备像python一样，提供一些全局基本的函数库：number,string,bool。
+ *          - > https://www.runoob.com/python3/python3-built-in-functions.html
  * 
- * 一些实现细节：
- * 注意的api的名字最好不要用 __ 开头，__ 开头的预留特殊用途，现有的在ExtUtils 里看。
  */
 using System;
 using System.Collections;

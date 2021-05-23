@@ -26,19 +26,46 @@ namespace MyScript
 
     public class ComplexStringItem : ExpSyntaxTree
     {
+#nullable disable
         public ComplexStringItem(int line_)
         {
             _line = line_;
         }
+#nullable restore
         public ExpSyntaxTree exp;
         public int len = 0;
-        public string format = null;
+        public string? format = null;
 
         protected override object _GetResults(Frame frame)
         {
             var obj = exp.GetResult(frame);
-            string str = Utils.ToString(obj, format, len);
-            return str;
+            string ret = string.Empty;
+            if(obj is string str)
+            {
+                ret = str;
+            }
+            else if (obj is not null)
+            {
+                obj = MyNumber.TryConvertFrom(obj) ?? obj;
+                if(format != null && obj is IFormattable formater)
+                {
+                    ret = formater.ToString(format, null);
+                }
+                else
+                {
+                    ret = obj.ToString() ?? string.Empty;
+                }
+            }
+            // padding
+            if (len > ret.Length)
+            {
+                ret = ret.PadLeft(len - ret.Length);
+            }
+            else if (len < -ret.Length)
+            {
+                ret = ret.PadRight(-len - ret.Length);
+            }
+            return ret;
         }
     }
 

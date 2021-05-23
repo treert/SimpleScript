@@ -23,26 +23,36 @@ namespace MyScript
             if (idx == null)
             {
                 ICall? func = caller.GetResult(frame) as ICall;
-                if (func == null)
+                if (func != null)
                 {
-                    throw frame.NewRunException(caller.line, "expect ICall to call");
+                    var args = this.args.GetArgs(frame);
+                    return func.Call(args);
                 }
-                var args = this.args.GetArgs(frame);
-                return func.Call(args);
+                else
+                {
+                    // @om do nothing
+                }
             }
             else
             {
                 var t = caller.GetResult(frame);
                 var idx = this.idx.GetResult(frame);
-                ICall? func = ExtUtils.Get(t, idx) as ICall;
-                if (func == null)
+                if(t != null && idx != null)
                 {
-                    throw frame.NewRunException(caller.line, "expect ICall to call");
+                    var obj = ExtUtils.Get(t, idx);
+                    if(obj is ICall func)
+                    {
+                        var args = this.args.GetArgs(frame);
+                        args.that = t;
+                        return func.Call(args);
+                    }
+                    else
+                    {
+                        // @om do nothing
+                    }
                 }
-                var args = this.args.GetArgs(frame);
-                args.that = t;
-                return func.Call(args);
             }
+            return null;
         }
     }
 

@@ -95,7 +95,7 @@ namespace MyScript
             arr.SetValue(val, idx);
         }
 
-        public static object GetByIdx(this string str, int idx)
+        public static object? GetByIdx(this string str, int idx)
         {
             if (str.Length == 0) return null;
             idx = ((idx % str.Length) + str.Length) % str.Length;

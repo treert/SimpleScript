@@ -11,6 +11,8 @@ namespace MyScript.Test
         {
             ExpectTrue(MyScript.MyNumber.TryParse("0x1234") is not null);
 
+            ExpectTrue(MyScript.MyNumber.TryParse("0b1234") is null);
+
             //throw new NotImplementedException();
         }
     }

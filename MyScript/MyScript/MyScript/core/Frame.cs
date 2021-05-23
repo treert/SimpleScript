@@ -71,7 +71,7 @@ namespace MyScript
             return v;
         }
 
-        public object Write(string name, object obj)
+        public object Write(string name, object? obj)
         {
             bool global;
             var v = GetName(name, out global);

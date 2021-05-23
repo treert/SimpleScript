@@ -19,30 +19,17 @@ namespace MyScript
     public interface ICall
     {
         object? Call(MyArgs args);
-        public static ICall Create(Func<MyArgs, List<object>> func) => new CallWrap(func);
 
-        public static ICall Create(Func<MyArgs, object> func) => new CallWrap2(func);
+        public static ICall Create(Func<MyArgs, object?> func) => new CallWrap(func);
 
         private class CallWrap : ICall
         {
-            Func<MyArgs, List<object>> func;
-            public CallWrap(Func<MyArgs, List<object>> func)
+            readonly Func<MyArgs, object?> func;
+            public CallWrap(Func<MyArgs, object?> func)
             {
                 this.func = func;
             }
-            public object Call(MyArgs args)
-            {
-                return func(args);
-            }
-        }
-        private class CallWrap2 : ICall
-        {
-            Func<MyArgs, object> func;
-            public CallWrap2(Func<MyArgs, object> func)
-            {
-                this.func = func;
-            }
-            public object Call(MyArgs args)
+            public object? Call(MyArgs args)
             {
                 return func(args);
             }
@@ -57,6 +44,11 @@ namespace MyScript
         /// <param name="expect_cnt">expect_cnt 是为了能实现 for v in table {}, for k,v in table {}</param>
         /// <returns></returns>
         IEnumerable<object?> GetForEachItor(int expect_cnt = -1);
+    }
+
+    public interface IFormatString
+    {
+        string FormatString(string format);
     }
 
     public class LocalValue
