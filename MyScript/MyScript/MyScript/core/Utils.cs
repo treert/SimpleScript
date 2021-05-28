@@ -6,13 +6,7 @@ namespace MyScript
 {
     public class Utils
     {
-        public const long MaxSafeInt = 9007199254740991;// 2^54 - 1
-        public const long MinSafeInt = -9007199254740991;
         public const string MAGIC_THIS = "this";
-        public static string def_shell = "bash";
-
-        // 稍微优化下性能，(/ □ \)
-        public static readonly List<object> EmptyResults = new List<object>();
 
         /// <summary>
         /// MyScript内部使用的比较函数，可以用于支持 a <> b。
@@ -108,28 +102,9 @@ namespace MyScript
             return MyNumber.ForceConvertFrom(obj);
         }
 
-        public static bool TryConvertToInt32(object obj, out int ret)
-        {
-            var n = MyNumber.TryConvertFrom(obj);
-            if (n is not null && n.IsInt32)
-            {
-                ret = (int)n;
-                return true;
-            }
-            ret = 0;
-            return false;
-        }
-
         public static string ToString(object? obj)
         {
-            return obj == null ? "" : (obj.ToString()??string.Empty);
-        }
-
-        public static string ToString(object obj, string format, int len)
-        {
-            return obj?.ToString() ?? "";
-            // todo
-            //throw new NotImplementedException();
+            return obj?.ToString()??string.Empty;
         }
     }
 }

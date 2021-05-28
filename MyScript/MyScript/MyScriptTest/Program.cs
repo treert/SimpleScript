@@ -50,7 +50,7 @@ class Program
 
         //TestEnum();
 
-        TestStringFormat();
+        //TestStringFormat();
 
         //TestThread.Test1();
 
@@ -60,7 +60,7 @@ class Program
 
         //TestStruct();
 
-        //TestIO();
+        TestIO();
     }
 
     /// <summary>
@@ -70,11 +70,23 @@ class Program
     static void TestIO()
     {
         Console.WriteLine("============== TestIO Start ===============");
+        //Console.WriteLine(System.IO.Directory.GetFiles(@"").FirstOrDefault());// exception
         Console.WriteLine(System.IO.Directory.GetFiles(@"C:\").FirstOrDefault());
         Console.WriteLine(System.IO.Directory.GetFiles(@"./").FirstOrDefault());
         Console.WriteLine(System.IO.Directory.GetFiles(@".///").FirstOrDefault());// ? 返回路径包含了.///
         Console.WriteLine(System.IO.Directory.GetFiles(@".").FirstOrDefault());
         Console.WriteLine(System.IO.Directory.GetFiles(@"./bin\.././").FirstOrDefault());
+        Console.WriteLine(System.IO.Path.GetExtension(""));
+        Console.WriteLine(System.IO.Path.GetExtension(null));
+        Console.WriteLine(System.IO.Path.GetFileName(null));
+        Console.WriteLine(System.IO.Path.GetDirectoryName(null));
+        Console.WriteLine($"{null}");
+        Console.WriteLine(string.Join(",",null,"",null));
+        Console.WriteLine(System.IO.Path.GetExtension("a.b.c.1"));
+        Console.WriteLine("========  Dir  ========");
+        Console.WriteLine(System.IO.Directory.GetDirectories(@"C:/").FirstOrDefault());
+        Console.WriteLine(System.IO.Directory.GetDirectories(@"c:\").FirstOrDefault());
+        Console.WriteLine(System.IO.Directory.GetDirectories(@".").FirstOrDefault());
         //Console.WriteLine(System.IO.Directory.GetFiles(@"xyzd").FirstOrDefault());// exception
         Console.WriteLine("============== TestIO Start ===============");
     }

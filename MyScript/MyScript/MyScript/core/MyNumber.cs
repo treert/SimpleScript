@@ -124,7 +124,7 @@ namespace MyScript
         /// <returns></returns>
         public static MyNumber ForceConvertFrom(object? obj)
         {
-            MyNumber? n = null;
+            MyNumber? n;
             if(obj is string str)
             {
                 n = TryParse(str);
@@ -148,8 +148,8 @@ namespace MyScript
             {
                 case MyNumber n:
                     return n;
-                case bool b:
-                    return b;
+                //case bool b:
+                //    return b;// 关闭的原因是bool 判断的缘故。MyScript里 0 是true，NaN 是 false
                 case int i:
                     return i;
                 case uint i:
@@ -208,10 +208,10 @@ namespace MyScript
         {
             return value.is_big ? value.big : (BigInteger)value.num;
         }
-        public static implicit operator MyNumber(bool value)
-        {
-            return new MyNumber((BigInteger)(value?1:0));
-        }
+        //public static implicit operator MyNumber(bool value)
+        //{
+        //    return new MyNumber((BigInteger)(value?1:0));
+        //}
         public static implicit operator MyNumber(double value)
         {
             return new MyNumber(value);

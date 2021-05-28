@@ -86,10 +86,9 @@ q_exp ::= exp '?' [exp] (':'|'?') exp_or_stat
 
 function ::= 'fn' funcbody
 
-# 稍微支持下 ! 语法，用于判空，MyScript 默认实现是抛异常的，慎重。
-index ::= '!' ('[' exp ']' | '.' Name | '.' String)
+index ::= '[' exp ']' | '.' Name | '.' String
 
-args ::=  ['!'] '(' [$concat($join(['*'] exp) , $join( ('**' exp| Name '=' exp) )) [','] ] ')'
+args ::=  '(' [$concat($join(['*'] exp) , $join( ('**' exp| Name '=' exp) )) [','] ] ')'
 
 # 这儿是按优先级排序的，除了 ^ 其他都是左结合
 binop ::= 'or'
