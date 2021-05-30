@@ -104,7 +104,7 @@ namespace MyScript
 
         public static string ToString(object? obj)
         {
-            return obj?.ToString()??string.Empty;
+            return obj?.ToString() ?? string.Empty;
         }
     }
 }

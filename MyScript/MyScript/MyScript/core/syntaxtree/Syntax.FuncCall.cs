@@ -44,7 +44,7 @@ namespace MyScript
                     if(obj is ICall func)
                     {
                         var args = this.args.GetArgs(frame);
-                        args.that = t;
+                        args.m_that = t;
                         return func.Call(args);
                     }
                     else
@@ -73,7 +73,7 @@ namespace MyScript
             MyArgs args = new MyArgs(frame);
             foreach(var it in exp_list)
             {
-                args.args.AddItem(it.exp.GetResult(frame), it.split);
+                args.m_args.AddItem(it.exp.GetResult(frame), it.split);
             }
             foreach(var it in kw_list)
             {
@@ -86,7 +86,7 @@ namespace MyScript
                         {
                             if(item.key is string str)
                             {
-                                args.name_args[str] = item.value;
+                                args.m_name_args[str] = item.value;
                             }
                         }
                     }
@@ -97,7 +97,7 @@ namespace MyScript
                 }
                 else
                 {
-                    args.name_args[it.name.m_string!] = ret;
+                    args.m_name_args[it.name.m_string!] = ret;
                 }
             }
             return args;

@@ -44,7 +44,7 @@ namespace MyScript
         {
             Frame frame = new Frame(this);
             // 先填充个this
-            frame.AddLocalVal(Utils.MAGIC_THIS, args.that);
+            frame.AddLocalVal(Utils.MAGIC_THIS, args.m_that);
 
             int name_cnt = 0;
             if (code.param_list is ParamList param)
@@ -61,16 +61,16 @@ namespace MyScript
                 {
                     string ls_name = param.ls_name.m_string!;
                     MyArray arr = new MyArray();
-                    for (int i = name_cnt; i < args.args.Count; i++)
+                    for (int i = name_cnt; i < args.m_args.Count; i++)
                     {
-                        arr.Add(args.args[i]);// 截断下
+                        arr.Add(args.m_args[i]);// 截断下
                     }
                 }
                 foreach (var it in param.kw_list)
                 {
                     var name = it.token.m_string!;
                     object? obj;
-                    _ = args.name_args.TryGetValue(name, out obj) || default_args.TryGetValue(name, out obj);
+                    _ = args.m_name_args.TryGetValue(name, out obj) || default_args.TryGetValue(name, out obj);
                     frame.AddLocalVal(name, obj);
                 }
 
@@ -78,7 +78,7 @@ namespace MyScript
                 {
                     // @om 取所有命名参数好了
                     MyTable t = new MyTable();
-                    foreach (var it in args.name_args)
+                    foreach (var it in args.m_name_args)
                     {
                         if (default_args.ContainsKey(it.Key) == false)
                             t.Set(it.Key, it.Value);

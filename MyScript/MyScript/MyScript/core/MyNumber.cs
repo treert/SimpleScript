@@ -129,6 +129,10 @@ namespace MyScript
             {
                 n = TryParse(str);
             }
+            else if(obj is bool bb)
+            {
+                return (MyNumber)bb;
+            }
             else
             {
                 n = TryConvertFrom(obj);
@@ -141,6 +145,11 @@ namespace MyScript
             num = TryConvertFrom(obj);
             return num is not null;
         }
+        /// <summary>
+        /// MS里的等效数字类型，特别的是Enum也统一当数字类型。
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
         public static MyNumber? TryConvertFrom(object? obj)
         {
             // @om 应该有性能更好的写法
@@ -172,10 +181,10 @@ namespace MyScript
                     return i;
                 case decimal i:
                     return i;
-                case Enum e:
+                case Enum e:// 枚举统一当成 int64 来处理
                     // c# enum 设计的不方便哎。
                     // https://social.msdn.microsoft.com/Forums/vstudio/en-US/92e31409-c9b6-4725-ac7e-6b912438f8f2/how-to-cast-an-enum-directly-to-int?forum=csharpgeneral
-                    return e;
+                    return Convert.ToInt64(e);
             }
             return null;
         }
@@ -199,6 +208,10 @@ namespace MyScript
         public static explicit operator double(MyNumber value)
         {
             return value.is_big ? (double)value.big : value.num;
+        }
+        public static explicit operator float(MyNumber value)
+        {
+            return value.is_big ? (float)value.big : (float)value.num;
         }
         /// <summary>
         /// 可能会抛异常，看上去似乎也用不到，暂时留着吧。
@@ -262,7 +275,15 @@ namespace MyScript
         }
         public static implicit operator MyNumber(Enum value)
         {
-            return new MyNumber((BigInteger)Convert.ToUInt64(value));// 枚举最大支持到int64，统一当成 uint64 来处理
+            return new MyNumber((BigInteger)Convert.ToInt64(value));// 枚举最大支持到int64，统一当成 int64 来处理
+        }
+        public static explicit operator MyNumber(bool value)
+        {
+            return new MyNumber((BigInteger)(value ? 1 : 0));
+        }
+        public static explicit operator bool(MyNumber value)
+        {
+            return value.is_big ? value.big == 0 : value.num == 0;
         }
         public static MyNumber operator +(MyNumber value)
         {

@@ -49,6 +49,8 @@ namespace MyScript
             m_line = line;
         }
 
+        public override string Message => $"{m_source}:{m_line} {inner.Message}";
+
         // @om 也许能保持c#堆栈
         public override string? StackTrace => base.StackTrace;
     }

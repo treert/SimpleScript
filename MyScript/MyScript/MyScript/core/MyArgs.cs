@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,50 +10,65 @@ namespace MyScript
     /// <summary>
     /// 统一的参数格式
     /// </summary>
-    public class MyArgs
+    public class MyArgs:IEnumerable
     {
-        public object? that = null;// this
-        public Dictionary<string, object?> name_args = new();
-        public MyArray args = new MyArray();
-        public Frame? frame = null;// VM 调用外部接口时，通过这个可以传递运行是环境，增加功能
+        public object? m_that = null;// this
+        public object? That
+        {
+            get {
+                if(m_name_args.TryGetValue(Utils.MAGIC_THIS, out var ret))
+                {
+                    return ret;
+                }
+                return m_that;
+            }
+        }
+        public Dictionary<string, object?> m_name_args = new();
+        public MyArray m_args = new MyArray();
+        public Frame? m_frame = null;// VM 调用外部接口时，通过这个可以传递运行是环境，增加功能
 
         public MyArgs(Frame frame)
         {
-            this.frame = frame;
+            this.m_frame = frame;
         }
 
         public MyArgs(params object[] args)
         {
-            this.args.m_items.AddRange(args);
+            this.m_args.m_items.AddRange(args);
         }
 
         public MyArgs(Dictionary<string, object?> name_args, params object[] args)
         {
-            this.name_args = name_args;
-            this.args.m_items.AddRange(args);
+            this.m_name_args = name_args;
+            this.m_args.m_items.AddRange(args);
         }
 
         public bool TryGetValue(int idx, string name, out object? ret)
         {
-            if (name_args.TryGetValue(name, out ret))
+            if (m_name_args.TryGetValue(name, out ret))
             {
                 return true;// 优先级高于数组参数
             }
-            else if (idx >= 0 && idx < args.Count)
+            else if (idx >= 0 && idx < m_args.Count)
             {
-                ret = args[idx];
+                ret = m_args[idx];
                 return true;
             }
             ret = null;
             return false;
         }
 
+        public IEnumerator GetEnumerator()
+        {
+            return m_args.GetEnumerator();
+        }
+
         public object? this[int idx]
         {
             get {
-                if (idx >= 0 && idx < args.Count)
+                if (idx >= 0 && idx < m_args.Count)
                 {
-                    return args[idx];
+                    return m_args[idx];
                 }
                 return null;
             }
@@ -62,7 +78,15 @@ namespace MyScript
         {
             get {
                 object? ret;
-                name_args.TryGetValue(name, out ret);
+                m_name_args.TryGetValue(name, out ret);
+                return ret;
+            }
+        }
+
+        public object? this[int idx, string name]
+        {
+            get {
+                TryGetValue(idx, name, out var ret);
                 return ret;
             }
         }

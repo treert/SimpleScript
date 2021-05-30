@@ -41,6 +41,7 @@ namespace MyScriptConsole
             Console.WriteLine("MyScript 0.9");
             VM vm = new VM();
             vm.global_table["echo"] = new MyConsole();
+            MyScriptStdLib.LibString.Register(vm);
             MyTable module = new MyTable();
             StringBuilder sb = new StringBuilder();
             for(; ; )

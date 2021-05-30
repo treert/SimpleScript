@@ -25,8 +25,6 @@ class TestA
     {
         this.a = a;
     }
-
-    [MyScript.ExtField]
     public int this[int idx, string x1, bool x2]
     {
         get
@@ -60,7 +58,9 @@ class Program
 
         //TestStruct();
 
-        TestIO();
+        //TestIO();
+
+        //OtherTest();
     }
 
     /// <summary>
@@ -248,6 +248,7 @@ class Program
         VM vm = new VM();
         // 注入基础扩展
         vm.global_table["echo"] = new MyConsole();
+        MyScriptStdLib.LibString.Register(vm);
         // 执行测试文件
         try
         {
@@ -335,6 +336,7 @@ class Program
 
     static void OtherTest()
     {
+        Console.WriteLine("===== OtherTest Start =======");
         {
             Func<List<int>> f = () =>
             {
@@ -458,7 +460,7 @@ class Program
             Console.WriteLine(aa is Array);
         }
         {
-            Console.WriteLine("2222222222222222");
+            Console.WriteLine("Test ExtUtils.ConvertFromMSToCS Begin");
             List<Type> types = new List<Type>(){
                 typeof(sbyte),typeof(byte),
                 typeof(Int16),typeof(UInt16),
@@ -470,8 +472,9 @@ class Program
             double a = 127;
             foreach (var t in types)
             {
-                Console.WriteLine(MyScript.ExtWrap.CheckAndConvertFromSSToSS(a, t));
+                Console.WriteLine(ExtUtils.ConvertFromMSToCS(a, t));
             }
+            Console.WriteLine("Test ExtUtils.ConvertFromMSToCS End");
         }
         {
             var type = typeof(ETest);
@@ -496,12 +499,14 @@ class Program
             Console.WriteLine($"null={null}.");
         }
         {
+            Console.WriteLine(Utils.CheckEquals(0.0, -0.0));
             Console.WriteLine(Utils.CheckEquals(1, 1.0));
             Console.WriteLine(Utils.CheckEquals(1f, 1.0));
         }
         {
             Console.WriteLine($"{"abc",4}#{"abe",-4}#");
         }
+        Console.WriteLine("===== OtherTest End =======");
     }
     enum ETest
     {

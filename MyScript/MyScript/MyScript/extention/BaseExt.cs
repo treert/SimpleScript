@@ -10,7 +10,7 @@ namespace MyScript
     {
         public object? Call(MyArgs args)
         {
-            for(var i = 0; i < args.args.Count; i++)
+            for(var i = 0; i < args.m_args.Count; i++)
             {
                 Console.Write(args[i]);
             }
@@ -33,7 +33,7 @@ namespace MyScript
 
         public object? Test(MyArgs args)
         {
-            Console.WriteLine($"test {args.args.Count}");
+            Console.WriteLine($"test {args.m_args.Count}");
             return null;
         }
 

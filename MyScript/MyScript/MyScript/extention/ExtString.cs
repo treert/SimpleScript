@@ -45,18 +45,33 @@ namespace MyScript
 
         public static object? Sub(MyArgs args)
         {
-            
+            var that = args.That;
+            var start = MyNumber.TryConvertFrom(args[0]);
+            var len = MyNumber.TryConvertFrom(args[1]);
+            if(that is string str && start is not null)
+            {
+                if (str.Length == 0) return "";
+                int s = (int)start;
+                s = (s % str.Length + str.Length) % str.Length;
+                if(len is null)
+                {
+                    return str.Substring(s);
+                }
+                else
+                {
+                    return str.Substring(s, (int)len);
+                }
+            }
             return null;
         }
 
         public static object? Join(MyArgs args)
         {
+            if(args.That is string str)
+            {
+                return args.m_args.m_items.Join(str);
+            }
             return null;
-        }
-
-        public static void Set(this string str, object key, object? value)
-        {
-            throw new NotSupportedException("not support modify <string>");
         }
     }
 }

@@ -14,6 +14,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MyScriptStdLib\MyScriptStdLib.csproj" />
     <ProjectReference Include="..\MyScript\MyScript.csproj" />
   </ItemGroup>
 
