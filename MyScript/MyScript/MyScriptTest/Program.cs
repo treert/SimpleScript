@@ -48,7 +48,7 @@ class Program
 
         //TestEnum();
 
-        //TestStringFormat();
+        TestStringFormat();
 
         //TestThread.Test1();
 
@@ -94,6 +94,7 @@ class Program
     static void TestStringFormat()
     {
         Console.WriteLine($@"
+{-2:d2}
 {string.Format("{0:000000}", 1234), -10}b
 {string.Format("{0: 哈哈 0#0####}", 1234)}
 {1.5:哈哈 \n .00}
@@ -249,6 +250,8 @@ class Program
         // 注入基础扩展
         vm.global_table["echo"] = new MyConsole();
         MyScriptStdLib.LibString.Register(vm);
+        MyScriptStdLib.LibNumber.Register(vm);
+        MyScriptStdLib.LibTable.Register(vm);
         // 执行测试文件
         try
         {

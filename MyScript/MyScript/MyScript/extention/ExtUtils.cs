@@ -110,9 +110,10 @@ namespace MyScript
                         TypeCode.UInt64 => (ulong)n,
                         TypeCode.Single => (float)n,
                         TypeCode.Double => (double)n,
-                        TypeCode.Decimal => (double)n,// 不想支持来着
+                        TypeCode.Decimal => (decimal)(double)n,// 不想支持来着
                         TypeCode.DateTime => null,
                         TypeCode.String => null,
+                        _ => throw new NotImplementedException(),
                     };
                 }
             }

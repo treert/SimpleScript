@@ -59,7 +59,7 @@ namespace MyScript
             }
         }
 
-        public int Len => _key_map.Count;
+        public int Count => _key_map.Count;
 
         void _RemoveNode(ItemNode node)
         {
